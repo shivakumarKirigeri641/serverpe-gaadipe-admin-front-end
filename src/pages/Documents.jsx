@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
 import { rupees, date, dateTime, plate, count, mobile as fmtMobile, daysTo } from '../lib/format';
 import Shell from '../components/Shell.jsx';
-import { Table, Chip, Hint, Empty, Spinner, Failed, saveBlob, openBlob } from '../components/ui.jsx';
+import { Table, Chip, Hint, Empty, Spinner, Failed, saveBlob, openBlob, Pager, PAGE_SIZE } from '../components/ui.jsx';
 import { useSession, allowed } from '../lib/session';
 
 /**
@@ -20,15 +20,19 @@ export default function Documents() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(null);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => { setPage(1); }, [tab, q]);
 
   const isReports = tab === 'reports';
 
   const load = useCallback(async () => {
     try {
       setError(null);
-      setData(await (isReports ? api.reports({ q, limit: 100 }) : api.invoices({ q, limit: 100 })));
+      setData(await (isReports ? api.reports({ q, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE })
+        : api.invoices({ q, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE })));
     } catch (e) { setError(e); }
-  }, [isReports, q]);
+  }, [isReports, q, page]);
 
   useEffect(() => {
     setData(null);
@@ -138,6 +142,7 @@ export default function Documents() {
               ))}
             </Table>
           )}
+        {data && <Pager page={page} total={data.total} onPage={setPage} />}
       </div>
 
       <p className="mt-3 text-2xs text-muted">

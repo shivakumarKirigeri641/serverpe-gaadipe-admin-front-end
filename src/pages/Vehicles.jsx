@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
 import { plate, count, date, dateTime, ago, daysTo, mobile as fmtMobile } from '../lib/format';
 import Shell from '../components/Shell.jsx';
-import { Table, Chip, Hint, Modal, Empty, Spinner, Failed, Banner } from '../components/ui.jsx';
+import { Table, Chip, Hint, Modal, Empty, Spinner, Failed, Banner, Pager, PAGE_SIZE } from '../components/ui.jsx';
 import { useSession, allowed } from '../lib/session';
 
 /**
@@ -18,11 +18,14 @@ export default function Vehicles() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [open, setOpen] = useState(null);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => { setPage(1); }, [q]);
 
   const load = useCallback(async () => {
-    try { setError(null); setData(await api.vehicles({ q, limit: 100 })); }
+    try { setError(null); setData(await api.vehicles({ q, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE })); }
     catch (e) { setError(e); }
-  }, [q]);
+  }, [q, page]);
 
   useEffect(() => {
     const t = setTimeout(load, q ? 300 : 0);
@@ -90,6 +93,7 @@ export default function Vehicles() {
               })}
             </Table>
           )}
+        {data && <Pager page={page} total={data.total} onPage={setPage} />}
       </div>
 
       {open && <VehicleDetail regNo={open} onClose={() => setOpen(null)} onChanged={load} />}

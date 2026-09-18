@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
 import { dateTime, ago, mobile as fmtMobile } from '../lib/format';
 import Shell from '../components/Shell.jsx';
-import { Table, Chip, Spinner, Failed, Empty, Hint } from '../components/ui.jsx';
+import { Table, Chip, Spinner, Failed, Empty, Hint, Pager, PAGE_SIZE } from '../components/ui.jsx';
 
 /**
  * Everything anyone did here.
@@ -39,11 +39,18 @@ export default function Audit() {
   const [rows, setRows] = useState(null);
   const [error, setError] = useState(null);
   const [action, setAction] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => { setPage(1); }, [action]);
 
   const load = useCallback(async () => {
-    try { setError(null); setRows((await api.audit({ action, limit: 200 })).rows); }
-    catch (e) { setError(e); }
-  }, [action]);
+    try {
+      setError(null);
+      const out = await api.audit({ action, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+      setRows(out.rows); setTotal(out.total || 0);
+    } catch (e) { setError(e); }
+  }, [action, page]);
   useEffect(() => { load(); }, [load]);
 
   return (
@@ -86,6 +93,7 @@ export default function Audit() {
               })}
             </Table>
           )}
+        {rows && <Pager page={page} total={total} onPage={setPage} />}
       </div>
     </Shell>
   );

@@ -27,11 +27,31 @@ export function BusyBar() {
  * opens on keyboard focus — a hover-only fact is a fact some people cannot read.
  */
 export function Hint({ children, note, right = false, className = '' }) {
+  const [at, setAt] = useState(null);
   if (!note) return children;
+
+  /* THE NOTE FLOATS ABOVE THE PAGE, in a portal at fixed coordinates. Drawn
+     inside the element, a hidden note still counted towards its container's
+     size — every table with notes near its last rows grew a small vertical
+     scrollbar, and the notes there were clipped when shown. */
+  const show = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const below = window.innerHeight - r.bottom;
+    setAt({ left: r.left, right: window.innerWidth - r.right, top: r.bottom + 6, bottom: window.innerHeight - r.top + 6, up: below < 180 && r.top > below });
+  };
+  const hide = () => setAt(null);
+
   return (
-    <span className={`hint ${right ? 'hint-right' : ''} ${className}`} tabIndex={0}>
+    <span className={`hint ${className}`} tabIndex={0}
+      onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide}>
       {children}
-      <span className="hint-body">{note}</span>
+      {at && createPortal(
+        <span className="hint-body" role="tooltip" style={{
+          ...(right ? { right: Math.max(8, at.right) } : { left: Math.max(8, Math.min(at.left, window.innerWidth - 348)) }),
+          ...(at.up ? { bottom: at.bottom } : { top: at.top }),
+        }}>{note}</span>,
+        document.body,
+      )}
     </span>
   );
 }
@@ -165,4 +185,43 @@ export function openBlob(blob) {
   // Revoked late: a tab that has not finished loading the PDF would show blank.
   setTimeout(() => URL.revokeObjectURL(url), 60000);
   return w;
+}
+
+/**
+ * Pages, not a long scroll (user, 2026-09-18). `page` is 1-based; the pager
+ * says where the reader is and offers the pages around it, the first and the
+ * last. A list that fits on one page gets no pager at all.
+ */
+export const PAGE_SIZE = 25;
+
+export function Pager({ page, total, size = PAGE_SIZE, onPage, className = '' }) {
+  const last = Math.max(1, Math.ceil((total || 0) / size));
+  if (!total || last <= 1) return null;
+  const set = new Set([1, last, page - 1, page, page + 1].filter((p) => p >= 1 && p <= last));
+  const pages = [];
+  [...set].sort((a, b) => a - b).forEach((p, i, all) => {
+    if (i && p - all[i - 1] > 1) pages.push('…');
+    pages.push(p);
+  });
+  const go = (p) => onPage(Math.max(1, Math.min(last, p)));
+  const from = (page - 1) * size + 1;
+  return (
+    <div className={`flex flex-wrap items-center justify-between gap-3 border-t border-line bg-shell/40 px-4 py-2.5 ${className}`}>
+      <span className="text-2xs tabular text-muted">
+        {from.toLocaleString('en-IN')}–{Math.min(page * size, total).toLocaleString('en-IN')} of {total.toLocaleString('en-IN')}
+      </span>
+      <nav className="flex flex-wrap items-center gap-1" aria-label="Pages">
+        <button type="button" className="btn-quiet !px-2.5 !py-1 text-2xs" disabled={page <= 1} onClick={() => go(page - 1)}>‹ Prev</button>
+        {pages.map((p, i) => (p === '…'
+          ? <span key={`gap${i}`} className="px-1 text-2xs text-muted">…</span>
+          : (
+            <button key={p} type="button" onClick={() => go(p)} aria-current={p === page ? 'page' : undefined}
+              className={`min-w-[2rem] rounded-md px-2 py-1 text-2xs font-semibold tabular transition ${p === page ? 'bg-brand text-white' : 'border border-line bg-white text-body hover:bg-shell'}`}>
+              {p}
+            </button>
+          )))}
+        <button type="button" className="btn-quiet !px-2.5 !py-1 text-2xs" disabled={page >= last} onClick={() => go(page + 1)}>Next ›</button>
+      </nav>
+    </div>
+  );
 }

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
 import { rupees, count, mobile as fmtMobile, plate, dateTime, ago, daysTo, date } from '../lib/format';
 import Shell from '../components/Shell.jsx';
-import { Table, Hint, Chip, Modal, Empty, Spinner, Failed, Banner, openBlob, saveBlob } from '../components/ui.jsx';
+import { Table, Hint, Chip, Modal, Empty, Spinner, Failed, Banner, openBlob, saveBlob, Pager, PAGE_SIZE } from '../components/ui.jsx';
 import { useSession, allowed } from '../lib/session';
 
 /**
@@ -23,16 +23,20 @@ export default function Customers() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [openId, setOpenId] = useState(null);
+  const [page, setPage] = useState(1);
+
+  // A new search or filter starts again from the first page.
+  useEffect(() => { setPage(1); }, [q, sort, filter]);
 
   const load = useCallback(async () => {
     try {
       setError(null);
-      const params = { q, sort, limit: 100 };
+      const params = { q, sort, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE };
       if (filter === 'paying') params.paying = 1;
       if (filter === 'blocked') params.blocked = 1;
       setData(await api.customers(params));
     } catch (e) { setError(e); }
-  }, [q, sort, filter]);
+  }, [q, sort, filter, page]);
 
   /* Typing searches, but not on every keystroke: a search per character is a
      request per character, and the table flickering under the reader's hands. */
@@ -117,6 +121,7 @@ export default function Customers() {
               ))}
             </Table>
           )}
+        {data && <Pager page={page} total={data.total} onPage={setPage} />}
       </div>
 
       {openId && <CustomerDetail id={openId} onClose={() => setOpenId(null)} onChanged={load} />}

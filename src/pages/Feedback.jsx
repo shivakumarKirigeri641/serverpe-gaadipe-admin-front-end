@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { mobile as fmtMobile, plate, dateTime, ago } from '../lib/format';
 import Shell from '../components/Shell.jsx';
-import { Empty, Spinner, Failed, Hint } from '../components/ui.jsx';
+import { Empty, Spinner, Failed, Hint, Pager, PAGE_SIZE } from '../components/ui.jsx';
 
 /**
  * What customers typed after tapping Feedback.
@@ -14,13 +14,16 @@ import { Empty, Spinner, Failed, Hint } from '../components/ui.jsx';
 export default function Feedback() {
   const [rows, setRows] = useState(null);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    api.feedback({ limit: 200 }).then((d) => setRows(d.rows)).catch(setError);
-  }, []);
+    api.feedback({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE })
+      .then((d) => { setRows(d.rows); setTotal(d.total || 0); }).catch(setError);
+  }, [page]);
 
   return (
-    <Shell title="Feedback" subtitle={rows ? `${rows.length} message${rows.length === 1 ? '' : 's'}` : ' '}>
+    <Shell title="Feedback" subtitle={rows ? `${total} message${total === 1 ? '' : 's'}` : ' '}>
       {error ? <Failed error={error} />
         : !rows ? <Spinner />
         : !rows.length ? (
@@ -45,6 +48,7 @@ export default function Feedback() {
                 </div>
               </div>
             ))}
+            <div className="card overflow-hidden"><Pager page={page} total={total} onPage={setPage} className="border-t-0" /></div>
           </div>
         )}
     </Shell>

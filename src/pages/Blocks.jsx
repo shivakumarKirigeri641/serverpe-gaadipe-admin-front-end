@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
 import { mobile as fmtMobile, plate, dateTime } from '../lib/format';
 import Shell from '../components/Shell.jsx';
-import { Table, Chip, Empty, Spinner, Failed, Banner, Field, Modal } from '../components/ui.jsx';
+import { Table, Chip, Empty, Spinner, Failed, Banner, Field, Modal, Pager, PAGE_SIZE } from '../components/ui.jsx';
 import { useSession, allowed } from '../lib/session';
 
 /**
@@ -22,6 +22,9 @@ export default function Blocks() {
   const [error, setError] = useState(null);
   const [history, setHistory] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => { setPage(1); }, [history]);
 
   const load = useCallback(async () => {
     try { setError(null); setRows((await api.blocks({ history: history ? 1 : undefined })).rows); }
@@ -70,7 +73,7 @@ export default function Blocks() {
                 <th className="th">State</th><th className="th"></th>
               </tr>
             }>
-              {rows.map((b) => (
+              {rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((b) => (
                 <tr key={b.id}>
                   <td className="td">
                     {b.kind === 'mobile'
@@ -97,6 +100,7 @@ export default function Blocks() {
               ))}
             </Table>
           )}
+        {rows && <Pager page={page} total={rows.length} onPage={setPage} />}
       </div>
 
       {adding && <AddBlock onClose={() => setAdding(false)} onDone={() => { setAdding(false); load(); }} />}

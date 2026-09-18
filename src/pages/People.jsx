@@ -123,7 +123,7 @@ function AddPerson({ onClose, onDone }) {
         </>
       }>
       <Field label="Mobile number" hint="They sign in with this. No password is created.">
-        <input className="input tabular" autoFocus value={mobile} placeholder="98861 22415"
+        <input className="input tabular" autoFocus value={mobile} placeholder="98765 43210"
           onChange={(e) => setMobile(e.target.value)} />
       </Field>
       <Field label="Name" hint="Shown against everything they do in the audit trail.">

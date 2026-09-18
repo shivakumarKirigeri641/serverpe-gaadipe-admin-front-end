@@ -17,7 +17,7 @@ import { Banner, Field } from '../components/ui.jsx';
 export default function SignIn() {
   const { signIn } = useSession();
   const [step, setStep] = useState('mobile');
-  const [mobile, setMobile] = useState('9886122415');
+  const [mobile, setMobile] = useState('');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -69,7 +69,7 @@ export default function SignIn() {
             <form onSubmit={ask} className="space-y-4">
               <Field label="Your mobile number" hint="The number registered for this panel.">
                 <input className="input tabular" inputMode="numeric" autoFocus autoComplete="tel"
-                  placeholder="98861 22415" value={mobile}
+                  placeholder="98765 43210" value={mobile}
                   onChange={(e) => setMobile(e.target.value)} />
               </Field>
               {error && <Banner tone="wrong">{error}</Banner>}

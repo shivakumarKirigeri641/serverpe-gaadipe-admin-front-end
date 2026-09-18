@@ -138,7 +138,7 @@ function AddBlock({ onClose, onDone }) {
       </Field>
       <Field label={kind === 'mobile' ? 'Mobile number' : 'Registration number'}>
         <input className="input" autoFocus value={value} onChange={(e) => setValue(e.target.value)}
-          placeholder={kind === 'mobile' ? '98861 22415' : 'KA02EX1480'} />
+          placeholder={kind === 'mobile' ? '98765 43210' : 'KA01AB1234'} />
       </Field>
       <Field label="Reason" hint="Recorded with your name and the time. A few words is enough.">
         <textarea className="input min-h-[70px]" value={reason} maxLength={500}

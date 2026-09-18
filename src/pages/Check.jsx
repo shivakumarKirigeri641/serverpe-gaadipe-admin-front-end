@@ -697,7 +697,7 @@ export default function Check() {
         <label className="min-w-[14rem] flex-1">
           <span className="label">Vehicle number</span>
           <input className="input font-mono text-lg uppercase tracking-wider" value={reg} autoFocus
-            placeholder="KA02EX1480" maxLength={14} onChange={(e) => setReg(e.target.value)} />
+            placeholder="KA01AB1234" maxLength={14} onChange={(e) => setReg(e.target.value)} />
         </label>
         <button type="submit" className="btn-primary" disabled={busy}>{busy ? 'Looking…' : 'Check'}</button>
         <Hint note="Spends a live ULIP call instead of answering from the cache. Free today; the reason to be sparing is the day it is not.">

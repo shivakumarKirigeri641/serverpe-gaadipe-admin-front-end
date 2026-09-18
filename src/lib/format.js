@@ -62,13 +62,13 @@ export const daysTo = (v) => {
   return Math.round((d.setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000);
 };
 
-/** " ka 02 ex-1480" -> "KA02EX1480": always written without spaces. */
+/** " ka 01 ab-1234" -> "KA01AB1234": always written without spaces. */
 export const plate = (reg) => {
   const s = String(reg || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   return s;
 };
 
-/** 9886122415 -> "98861 22415", which is how an Indian number is read aloud. */
+/** 9876543210 -> "98765 43210", which is how an Indian number is read aloud. */
 export const mobile = (m) => {
   const s = String(m || '').replace(/\D/g, '').slice(-10);
   return s.length === 10 ? `${s.slice(0, 5)} ${s.slice(5)}` : (m || '—');

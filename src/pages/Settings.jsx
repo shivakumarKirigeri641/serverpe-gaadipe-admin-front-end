@@ -38,6 +38,22 @@ const GROUPS = [
       watch_interval_minutes_rc: 'Gap between RC checks.',
       watch_interval_minutes_fastag: 'Gap between FASTag checks.',
       renewal_notice_days: 'Days before a subscription ends that the reminder is sent.',
+      alert_send_hour_ist: 'Hour (IST, 0–23) the evening WhatsApp alert starts going out — one per mobile per day. 19 = 7 pm.',
+      alert_send_until_hour_ist: 'Hour (IST) after which no alert is sent that day. 22 = 10 pm.',
+    },
+  },
+  {
+    title: 'Emails to you',
+    note: 'Sent from the noreply mailbox. Switch any of them off here; it takes effect within a minute.',
+    keys: {
+      admin_alert_emails: 'Who receives them — comma-separated. Empty means ADMINMAIL from the server settings.',
+      notify_sign_ins: 'An email each time someone signs in to gaadipe.in: who, device, place, IP.',
+      notify_payments: 'An email for every successful payment, with the full breakdown and the invoice attached.',
+      notify_contact: 'An email for every message sent through the website’s Contact form.',
+      notify_feedback: 'An email for every feedback note.',
+      daily_summary_email: 'One summary of the day: revenue, take-home, payments, checks, sign-ins.',
+      daily_summary_hour_ist: 'Hour (IST) the daily summary is sent. 21 = 9 pm.',
+      contact_per_hour_per_ip: 'How many Contact messages one IP may send in an hour.',
     },
   },
   {
@@ -125,6 +141,7 @@ export default function Settings() {
             <div key={g.title} className="card">
               <div className="border-b border-line px-5 py-3">
                 <h2 className="text-sm font-semibold text-ink">{g.title}</h2>
+                {g.note && <p className="text-2xs text-muted">{g.note}</p>}
               </div>
               <div className="divide-y divide-line">
                 {Object.entries(g.keys)
@@ -136,8 +153,20 @@ export default function Settings() {
                         <div className="text-2xs text-muted">{note}</div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {/^(true|false)$/i.test(String(value(key))) ? (
+                          /* An on/off setting is a switch, not a text box. */
+                          <button type="button" role="switch" aria-checked={String(value(key)).toLowerCase() === 'true'}
+                            onClick={() => set(key, String(value(key)).toLowerCase() === 'true' ? 'false' : 'true')}
+                            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition ${String(value(key)).toLowerCase() === 'true' ? 'bg-brand' : 'bg-line'} ${key in draft ? 'ring-2 ring-brand-accent/40' : ''}`}>
+                            <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition ${String(value(key)).toLowerCase() === 'true' ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                          </button>
+                        ) : (
                         <input className={`input !py-2 ${key in draft ? '!border-brand-accent' : ''}`}
                           value={value(key)} onChange={(e) => set(key, e.target.value)} />
+                        )}
+                        {/^(true|false)$/i.test(String(value(key))) && (
+                          <span className="text-2xs font-semibold text-muted">{String(value(key)).toLowerCase() === 'true' ? 'On' : 'Off'}</span>
+                        )}
                         {/^\d+$/.test(String(value(key))) && /paise/.test(key) && (
                           <span className="whitespace-nowrap text-2xs text-muted">
                             = {rupees(Number(value(key)))}

@@ -39,7 +39,7 @@ const NAV = [
     items: [
       { to: '/check', label: 'Check a vehicle', icon: SearchIcon, cap: 'lookup' },
       { to: '/blocks', label: 'Blocked', icon: ShieldIcon },
-      { to: '/feedback', label: 'Feedback', icon: StarIcon },
+      { to: '/feedback', label: 'Messages', icon: StarIcon },
     ],
   },
   {

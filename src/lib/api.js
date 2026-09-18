@@ -134,6 +134,9 @@ export const api = {
   health: () => call('/health'),
   series: (params) => call(`/series${qs(params)}`),
   funnel: (params) => call(`/funnel${qs(params)}`),
+  compare: () => call('/insights/compare'),
+  fleet: () => call('/insights/fleet', { timeoutMs: 60000 }),
+  heatmap: (params) => call(`/insights/heatmap${qs(params)}`),
   finance: (params) => call(`/finance${qs(params)}`),
 
   customers: (params) => call(`/customers${qs(params)}`),

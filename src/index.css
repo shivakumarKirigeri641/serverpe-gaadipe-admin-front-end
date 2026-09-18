@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { @apply bg-shell text-body font-sans antialiased; }
+  h1, h2, h3 { @apply text-ink; }
+  /* Numbers in a table must line up; a dashboard read at a glance depends on it. */
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+@layer components {
+  .card { @apply rounded-xl border border-line bg-white shadow-card; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50; }
+  .btn-primary { @apply btn bg-brand text-white hover:bg-brand-light; }
+  .btn-quiet { @apply btn border border-line bg-white text-ink hover:bg-shell; }
+  .btn-danger { @apply btn border border-wrong-500/30 bg-wrong-50 text-wrong-700 hover:bg-wrong-50/70; }
+  .input { @apply w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-muted/60 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/10; }
+  .label { @apply mb-1.5 block text-2xs font-semibold uppercase tracking-wider text-muted; }
+  .chip { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-semibold; }
+  .th { @apply px-4 py-2.5 text-left text-2xs font-semibold uppercase tracking-wider text-muted; }
+  /* Top, not middle: one unusually tall cell would otherwise push every short
+     cell beside it to the middle of that height, and the row reads as blank. */
+  .td { @apply px-4 py-3 align-top text-sm; }
+  .plate { @apply font-mono text-[13px] font-semibold tracking-wider text-ink; }
+}
+
+/*
+ * Detail on hover, without a library.
+ *
+ * Every screen here is dense, and the alternative to a hover note is either a
+ * cluttered table or a click that loses the reader's place. The note is drawn
+ * above everything, never wraps to more than a few words per line, and is
+ * invisible to a pointer so it cannot swallow the click underneath it.
+ */
+.hint { position: relative; }
+.hint > .hint-body {
+  position: absolute; left: 0; top: calc(100% + 6px); z-index: 60;
+  min-width: 180px; max-width: 340px; padding: .6rem .7rem;
+  border-radius: .6rem; border: 1px solid #e3ecea; background: #fff;
+  box-shadow: 0 12px 32px rgba(11,31,28,.12);
+  font-size: 11.5px; line-height: 1.45; color: #41514e;
+  opacity: 0; visibility: hidden; transform: translateY(-3px);
+  transition: opacity .12s ease, transform .12s ease, visibility .12s;
+  pointer-events: none; white-space: normal;
+}
+.hint:hover > .hint-body, .hint:focus-within > .hint-body {
+  opacity: 1; visibility: visible; transform: translateY(0);
+}
+.hint-right > .hint-body { left: auto; right: 0; }
+
+/* The thread across the top while the panel is asking the server anything. */
+@keyframes busy-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.busy-bar { animation: busy-slide 1.1s ease-in-out infinite; }
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+}

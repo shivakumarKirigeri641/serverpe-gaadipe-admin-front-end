@@ -119,6 +119,10 @@ export const api = {
   /* Sign-in is by a code sent to the admin's own number. The answer to "send me
      a code" is the same whether or not the number belongs to an admin. */
   requestCode: (mobile) => call('/session/otp', { method: 'POST', auth: false, body: { mobile } }),
+  // A wrong passcode, or too many, is an answer to show, not a failure.
+  signInWithPasscode: (passcode) =>
+    call('/session/passcode', { method: 'POST', auth: false, body: { passcode } })
+      .catch((e) => { if (e.body && (e.status === 401 || e.status === 429)) return e.body; throw e; }),
   verifyCode: (mobile, code) =>
     call('/session/verify', { method: 'POST', auth: false, body: { mobile, code } })
       .catch((e) => {

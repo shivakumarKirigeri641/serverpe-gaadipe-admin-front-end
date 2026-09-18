@@ -171,6 +171,7 @@ export const api = {
 
   feedback: (params) => call(`/feedback${qs(params)}`),
   audit: (params) => call(`/audit${qs(params)}`),
+  signIns: (params) => call(`/sign-ins${qs(params)}`),
   cleanPreview: () => call('/maintenance/preview'),
   cleanDb: () => call('/maintenance/clean', { method: 'POST', body: { confirm: 'CLEAN' }, timeoutMs: 60000 }),
   admins: () => call('/admins'),

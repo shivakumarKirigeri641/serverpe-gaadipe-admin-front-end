@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
 import { rupees, count, mobile as fmtMobile, plate, dateTime, ago, daysTo, date } from '../lib/format';
 import Shell from '../components/Shell.jsx';
+import { Row as SignInRow, Detail as SignInDetail } from './SignIns.jsx';
 import { Table, Hint, Chip, Modal, Empty, Spinner, Failed, Banner, openBlob, saveBlob, Pager, PAGE_SIZE } from '../components/ui.jsx';
 import { useSession, allowed } from '../lib/session';
 
@@ -164,6 +165,7 @@ function CustomerDetail({ id, onClose, onChanged }) {
     ['payments', 'Payments', data?.payments.length],
     ['documents', 'Documents', (data?.reports.length || 0) + (data?.invoices.length || 0)],
     ['chat', 'Conversation', data?.messages.length],
+    ['signins', 'Sign-ins', data?.sign_ins?.length],
     ['trail', 'Devices & consent', (data?.devices.length || 0) + (data?.consent.length || 0)],
   ];
 
@@ -264,6 +266,8 @@ function CustomerDetail({ id, onClose, onChanged }) {
                 </div>
               ) : <Empty>No messages.</Empty>
             )}
+
+            {tab === 'signins' && <SignInHistory data={data} />}
 
             {tab === 'trail' && (
               <div className="space-y-4">
@@ -488,3 +492,59 @@ const Pair = ({ label, value }) => (
     <span className="text-right text-sm text-ink">{value || '—'}</span>
   </div>
 );
+
+/*
+ * Everything this person did to sign in (user, 2026-09-18): each step with its
+ * device and network, and every device they have used, first and last seen.
+ */
+function SignInHistory({ data }) {
+  const [open, setOpen] = useState(null);
+  const [page, setPage] = useState(1);
+  const rows = data.sign_ins || [];
+  const devices = Object.values(rows.reduce((m, r) => {
+    const k = r.device_id || `ua:${r.user_agent || '?'}`;
+    const d = m[k] || (m[k] = { key: k, device_id: r.device_id, described: r.described, first: r.created_at, last: r.created_at, ips: new Set(), numbers: new Set(), sign_ins: 0, failures: 0 });
+    if (new Date(r.created_at) < new Date(d.first)) d.first = r.created_at;
+    if (new Date(r.created_at) > new Date(d.last)) { d.last = r.created_at; d.described = r.described || d.described; }
+    if (r.ip) d.ips.add(r.ip);
+    if (r.mobile) d.numbers.add(r.mobile);
+    if (r.event === 'signed_in') d.sign_ins += 1;
+    if (r.event === 'sign_in_failed' || r.event === 'code_refused') d.failures += 1;
+    return m;
+  }, {}));
+  if (!rows.length) return <Empty>No sign-in activity on the website yet.</Empty>;
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted">Devices used ({devices.length})</h3>
+        <Table head={<tr><th className="th">Device</th><th className="th">First seen</th><th className="th">Last seen</th><th className="th">Sign-ins</th><th className="th">Failed</th><th className="th">IPs</th><th className="th">Numbers</th></tr>}>
+          {devices.map((d) => (
+            <tr key={d.key}>
+              <td className="td">{d.described || 'Unknown device'}<div className="font-mono text-2xs text-muted">{d.device_id || 'no device id'}</div></td>
+              <td className="td text-2xs">{dateTime(d.first)}</td>
+              <td className="td text-2xs">{dateTime(d.last)}</td>
+              <td className="td tabular">{d.sign_ins}</td>
+              <td className={`td tabular ${d.failures ? 'font-semibold text-wrong-700' : ''}`}>{d.failures}</td>
+              <td className="td font-mono text-2xs">{[...d.ips].join(', ')}</td>
+              <td className={`td tabular text-2xs ${d.numbers.size > 1 ? 'font-semibold text-wrong-700' : ''}`}>{[...d.numbers].map(fmtMobile).join(', ')}</td>
+            </tr>
+          ))}
+        </Table>
+      </div>
+      <div>
+        <h3 className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted">Every step ({rows.length})</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[820px] text-sm">
+            <tbody className="divide-y divide-line">
+              {rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((r, i) => (
+                <SignInRow key={r.id} r={r} i={i} showNumber onOpen={() => setOpen(r)} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <Pager page={page} total={rows.length} onPage={setPage} />
+      </div>
+      {open && <SignInDetail r={open} onClose={() => setOpen(null)} />}
+    </div>
+  );
+}

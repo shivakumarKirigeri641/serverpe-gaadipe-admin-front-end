@@ -4,6 +4,8 @@ import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { dateTime, ago, mobile as fmtMobile } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Chip, Empty, Failed, Hint, Modal, Pager, PAGE_SIZE, Spinner } from '../components/ui.jsx';
+import { SessionsTable, STATES } from '../components/Sessions.jsx';
+import { duration } from '../lib/format';
 
 /**
  * Every sign-in step on the website (user, 2026-09-18): each code asked for,
@@ -30,6 +32,73 @@ export const OUTCOMES = {
 };
 
 export default function SignIns() {
+  const [view, setView] = useState('visits');
+  return view === 'visits' ? <Visits onView={setView} /> : <Steps onView={setView} />;
+}
+
+const ViewSwitch = ({ view, onView }) => (
+  <div className="mb-4 flex gap-1 border-b border-line">
+    {[['visits', 'Visits — how long, how it ended'], ['steps', 'Every sign-in step']].map(([k, label]) => (
+      <button key={k} type="button" onClick={() => onView(k)}
+        className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition ${view === k ? 'border-brand text-brand-deep' : 'border-transparent text-muted hover:text-ink'}`}>
+        {label}
+      </button>
+    ))}
+  </div>
+);
+
+/* Every visit: who, when, how long, how it ended. */
+function Visits({ onView }) {
+  const [q, setQ] = useState('');
+  const [state, setState] = useState('');
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => { setPage(1); }, [q, state]);
+  const load = useCallback(async () => {
+    try { setError(null); setData(await api.sessions({ q, state, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE })); }
+    catch (e) { setError(e); }
+  }, [q, state, page]);
+  useEffect(() => { const t = setTimeout(load, q ? 300 : 0); return () => clearTimeout(t); }, [load, q]);
+  useAutoRefresh(load);
+  const t = data?.totals;
+
+  return (
+    <Shell title="Sign-ins" subtitle="Every visit to gaadipe.in: when, how long, how it ended, from where"
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <input className="input !w-56 !py-1.5 text-sm" placeholder="Number, name, IP, device…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <select className="input !w-auto !py-1.5 text-sm" value={state} onChange={(e) => setState(e.target.value)}>
+            <option value="">Every visit</option>
+            {Object.entries(STATES).map(([k, [label]]) => <option key={k} value={k}>{label}</option>)}
+          </select>
+        </div>
+      }>
+      <ViewSwitch view="visits" onView={onView} />
+      {t && (
+        <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-5">
+          {[['Online now', t.online, t.online ? 'text-good-700' : ''], ['Visits, 24h', t.today], ['All visits', t.sessions],
+            ['Average stay', duration(t.avg_seconds)], ['Time on site, all', duration(t.total_seconds)]].map(([k, v, tone], i) => (
+            <div key={k} className="card cv-rise cv-tile px-4 py-3" style={{ animationDelay: `${i * 30}ms` }}>
+              <div className="text-2xs font-semibold uppercase tracking-wider text-muted">{k}</div>
+              <div className={`tabular mt-1 text-2xl font-semibold ${tone || 'text-ink'}`}>{v}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="card">
+        {error ? <Failed error={error} onRetry={load} />
+          : !data ? <Spinner />
+          : !data.rows.length ? <Empty>No visits{q || state ? ' match' : ' yet'}.</Empty>
+          : <SessionsTable rows={data.rows} showCustomer />}
+        {data && <Pager page={page} total={data.total} onPage={setPage} />}
+      </div>
+    </Shell>
+  );
+}
+
+function Steps({ onView }) {
   const [q, setQ] = useState('');
   const [event, setEvent] = useState('');
   const [filter, setFilter] = useState(null);          // { device_id } or { ip }
@@ -68,6 +137,7 @@ export default function SignIns() {
         </div>
       }>
 
+      <ViewSwitch view="steps" onView={onView} />
       {s && (
         <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-5">
           {[['Signed in, 24h', s.sign_ins_today], ['Failed or refused, 24h', s.failures_today, s.failures_today ? 'text-wrong-700' : ''],

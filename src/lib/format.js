@@ -86,3 +86,14 @@ export const change = (now, before) => {
   if (pct === 0) return { dir: 'flat', text: 'same as yesterday' };
   return { dir: pct > 0 ? 'up' : 'down', text: `${pct > 0 ? '+' : ''}${pct}% vs yesterday` };
 };
+
+/** 44 -> "44s", 224 -> "3m 44s", 3900 -> "1h 5m", 200000 -> "2d 7h". */
+export const duration = (seconds) => {
+  const s = Math.max(0, Math.round(Number(seconds) || 0));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ${s % 60}s`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ${m % 60}m`;
+  return `${Math.floor(h / 24)}d ${h % 24}h`;
+};

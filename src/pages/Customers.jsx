@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
 import { useAutoRefresh } from '../lib/useAutoRefresh';
-import { rupees, count, mobile as fmtMobile, plate, dateTime, ago, daysTo, date } from '../lib/format';
+import { rupees, count, mobile as fmtMobile, plate, dateTime, ago, daysTo, date, duration } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Row as SignInRow, Detail as SignInDetail } from './SignIns.jsx';
+import { SessionsTable, VisitSummary } from '../components/Sessions.jsx';
 import { Table, Hint, Chip, Modal, Empty, Spinner, Failed, Banner, openBlob, saveBlob, Pager, PAGE_SIZE } from '../components/ui.jsx';
 import { useSession, allowed } from '../lib/session';
 
@@ -61,6 +62,8 @@ export default function Customers() {
             <option value="paid">Paid most</option>
             <option value="checks">Most checks</option>
             <option value="reports">Most reports</option>
+            <option value="sign_ins">Most sign-ins</option>
+            <option value="time">Most time on site</option>
           </select>
           <select className="input !w-auto !py-1.5 text-sm" value={filter} onChange={(e) => setFilter(e.target.value)}>
             <option value="all">Everyone</option>
@@ -82,6 +85,7 @@ export default function Customers() {
                 <th className="th">Checks</th>
                 <th className="th">Reports</th>
                 <th className="th">Paid</th>
+                <th className="th">Sign-ins</th>
                 <th className="th">Last seen</th>
                 <th className="th">State</th>
               </tr>
@@ -104,6 +108,17 @@ export default function Customers() {
                     {r.paid_paise ? (
                       <Hint note={`${count(r.payments_made)} payment(s). ${r.refunded_paise ? `${rupees(r.refunded_paise)} refunded. ` : ''}Last paid ${ago(r.last_paid_at)}.`}>
                         <span className="font-semibold text-ink">{rupees(r.paid_paise)}</span>
+                      </Hint>
+                    ) : <span className="text-muted">—</span>}
+                  </td>
+                  <td className="td tabular">
+                    {r.sign_ins ? (
+                      <Hint note={`${r.sign_ins} sign-in${r.sign_ins === 1 ? '' : 's'} · ${duration(r.seconds_on_site)} on the site in all. Last signed in ${r.last_sign_in_at ? dateTime(r.last_sign_in_at) : '—'}; last signed out ${r.last_sign_out_at ? dateTime(r.last_sign_out_at) : 'never'}.`}>
+                        <span className="inline-flex items-center gap-1.5">
+                          {r.online && <span className="h-2 w-2 animate-pulse rounded-full bg-good-500" title="Online now" />}
+                          <span className="font-semibold text-ink">{r.sign_ins}</span>
+                          <span className="text-2xs text-muted">· {duration(r.seconds_on_site)}</span>
+                        </span>
                       </Hint>
                     ) : <span className="text-muted">—</span>}
                   </td>
@@ -168,7 +183,7 @@ function CustomerDetail({ id, onClose, onChanged }) {
     ['payments', 'Payments', data?.payments.length],
     ['documents', 'Documents', (data?.reports.length || 0) + (data?.invoices.length || 0)],
     ['chat', 'Conversation', data?.messages.length],
-    ['signins', 'Sign-ins', data?.sign_ins?.length],
+    ['signins', 'Sign-ins & visits', data?.visits?.sign_ins],
     ['trail', 'Devices & consent', (data?.devices.length || 0) + (data?.consent.length || 0)],
   ];
 
@@ -515,9 +530,19 @@ function SignInHistory({ data }) {
     if (r.event === 'sign_in_failed' || r.event === 'code_refused') d.failures += 1;
     return m;
   }, {}));
-  if (!rows.length) return <Empty>No sign-in activity on the website yet.</Empty>;
+  const sessions = data.sessions || [];
+  const [spage, setSpage] = useState(1);
+  if (!rows.length && !sessions.length) return <Empty>No sign-in activity on the website yet.</Empty>;
   return (
     <div className="space-y-4">
+      <VisitSummary v={data.visits} />
+      <div>
+        <h3 className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted">Visits ({sessions.length}) — when, how long, how it ended</h3>
+        <div className="rounded-lg border border-line">
+          <SessionsTable rows={sessions.slice((spage - 1) * PAGE_SIZE, spage * PAGE_SIZE)} />
+          <Pager page={spage} total={sessions.length} onPage={setSpage} />
+        </div>
+      </div>
       <div>
         <h3 className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted">Devices used ({devices.length})</h3>
         <Table head={<tr><th className="th">Device</th><th className="th">First seen</th><th className="th">Last seen</th><th className="th">Sign-ins</th><th className="th">Failed</th><th className="th">IPs</th><th className="th">Numbers</th></tr>}>

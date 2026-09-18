@@ -33,7 +33,7 @@ const GROUPS = [
     title: 'Reports and alerts',
     keys: {
       report_valid_days: 'How many days a paid report can be downloaded again.',
-      document_number_start: 'Where each day’s invoice and report numbers begin (GP2, GP3…). Never lower it below a number already issued today — an invoice number must not repeat.',
+      document_number_start: 'Where each day’s invoice and report numbers begin (default 1: GP1, GP2…). Never lower it below a number already issued today — an invoice number must not repeat.',
       watch_check_interval_minutes: 'Default gap between checks of a watched vehicle.',
       watch_interval_minutes_challan: 'Gap between challan checks. The only dataset that really moves.',
       watch_interval_minutes_rc: 'Gap between RC checks.',

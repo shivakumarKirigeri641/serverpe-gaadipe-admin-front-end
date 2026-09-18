@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="GaadiPe Admin">
+  <!-- Deeper than the customer site's mark, so the two are not confused in a
+       row of open tabs. -->
+  <rect width="64" height="64" rx="14" fill="#0b4f4a"/>
+  <text x="32" y="43" font-family="Inter, system-ui, sans-serif" font-size="30"
+        font-weight="700" fill="#ffffff" text-anchor="middle">GP</text>
+</svg>

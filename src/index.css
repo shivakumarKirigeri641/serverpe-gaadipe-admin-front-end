@@ -60,3 +60,21 @@
   .no-print { display: none !important; }
   body { background: #fff; }
 }
+
+/* Check vehicle: the same motion as the Pravesha panel's check. */
+@keyframes cv-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes cv-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cv-unfold { from { opacity: 0; transform: translateY(-4px) scaleY(.98); } to { opacity: 1; transform: none; } }
+@keyframes cv-shine { from { transform: translateX(-120%); } to { transform: translateX(220%); } }
+.cv-rise { animation: cv-rise .38s cubic-bezier(.2, .8, .2, 1) backwards; }
+.cv-row { animation: cv-fade .3s ease-out backwards; }
+.cv-unfold { animation: cv-unfold .22s ease-out backwards; transform-origin: top; }
+.cv-tile { transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; }
+.cv-tile:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 26, 28, .08); background-color: #fff; }
+.cv-plate { position: relative; overflow: hidden; }
+.cv-plate::after { content: ''; position: absolute; inset: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent); animation: cv-shine 1.6s .3s ease-out 1 backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-rise, .cv-row, .cv-unfold, .cv-plate::after { animation: none !important; }
+  .cv-tile, .cv-tile:hover { transition: none !important; transform: none !important; }
+}

@@ -3,6 +3,8 @@ import { api } from '../lib/api';
 import { rupees, dateTime } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Banner, Field, Hint, Spinner, Failed, Table } from '../components/ui.jsx';
+import CleanDatabase from '../components/CleanDatabase.jsx';
+import { useSession, allowed } from '../lib/session';
 
 /**
  * Prices, and everything else that changes without a deploy.
@@ -58,6 +60,7 @@ const GROUPS = [
 ];
 
 export default function Settings() {
+  const { can } = useSession();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [draft, setDraft] = useState({});
@@ -163,6 +166,8 @@ export default function Settings() {
               </div>
             </details>
           )}
+
+          {allowed(can, 'admins') && <CleanDatabase />}
         </div>
       )}
     </Shell>

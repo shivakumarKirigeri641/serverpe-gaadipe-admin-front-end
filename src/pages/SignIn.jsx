@@ -17,7 +17,7 @@ import { Banner, Field } from '../components/ui.jsx';
 export default function SignIn() {
   const { signIn } = useSession();
   const [step, setStep] = useState('mobile');
-  const [mobile, setMobile] = useState('');
+  const [mobile, setMobile] = useState('9886122415');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);

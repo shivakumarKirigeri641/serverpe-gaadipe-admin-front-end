@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { rupees, count, mobile as fmtMobile, plate, dateTime, ago, daysTo, date } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Row as SignInRow, Detail as SignInDetail } from './SignIns.jsx';
@@ -45,6 +46,7 @@ export default function Customers() {
     const t = setTimeout(load, q ? 300 : 0);
     return () => clearTimeout(t);
   }, [load, q]);
+  useAutoRefresh(load);
 
   return (
     <Shell title="Customers"
@@ -144,6 +146,7 @@ function CustomerDetail({ id, onClose, onChanged }) {
     try { setData(await api.customer(id)); } catch (e) { setError(e); }
   }, [id]);
   useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   const pause = async (paused) => {
     setBusy(true);

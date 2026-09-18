@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { plate, count, date, dateTime, ago, daysTo, mobile as fmtMobile } from '../lib/format';
 import Shell from '../components/Shell.jsx';
+import { RcView, ChallanView, FastagView, FastagNotApplicable, isTwoWheeler } from '../components/VehicleRecord.jsx';
 import { Table, Chip, Hint, Modal, Empty, Spinner, Failed, Banner, Pager, PAGE_SIZE } from '../components/ui.jsx';
 import { useSession, allowed } from '../lib/session';
 
@@ -31,6 +33,7 @@ export default function Vehicles() {
     const t = setTimeout(load, q ? 300 : 0);
     return () => clearTimeout(t);
   }, [load, q]);
+  useAutoRefresh(load);
 
   return (
     <Shell title="Vehicles" subtitle={data ? `${count(data.total)} known` : ' '}
@@ -106,11 +109,13 @@ function VehicleDetail({ regNo, onClose, onChanged }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState('rc');
 
   const load = useCallback(async () => {
     try { setData(await api.vehicle(regNo)); } catch (e) { setError(e); }
   }, [regNo]);
   useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   const block = async () => {
     const reason = window.prompt('Why is this vehicle being blocked? (recorded against your name)');
@@ -121,7 +126,12 @@ function VehicleDetail({ regNo, onClose, onChanged }) {
   };
 
   const v = data?.vehicle;
-  const rc = data?.snapshots?.rc?.data || {};
+  const snap = data?.snapshots || {};
+  const challanN = snap.challan?.data?.summary?.total_pending ?? snap.challan?.data?.pending_count ?? 0;
+  const heldFor = ['rc', 'challan', 'fastag']
+    .filter((k) => snap[k])
+    .map((k) => `${{ rc: 'RC', challan: 'eChallan', fastag: 'FASTag' }[k]} fetched ${dateTime(snap[k].fetched_at)}${snap[k].source ? ` (${snap[k].source})` : ''}`)
+    .join(' · ');
 
   return (
     <Modal wide busy={busy} onClose={onClose} title={plate(regNo)}
@@ -137,33 +147,29 @@ function VehicleDetail({ regNo, onClose, onChanged }) {
             </Banner>
           )}
 
-          <div className="grid gap-x-6 sm:grid-cols-2">
-            <Pair label="Class" value={v.vehicle_class} />
-            <Pair label="Fuel" value={v.fuel} />
-            <Pair label="RC status" value={v.rc_status} />
-            <Pair label="Registered" value={v.reg_date ? date(v.reg_date) : null} />
-            <Pair label="Financer" value={v.financer || 'Not financed'} />
-            <Pair label="Blacklist" value={v.blacklist_status || 'None recorded'} />
-            <Pair label="Owner serial" value={v.owner_serial ? `${v.owner_serial}` : null} />
-            <Pair label="RTO" value={rc.registered_at} />
+          {/* THE RECORD IN FULL (user, 2026-09-18): the same views as "Check a
+              vehicle", drawn from the record already held — no lookup is spent. */}
+          <div className="flex flex-wrap items-center gap-2">
+            {[['rc', 'RC'], ['challans', challanN ? `eChallan (${challanN})` : 'eChallan'], ['fastag', 'FASTag'],
+              ['activity', `Customers & lookups (${data.watchers.length})`]].map(([k, label]) => (
+              <button key={k} type="button" onClick={() => setTab(k)}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${tab === k ? 'bg-brand text-white' : 'border border-line bg-white text-muted hover:text-ink'}`}>
+                {label}
+              </button>
+            ))}
           </div>
+          <p className="text-2xs text-muted">{heldFor || 'No record held for this vehicle yet.'}</p>
 
-          <div>
-            <h3 className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted">Documents</h3>
-            <div className="flex flex-wrap gap-1.5">
-              {[['Insurance', v.insurance_upto], ['PUC', v.pucc_upto], ['Fitness', v.fitness_upto],
-                ['Road tax', v.tax_upto], ['Permit', v.permit_upto]]
-                .filter(([, d]) => d).map(([label, d]) => {
-                  const days = daysTo(d);
-                  return (
-                    <Chip key={label} tone={days < 0 ? 'wrong' : days <= 30 ? 'watch' : 'good'}>
-                      {label} {date(d)}
-                    </Chip>
-                  );
-                })}
+          {tab !== 'activity' && (
+            <div key={tab} className="cv-rise">
+              {tab === 'rc' && (snap.rc ? <RcView body={{ rc: snap.rc.data, vehicle_number: regNo }} /> : <Empty>No RC record held for this vehicle.</Empty>)}
+              {tab === 'challans' && (snap.challan ? <ChallanView body={snap.challan.data} /> : <Empty>No challan record held for this vehicle.</Empty>)}
+              {tab === 'fastag' && (isTwoWheeler(snap.rc?.data) && !(snap.fastag?.data?.tags || []).length ? <FastagNotApplicable />
+                : snap.fastag ? <FastagView body={{ fastag: snap.fastag.data }} /> : <Empty>No FASTag record held for this vehicle.</Empty>)}
             </div>
-          </div>
+          )}
 
+          {tab === 'activity' && (<>
           <div>
             <h3 className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted">
               Checked by ({data.watchers.length})
@@ -226,6 +232,7 @@ function VehicleDetail({ regNo, onClose, onChanged }) {
               </ul>
             </div>
           )}
+          </>)}
         </>
       )}
     </Modal>

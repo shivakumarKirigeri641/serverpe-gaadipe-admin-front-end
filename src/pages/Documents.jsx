@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { rupees, date, dateTime, plate, count, mobile as fmtMobile, daysTo } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Table, Chip, Hint, Empty, Spinner, Failed, saveBlob, openBlob, Pager, PAGE_SIZE } from '../components/ui.jsx';
@@ -39,6 +40,7 @@ export default function Documents() {
     const t = setTimeout(load, q ? 300 : 0);
     return () => clearTimeout(t);
   }, [load, q]);
+  useAutoRefresh(load);
 
   const get = async (id, download) => {
     setBusy(id);

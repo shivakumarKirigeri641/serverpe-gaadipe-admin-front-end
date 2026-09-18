@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { dateTime, ago, mobile as fmtMobile } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Chip, Empty, Failed, Hint, Modal, Pager, PAGE_SIZE, Spinner } from '../components/ui.jsx';
@@ -50,6 +51,7 @@ export default function SignIns() {
     const t = setTimeout(load, q ? 300 : 0);
     return () => clearTimeout(t);
   }, [load, q]);
+  useAutoRefresh(load);
 
   const s = data?.summary;
 
@@ -92,11 +94,11 @@ export default function SignIns() {
           : !data.rows.length ? <Empty>No sign-in activity{q || event || filter ? ' matches' : ' yet'}.</Empty>
           : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[980px] text-sm">
+              <table className="w-full min-w-[1100px] text-sm">
                 <thead className="border-b border-line bg-shell/60">
                   <tr>
-                    <th className="th">When</th><th className="th">Step</th><th className="th">Number</th>
-                    <th className="th">Device</th><th className="th">IP</th><th className="th">Device id</th><th className="th"></th>
+                    <th className="th">When</th><th className="th">Step</th><th className="th">Customer</th>
+                    <th className="th">Device</th><th className="th">Place</th><th className="th">IP</th><th className="th">Device id</th><th className="th"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -125,9 +127,9 @@ export function Row({ r, i = 0, onOpen, onFilter, showNumber = true }) {
         {r.outcome && <div className="mt-0.5 text-2xs text-muted">{OUTCOMES[r.outcome] || r.outcome}</div>}
       </td>
       {showNumber && (
-        <td className="td tabular">
-          {r.mobile ? fmtMobile(r.mobile) : '—'}
-          {r.name && <div className="text-2xs text-muted">{r.name}</div>}
+        <td className="td">
+          <div className={r.name ? 'font-medium text-ink' : 'text-2xs italic text-muted'}>{r.name || 'No name given'}</div>
+          <div className="tabular text-2xs text-muted">{r.mobile ? fmtMobile(r.mobile) : '—'}</div>
         </td>
       )}
       <td className="td">
@@ -135,12 +137,14 @@ export function Row({ r, i = 0, onOpen, onFilter, showNumber = true }) {
           <span className="border-b border-dotted border-muted/40 text-body">{r.described || 'Unknown device'}</span>
         </Hint>
       </td>
+      <td className="td text-2xs">
+        {r.place || <span className="text-muted">Unknown</span>}
+      </td>
       <td className="td">
         {r.ip ? (
           <button type="button" className="font-mono text-2xs text-brand-deep hover:underline"
             onClick={(e) => { e.stopPropagation(); onFilter?.({ ip: r.ip }); }}>{r.ip}</button>
         ) : '—'}
-        {(r.city || r.country) && <div className="text-2xs text-muted">{[r.city, r.region, r.country].filter(Boolean).join(', ')}</div>}
       </td>
       <td className="td">
         {r.device_id ? (
@@ -175,13 +179,14 @@ export function Detail({ r, onClose, onFilter }) {
     ['When', dateTime(r.created_at)],
     ['Step', <Chip key="s" tone={tone}>{label}</Chip>],
     ['Outcome', r.outcome ? (OUTCOMES[r.outcome] || r.outcome) : null],
+    ['Name', r.name || 'No name given'],
     ['Number', r.mobile ? fmtMobile(r.mobile) : null],
     ['Customer id', r.user_id],
     ['Session id', r.session_id],
     ['Device id', r.device_id],
     ['IP address', r.ip],
     ['Proxy chain', r.ip_chain],
-    ['Location', [r.city, r.region, r.country].filter(Boolean).join(', ') || null],
+    ['Place (from IP, approximate)', r.place || [r.city, r.region, r.country].filter(Boolean).join(', ') || null],
     ['Device', [r.device_type, r.device_vendor, r.device_model].filter(Boolean).join(' · ') || null],
     ['Operating system', [r.os, r.os_version].filter(Boolean).join(' ') || null],
     ['Browser', [r.browser, r.browser_version].filter(Boolean).join(' ') || null],

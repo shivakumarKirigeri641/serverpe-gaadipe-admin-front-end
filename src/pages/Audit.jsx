@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { dateTime, ago, mobile as fmtMobile } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Table, Chip, Spinner, Failed, Empty, Hint, Pager, PAGE_SIZE } from '../components/ui.jsx';
@@ -52,6 +53,7 @@ export default function Audit() {
     } catch (e) { setError(e); }
   }, [action, page]);
   useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   return (
     <Shell title="Audit trail" subtitle="Every change, and every customer record opened"

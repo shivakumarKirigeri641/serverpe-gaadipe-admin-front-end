@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { mobile as fmtMobile, plate, dateTime } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Table, Chip, Empty, Spinner, Failed, Banner, Field, Modal, Pager, PAGE_SIZE } from '../components/ui.jsx';
@@ -31,6 +32,7 @@ export default function Blocks() {
     catch (e) { setError(e); }
   }, [history]);
   useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   const release = async (id) => {
     if (!window.confirm('Let this back in?')) return;

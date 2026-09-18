@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import { REFRESH_MS } from '../lib/useAutoRefresh';
 import { rupees, count, change, ago } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Stat, Hint, Banner, Failed, Spinner, Chip } from '../components/ui.jsx';
@@ -32,7 +33,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     load();
-    const t = setInterval(() => load(true), 30000);
+    const t = setInterval(() => load(true), REFRESH_MS);
     return () => clearInterval(t);
   }, [load]);
 

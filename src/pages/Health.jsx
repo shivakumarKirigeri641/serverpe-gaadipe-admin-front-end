@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
+import { REFRESH_MS } from '../lib/useAutoRefresh';
 import { count, ago } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Spinner, Failed, Banner } from '../components/ui.jsx';
@@ -73,7 +74,7 @@ export default function Health() {
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 60000);
+    const t = setInterval(load, REFRESH_MS);
     return () => clearInterval(t);
   }, [load]);
 

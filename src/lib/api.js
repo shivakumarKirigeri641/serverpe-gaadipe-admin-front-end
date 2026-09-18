@@ -33,6 +33,12 @@ const signedOut = () => { setToken(null); listeners.forEach((fn) => fn()); };
  * few seconds all day and stop meaning anything.
  */
 let busy = 0;
+let background = 0;
+/** Run fn with every call it makes kept off the loading bar (auto-refresh). */
+export async function quietly(fn) {
+  background += 1;
+  try { return await fn(); } finally { background -= 1; }
+}
 const busyWatchers = new Set();
 export const onBusyChange = (fn) => { busyWatchers.add(fn); fn(busy); return () => busyWatchers.delete(fn); };
 const setBusy = (d) => { busy = Math.max(0, busy + d); busyWatchers.forEach((fn) => fn(busy)); };
@@ -54,7 +60,10 @@ async function call(path, { method = 'GET', body, auth = true, timeoutMs = 25000
   if (auth && token) headers.Authorization = `Bearer ${token}`;
 
   let res;
-  if (!quiet) setBusy(1);
+  const silent = quiet || background > 0;
+  // Background refreshes say so, and the server does not audit them again.
+  if (background > 0) headers['X-Refresh'] = '1';
+  if (!silent) setBusy(1);
   try {
     res = await fetch(`${P}${path}`, {
       method, headers,
@@ -66,7 +75,7 @@ async function call(path, { method = 'GET', body, auth = true, timeoutMs = 25000
       e.name === 'TimeoutError' ? 'The server is taking too long to answer.' : 'Cannot reach the server.',
       { code: 'offline' });
   } finally {
-    if (!quiet) setBusy(-1);
+    if (!silent) setBusy(-1);
   }
 
   const data = await res.json().catch(() => ({}));

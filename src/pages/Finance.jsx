@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { rupees, count, date } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Table, Hint, Spinner, Failed, Banner, Empty } from '../components/ui.jsx';
@@ -30,6 +31,7 @@ export default function Finance() {
     catch (e) { setError(e); }
   }, [from, to]);
   useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   const preset = (days) => { setFrom(AGO(days)); setTo(TODAY()); };
 

@@ -16,7 +16,7 @@ export default defineConfig({
      site sets VITE_API_BASE and calls the gateway directly; this is dev only. */
   server: {
     port: 5173, strictPort: true, host: true,
-    proxy: Object.fromEntries(["/admin/api"].map((p) => [p, { target: process.env.VITE_PROXY_TARGET || 'http://localhost:5007', changeOrigin: false }])),
+    proxy: Object.fromEntries(["/admin/api"].map((p) => [p, { target: process.env.VITE_PROXY_TARGET || 'http://localhost:5007', changeOrigin: false, xfwd: true }])),
   },
   preview: { port: 4173, strictPort: true },
   build: { outDir: 'dist', sourcemap: false },

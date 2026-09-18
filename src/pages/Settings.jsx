@@ -44,6 +44,33 @@ const GROUPS = [
     },
   },
   {
+    title: 'WhatsApp evening alerts',
+    note: 'Sent by the WhatsApp Cloud API — no webhook needed, only the access token and phone number id on the server. '
+      + 'Until the language templates are approved, leave "languages live" off and every alert uses the fallback.',
+    keys: {
+      template_vehicle_alert_languages_live: 'Off: every alert uses the fallback template. On: English or Hindi by the customer’s language, falling back if that fails. Switch on once Meta approves both.',
+      template_vehicle_alert_en: 'English template name (4 parameters: name · vehicle · what · details). Pending approval.',
+      template_vehicle_alert_hi: 'Hindi template name (same 4 parameters). Pending approval.',
+      template_vehicle_alert_fallback: 'The fallback — used now, and whenever the language template fails. Must be an APPROVED template (gp_vehicle_alert_v2 is; parameters: name · vehicle · details · date).',
+    },
+  },
+  {
+    title: 'Security',
+    note: 'The API is encrypted end to end and guarded. Anything refused is recorded under Security and emailed to you.',
+    keys: {
+      api_encryption_required: 'auto = required in production (the site and panel must use the encrypted channel); true / false to force it.',
+      rate_limit_per_minute_ip: 'API calls one address may make in a minute. Three times this blocks the address for a while.',
+      rate_limit_handshakes_per_minute_ip: 'New encrypted sessions one address may open in a minute.',
+      loop_limit_same_call_30s: 'The same call, with the same data, allowed this many times in 30 seconds.',
+      scrape_distinct_vehicles_per_hour_user: 'Different vehicles one account may check in an hour before it is stopped as scraping.',
+      scrape_distinct_vehicles_per_hour_ip: 'Different vehicles one address may check in an hour (across accounts) before it is blocked.',
+      block_automation_tools: 'Refuse curl, Python, headless browsers and similar tools on the website API.',
+      temp_block_minutes: 'How long a blocked address is refused.',
+      notify_security: 'Email you when something is refused (batched).',
+      security_alert_cooldown_minutes: 'At most one security email per this many minutes.',
+    },
+  },
+  {
     title: 'Emails to you',
     note: 'Sent from the noreply mailbox. Switch any of them off here; it takes effect within a minute.',
     keys: {

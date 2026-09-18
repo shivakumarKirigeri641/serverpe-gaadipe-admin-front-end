@@ -8,6 +8,8 @@
  * Grows one function at a time, beside the screen that uses it.
  */
 
+import { available as secureAvailable, secureCall } from './secure';
+
 const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 const P = `${BASE}/admin/api`;
 const KEY = 'gaadipe.admin.token';
@@ -59,17 +61,27 @@ async function call(path, { method = 'GET', body, auth = true, timeoutMs = 25000
   const token = getToken();
   if (auth && token) headers.Authorization = `Bearer ${token}`;
 
-  let res;
+  let res; let data;
   const silent = quiet || background > 0;
   // Background refreshes say so, and the server does not audit them again.
   if (background > 0) headers['X-Refresh'] = '1';
   if (!silent) setBusy(1);
   try {
-    res = await fetch(`${P}${path}`, {
-      method, headers,
-      body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+    /* Encrypted end to end (lib/secure.js): the Network tab shows ciphertext only. */
+    if (secureAvailable()) {
+      const outer = {};
+      if (headers.Authorization) outer.Authorization = headers.Authorization;
+      if (headers['X-Refresh']) outer['X-Refresh'] = headers['X-Refresh'];
+      const out = await secureCall(P, { method, path, body, headers: outer, timeoutMs });
+      res = { status: out.status, ok: out.ok };
+      data = out.data || {};
+    } else {
+      res = await fetch(`${P}${path}`, {
+        method, headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    }
   } catch (e) {
     throw new ApiError(
       e.name === 'TimeoutError' ? 'The server is taking too long to answer.' : 'Cannot reach the server.',
@@ -78,7 +90,7 @@ async function call(path, { method = 'GET', body, auth = true, timeoutMs = 25000
     if (!silent) setBusy(-1);
   }
 
-  const data = await res.json().catch(() => ({}));
+  if (data === undefined) data = await res.json().catch(() => ({}));
 
   if (res.status === 401 && auth) {
     signedOut();
@@ -186,6 +198,7 @@ export const api = {
   audit: (params) => call(`/audit${qs(params)}`),
   signIns: (params) => call(`/sign-ins${qs(params)}`),
   sessions: (params) => call(`/sessions${qs(params)}`),
+  securityEvents: (params) => call(`/security-events${qs(params)}`),
   contactMessages: (params) => call(`/contact-messages${qs(params)}`),
   setContactStatus: (id, status) => call(`/contact-messages/${id}`, { method: 'PUT', body: { status } }),
   notifications: (params) => call(`/notifications${qs(params)}`),

@@ -49,6 +49,7 @@ const NAV = [
       { to: '/policies', label: 'Policies & terms', icon: BookIcon, cap: 'settings' },
       { to: '/people', label: 'Panel users', icon: KeyIcon, cap: 'admins' },
       { to: '/audit', label: 'Audit trail', icon: ListIcon },
+      { to: '/security', label: 'Security', icon: ShieldIcon },
       { to: '/health', label: 'System health', icon: HeartIcon },
     ],
   },

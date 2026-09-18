@@ -20,6 +20,8 @@ const KINDS = {
   plain_request: ['Unencrypted call', 'watch'],
   bad_envelope: ['Tampered request', 'wrong'],
   replay: ['Replayed request', 'wrong'],
+  key_misuse: ['Key misuse', 'wrong'],
+  full_view_cap: ['Daily record limit', 'watch'],
 };
 
 export default function Security() {

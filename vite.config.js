@@ -1,5 +1,38 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import obfuscator from 'vite-plugin-javascript-obfuscator';
+
+/*
+ * THE PRODUCTION BUILD IS OBFUSCATED (user, 2026-09-18). Our own code — not
+ * React or the libraries — is turned into something very hard to read, so
+ * following the page's decryption step in the browser's debugger takes hours
+ * rather than minutes. Build only: development stays readable. No source maps
+ * are published. Settings chosen to keep the site fast: no control-flow
+ * flattening or dead-code injection, which slow a phone down for little gain.
+ */
+const obfuscate = obfuscator({
+  apply: 'build',
+  include: [/src\/.*\.(js|jsx)$/],
+  exclude: [/node_modules/],
+  options: {
+    compact: true,
+    identifierNamesGenerator: 'hexadecimal',
+    renameGlobals: false,
+    stringArray: true,
+    stringArrayEncoding: ['base64'],
+    stringArrayThreshold: 0.75,
+    stringArrayRotate: true,
+    stringArrayShuffle: true,
+    splitStrings: false,
+    transformObjectKeys: false,
+    controlFlowFlattening: false,
+    deadCodeInjection: false,
+    selfDefending: false,
+    debugProtection: false,
+    unicodeEscapeSequence: false,
+    sourceMap: false,
+  },
+});
 
 /*
  * The panel is served as static files and talks to the gateway over its own
@@ -8,7 +41,7 @@ import react from '@vitejs/plugin-react';
  * exists on a laptop.
  */
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), obfuscate],
   /* IN DEVELOPMENT THE API IS PROXIED (user, 2026-09-18). The page calls its own
      origin and Vite passes the call to the gateway, so the site works however it
      is opened — localhost, 127.0.0.1, a phone on the same Wi-Fi, a tunnel —

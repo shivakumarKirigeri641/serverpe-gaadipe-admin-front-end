@@ -65,6 +65,7 @@ const GROUPS = [
       scrape_distinct_vehicles_per_hour_user: 'Different vehicles one account may check in an hour before it is stopped as scraping.',
       scrape_distinct_vehicles_per_hour_ip: 'Different vehicles one address may check in an hour (across accounts) before it is blocked.',
       block_automation_tools: 'Refuse curl, Python, headless browsers and similar tools on the website API.',
+      full_views_per_day_user: 'Full vehicle records one account may open in a day. Past it the basic view is shown (their PDF stays available) and you are told.',
       temp_block_minutes: 'How long a blocked address is refused.',
       notify_security: 'Email you when something is refused (batched).',
       security_alert_cooldown_minutes: 'At most one security email per this many minutes.',

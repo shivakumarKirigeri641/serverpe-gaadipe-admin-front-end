@@ -45,6 +45,8 @@ const GROUPS = [
     keys: {
       razorpay_fee_percent: "Razorpay's fee, as a percentage. UPI is nil today; cards about 2%.",
       razorpay_fee_gst_percent: 'GST on that fee — 18% in India.',
+      whatsapp_message_cost_paise: 'What one WhatsApp template message costs, in paise (11 = ₹0.11). Taken out of take-home.',
+      sms_otp_cost_paise: 'What one SMS sign-in code costs, in paise (25 = ₹0.25). Taken out of take-home.',
       ulip_cost_paise_vahan: 'What one VAHAN lookup costs us, in paise. Zero while ULIP is free.',
       ulip_cost_paise_challan: 'What one e-Challan lookup costs us, in paise.',
       ulip_cost_paise_fastag: 'What one FASTag lookup costs us, in paise.',

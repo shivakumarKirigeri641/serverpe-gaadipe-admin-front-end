@@ -62,11 +62,10 @@ export const daysTo = (v) => {
   return Math.round((d.setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000);
 };
 
-/** KA02EX1480 -> "KA 02 EX 1480", as a plate is actually written. */
+/** " ka 02 ex-1480" -> "KA02EX1480": always written without spaces. */
 export const plate = (reg) => {
   const s = String(reg || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const m = /^([A-Z]{2})(\d{1,2})([A-Z]{0,3})(\d{1,4})$/.exec(s);
-  return m ? m.slice(1).filter(Boolean).join(' ') : s;
+  return s;
 };
 
 /** 9886122415 -> "98861 22415", which is how an Indian number is read aloud. */

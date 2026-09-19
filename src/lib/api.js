@@ -204,6 +204,8 @@ export const api = {
   notifications: (params) => call(`/notifications${qs(params)}`),
   cleanPreview: () => call('/maintenance/preview'),
   cleanDb: () => call('/maintenance/clean', { method: 'POST', body: { confirm: 'CLEAN' }, timeoutMs: 60000 }),
+  /* A file, fetched like the PDFs: outside the encrypted envelope, with the session token. */
+  backupDb: () => pdf('/maintenance/backup?confirm=DOWNLOAD'),
   admins: () => call('/admins'),
   addAdmin: (body) => call('/admins', { method: 'POST', body }),
   setAdminActive: (id, active) => call(`/admins/${id}/active`, { method: 'POST', body: { active } }),

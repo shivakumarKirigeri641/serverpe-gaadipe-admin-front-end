@@ -4,6 +4,7 @@ import { rupees, dateTime } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Banner, Field, Hint, Spinner, Failed, Table } from '../components/ui.jsx';
 import CleanDatabase from '../components/CleanDatabase.jsx';
+import BackupDatabase from '../components/BackupDatabase.jsx';
 import { useSession, allowed } from '../lib/session';
 
 /**
@@ -227,6 +228,7 @@ export default function Settings() {
             </details>
           )}
 
+          {allowed(can, 'admins') && <BackupDatabase />}
           {allowed(can, 'admins') && <CleanDatabase />}
         </div>
       )}

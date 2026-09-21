@@ -90,7 +90,7 @@ export default function Dashboard() {
           sub={`${count(data.vehicles.total)} vehicles known`}
           onClick={() => navigate('/customers')}
           note="Everyone who has ever messaged GaadiPe, and every distinct vehicle any of them has checked." />
-        <Stat label="Being watched" value={count(data.watching.watches)}
+        <Stat label="Vehicle alerts running" value={count(data.watching.watches)}
           sub={`${count(data.watching.subscriptions)} paid and live`}
           note="Vehicles under active monitoring right now. Each one is re-checked on its own schedule and its owner is messaged only when something changes." />
         <Stat label="Reports sold" value={count(data.reports.total)}

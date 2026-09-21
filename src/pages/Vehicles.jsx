@@ -50,7 +50,7 @@ export default function Vehicles() {
               <tr>
                 <th className="th">Vehicle</th>
                 <th className="th">Checked by</th>
-                <th className="th">Watching</th>
+                <th className="th">Alerts on for</th>
                 <th className="th">Next to expire</th>
                 <th className="th">Last seen</th>
                 <th className="th">State</th>
@@ -175,7 +175,7 @@ function VehicleDetail({ regNo, onClose, onChanged }) {
               Checked by ({data.watchers.length})
             </h3>
             {data.watchers.length ? (
-              <Table head={<tr><th className="th">Customer</th><th className="th">Checks</th><th className="th">Last</th><th className="th">Watching</th></tr>}>
+              <Table head={<tr><th className="th">Customer</th><th className="th">Checks</th><th className="th">Last</th><th className="th">Alerts</th></tr>}>
                 {data.watchers.map((w) => (
                   <tr key={w.user_id}>
                     <td className="td">
@@ -184,7 +184,7 @@ function VehicleDetail({ regNo, onClose, onChanged }) {
                     </td>
                     <td className="td tabular">{count(w.check_count)}</td>
                     <td className="td text-2xs text-muted">{ago(w.last_checked_at)}</td>
-                    <td className="td">{w.watching ? <Chip tone="good">Yes</Chip> : <span className="text-muted">—</span>}</td>
+                    <td className="td">{w.watching ? <Chip tone="good">🔔 On</Chip> : <span className="text-muted">—</span>}</td>
                   </tr>
                 ))}
               </Table>

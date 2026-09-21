@@ -131,7 +131,7 @@ export default function Customers() {
                     <div className="flex flex-wrap gap-1">
                       {r.blocked && <Chip tone="wrong">Blocked</Chip>}
                       {r.is_paused && <Chip tone="watch">Paused</Chip>}
-                      {r.active && <Chip tone="good">Watching</Chip>}
+                      {r.active && <Hint note="Vehicle alerts (daily updates) are running from a report. Not the same as being signed in — see the Sign-ins column for that."><Chip tone="good">🔔 Alerts on{r.alerts_until ? ` · until ${date(r.alerts_until)}` : ''}</Chip></Hint>}
                       {r.is_internal && <Chip tone="brand">Internal</Chip>}
                     </div>
                   </td>

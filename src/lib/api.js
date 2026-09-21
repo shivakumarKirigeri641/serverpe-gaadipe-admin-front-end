@@ -173,6 +173,8 @@ export const api = {
   pulse: (since) => call(`/live/pulse${qs({ since })}`, { quiet: true }),
   visitors: (minutes) => call(`/live/visitors${qs({ minutes })}`, { quiet: true }),
   visitorTrail: (id) => call(`/live/visitors/${id}/trail`),
+  liveCustomers: (params) => call(`/live/customers${qs(params)}`, { quiet: true }),
+  liveCustomerActivity: (id, params) => call(`/live/customers/${id}/activity${qs(params)}`),
   activity: (params) => call(`/live/activity${qs(params)}`),
 
   vehicles: (params) => call(`/vehicles${qs(params)}`),

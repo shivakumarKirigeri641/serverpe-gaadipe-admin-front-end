@@ -100,6 +100,15 @@ const GROUPS = [
     },
   },
   {
+    title: 'Tracking on the website',
+    note: 'Signed-in customers only: pages, clicks and actions, shown per customer on Live. What they type is never recorded.',
+    keys: {
+      track_clicks: 'Record every click / tap of signed-in customers (true / false).',
+      track_clicks_per_minute: 'Most clicks recorded per customer visit in a minute; extra are dropped.',
+      activity_retention_days: 'Page, click and action history older than this many days is deleted (the privacy policy says 180).',
+    },
+  },
+  {
     title: 'Referral offer (QuizPe)',
     note: 'Refer QuizPe to a parent → one free full report when they buy QuizPe premium. Nothing is ever sent to the parent. QuizPe is checked read-only.',
     keys: {

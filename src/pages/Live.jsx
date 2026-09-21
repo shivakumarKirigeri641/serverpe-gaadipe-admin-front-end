@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { api } from '../lib/api';
 import { mobile as fmtMobile, ago, dateTime, count, plate as fmtPlate, duration } from '../lib/format';
 import Shell from '../components/Shell.jsx';
+import CustomerActivity from '../components/CustomerActivity.jsx';
 import { Chip, Empty, Spinner, Failed, Hint, Modal } from '../components/ui.jsx';
 
 /**
@@ -83,6 +84,8 @@ export default function Live() {
           </div>
 
           <OnSite rows={visitors} onOpen={setOpenVisit} />
+
+          <CustomerActivity tick={pulse?.at} />
 
           <div className="mt-4 grid gap-4 lg:grid-cols-5">
             <div className="card lg:col-span-3">
@@ -273,7 +276,7 @@ function OnSite({ rows, onOpen }) {
                       {r.vehicles > 1 && <div className="text-2xs text-muted">{count(r.vehicles)} this visit</div>}
                     </td>
                     <td className="px-4 py-2">
-                      <div className="text-ink">{actionLabel(r.current_action)}</div>
+                      <div className="text-ink">{r.current_action === 'click' && r.current_detail ? <>Clicked “{r.current_detail}”</> : actionLabel(r.current_action)}</div>
                       <div className="text-2xs text-muted">{r.current_at ? ago(r.current_at) : ''}</div>
                     </td>
                     <td className="px-4 py-2 text-2xs text-muted">
@@ -320,7 +323,7 @@ function Visit({ visit, onClose }) {
             <li key={a.id} className="flex items-start gap-3 py-2 text-sm">
               <span className="w-36 shrink-0 tabular text-2xs text-muted">{dateTime(a.created_at)}</span>
               <span className="min-w-0 flex-1">
-                <span className="text-ink">{a.kind === 'page' ? `Opened ${pageLabel(a.page)}` : actionLabel(a.action)}</span>
+                <span className="text-ink">{a.kind === 'page' ? `Opened ${pageLabel(a.page)}` : a.kind === 'click' ? `Clicked “${a.detail?.label || a.detail?.href || ''}”` : actionLabel(a.action)}</span>
                 {a.reg_no && <span className="ml-2 tabular text-brand-deep">{fmtPlate(a.reg_no)}</span>}
                 {a.detail?.number && <span className="ml-2 text-2xs text-muted">{a.detail.number}</span>}
                 {a.page && <span className="block truncate text-2xs text-muted">{a.page}</span>}

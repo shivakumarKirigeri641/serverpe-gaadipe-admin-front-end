@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { api } from '../lib/api';
-import { mobile as fmtMobile, ago, dateTime, count } from '../lib/format';
+import { mobile as fmtMobile, ago, dateTime, count, plate as fmtPlate, duration } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Chip, Empty, Spinner, Failed, Hint, Modal } from '../components/ui.jsx';
 
@@ -25,6 +25,8 @@ export default function Live() {
   const [error, setError] = useState(null);
   const [q, setQ] = useState('');
   const [openMobile, setOpenMobile] = useState(null);
+  const [visitors, setVisitors] = useState(null);
+  const [openVisit, setOpenVisit] = useState(null);
   const [paused, setPaused] = useState(false);
   const since = useRef(null);
 
@@ -46,13 +48,17 @@ export default function Live() {
     catch (e) { setError(e); }
   }, [q]);
 
-  useEffect(() => { loadRows(); }, [loadRows]);
+  const loadVisitors = useCallback(async () => {
+    try { setVisitors((await api.visitors(30)).rows); } catch { /* the next tick retries */ }
+  }, []);
+
+  useEffect(() => { loadRows(); loadVisitors(); }, [loadRows, loadVisitors]);
   useEffect(() => {
     poll();
     if (paused) return undefined;
-    const t = setInterval(() => { poll(); loadRows(); }, TICK_MS);
+    const t = setInterval(() => { poll(); loadRows(); loadVisitors(); }, TICK_MS);
     return () => clearInterval(t);
-  }, [poll, loadRows, paused]);
+  }, [poll, loadRows, loadVisitors, paused]);
 
   return (
     <Shell title="Live"
@@ -75,6 +81,8 @@ export default function Live() {
             <Tile label="Checks, last 15 min" value={count(pulse?.checks_15m ?? 0)} />
             <Tile label="Paying right now" value={count(pulse?.paying_now ?? 0)} note="Payment links opened in the last 30 minutes that have not completed yet." />
           </div>
+
+          <OnSite rows={visitors} onOpen={setOpenVisit} />
 
           <div className="mt-4 grid gap-4 lg:grid-cols-5">
             <div className="card lg:col-span-3">
@@ -145,6 +153,7 @@ export default function Live() {
       )}
 
       {openMobile && <Thread mobile={openMobile} onClose={() => setOpenMobile(null)} />}
+      {openVisit && <Visit visit={openVisit} onClose={() => setOpenVisit(null)} />}
     </Shell>
   );
 }
@@ -189,3 +198,137 @@ const Tile = ({ label, value, note }) => (
     </div>
   </Hint>
 );
+
+/*
+ * ON THE SITE NOW (user, 2026-09-21): every signed-in customer active in the
+ * last 30 minutes — who they are, the page they are on, the vehicle they are
+ * looking at and the last thing they did. Signed-out visits stay listed, marked
+ * offline, until they age out. Tap a row for the whole visit, step by step.
+ */
+const ACTIONS = {
+  viewing: 'Viewing', check: 'Checked a vehicle', check_paid: 'Checked a vehicle (paid)',
+  view_vehicle: 'Opened a vehicle', view_vehicle_paid: 'Opened a vehicle (paid)',
+  buy_open: 'Opened Buy report', buy_close: 'Closed Buy report', pay_start: 'Went to payment',
+  pay_cancel: 'Cancelled payment', view_report: 'Viewed report PDF', download_report: 'Downloaded report',
+  view_invoice: 'Viewed invoice', download_invoice: 'Downloaded invoice', signed_out: 'Signed out',
+  share: 'Shared', print: 'Printed',
+};
+const actionLabel = (a) => ACTIONS[a] || a || '—';
+
+const PAGES = [
+  [/^\/app\/vehicle\//, 'Vehicle page'], [/^\/app\/check/, 'Check a vehicle'], [/^\/app\/reports/, 'My reports'],
+  [/^\/app\/invoices/, 'My invoices'], [/^\/app\/profile/, 'Profile'], [/^\/app\/?$/, 'Dashboard'],
+  [/^\/login/, 'Sign in'], [/^\/help/, 'Help'], [/^\/$/, 'Home'],
+];
+const pageLabel = (p) => {
+  if (!p) return '—';
+  const hit = PAGES.find(([re]) => re.test(p));
+  return hit ? hit[1] : p;
+};
+
+const STATE = {
+  online: ['Online', 'good'], idle: ['Idle', 'watch'], signed_out: ['Offline · signed out', 'info'],
+  expired: ['Offline · expired', 'info'],
+};
+
+function OnSite({ rows, onOpen }) {
+  const online = (rows || []).filter((r) => r.state === 'online').length;
+  return (
+    <div className="card mt-4">
+      <div className="flex items-center justify-between border-b border-line px-4 py-3">
+        <h2 className="text-sm font-semibold text-ink">On the site now</h2>
+        <span className="text-2xs text-muted">
+          {rows ? `${count(online)} online · last 30 minutes · tap for the whole visit` : ' '}
+        </span>
+      </div>
+      {!rows ? <Spinner /> : !rows.length ? <Empty>No signed-in visitors in the last 30 minutes.</Empty> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-2xs uppercase tracking-wider text-muted">
+              <tr>
+                {['Customer', 'Status', 'Page', 'Vehicle', 'Doing', 'Visit', 'Device'].map((h) => (
+                  <th key={h} className="px-4 py-2 font-semibold">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {rows.map((r) => {
+                const [label, tone] = STATE[r.state] || [`Offline · ${r.state}`, 'info'];
+                return (
+                  <tr key={r.id} onClick={() => onOpen(r)} className="cursor-pointer align-top transition hover:bg-shell/70">
+                    <td className="px-4 py-2">
+                      <div className="font-semibold text-ink">{r.name || 'No name yet'}</div>
+                      <div className="tabular text-2xs text-muted">{fmtMobile(r.mobile)}{r.has_paid ? ' · paid before' : ''}</div>
+                    </td>
+                    <td className="px-4 py-2">
+                      <Chip tone={tone}>{label}</Chip>
+                      <div className="mt-0.5 text-2xs text-muted">{ago(r.ended_at || r.last_used_at)}</div>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="text-ink">{pageLabel(r.current_page)}</div>
+                      <div className="max-w-[14rem] truncate text-2xs text-muted">{r.current_page || ''}</div>
+                    </td>
+                    <td className="px-4 py-2 tabular">
+                      {r.current_reg_no ? fmtPlate(r.current_reg_no) : '—'}
+                      {r.vehicles > 1 && <div className="text-2xs text-muted">{count(r.vehicles)} this visit</div>}
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="text-ink">{actionLabel(r.current_action)}</div>
+                      <div className="text-2xs text-muted">{r.current_at ? ago(r.current_at) : ''}</div>
+                    </td>
+                    <td className="px-4 py-2 text-2xs text-muted">
+                      <div>since {ago(r.created_at)}</div>
+                      <div>{count(r.pages)} pages · {count(r.request_count)} requests</div>
+                    </td>
+                    <td className="px-4 py-2 text-2xs text-muted">
+                      <div>{r.device || '—'}</div>
+                      <div className="tabular">{r.ip || ''}</div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Visit({ visit, onClose }) {
+  const [rows, setRows] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    api.visitorTrail(visit.id).then((d) => setRows(d.rows)).catch(setError);
+  }, [visit.id]);
+
+  const seconds = Math.max(0, (new Date(visit.ended_at || visit.last_used_at) - new Date(visit.created_at)) / 1000);
+  return (
+    <Modal wide title={`${visit.name || 'Customer'} · ${fmtMobile(visit.mobile)}`}
+      subtitle={`Signed in ${dateTime(visit.created_at)} · ${duration(seconds)} · ${visit.device || ''}`}
+      onClose={onClose}>
+      {visit.vehicle_list?.length ? (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5 text-2xs">
+          <span className="text-muted">Vehicles this visit:</span>
+          {visit.vehicle_list.map((v) => <Chip key={v}>{fmtPlate(v)}</Chip>)}
+        </div>
+      ) : null}
+      {error ? <Failed error={error} /> : !rows ? <Spinner /> : !rows.length ? <Empty>Nothing recorded for this visit yet.</Empty> : (
+        <ul className="max-h-[60vh] divide-y divide-line overflow-y-auto">
+          {rows.map((a) => (
+            <li key={a.id} className="flex items-start gap-3 py-2 text-sm">
+              <span className="w-36 shrink-0 tabular text-2xs text-muted">{dateTime(a.created_at)}</span>
+              <span className="min-w-0 flex-1">
+                <span className="text-ink">{a.kind === 'page' ? `Opened ${pageLabel(a.page)}` : actionLabel(a.action)}</span>
+                {a.reg_no && <span className="ml-2 tabular text-brand-deep">{fmtPlate(a.reg_no)}</span>}
+                {a.detail?.number && <span className="ml-2 text-2xs text-muted">{a.detail.number}</span>}
+                {a.page && <span className="block truncate text-2xs text-muted">{a.page}</span>}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Modal>
+  );
+}

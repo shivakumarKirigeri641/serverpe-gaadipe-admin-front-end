@@ -171,6 +171,8 @@ export const api = {
   conversations: (params) => call(`/live/conversations${qs(params)}`),
   thread: (mobile) => call(`/live/thread/${mobile}`),
   pulse: (since) => call(`/live/pulse${qs({ since })}`, { quiet: true }),
+  visitors: (minutes) => call(`/live/visitors${qs({ minutes })}`, { quiet: true }),
+  visitorTrail: (id) => call(`/live/visitors/${id}/trail`),
   activity: (params) => call(`/live/activity${qs(params)}`),
 
   vehicles: (params) => call(`/vehicles${qs(params)}`),

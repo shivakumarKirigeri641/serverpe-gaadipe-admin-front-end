@@ -66,19 +66,19 @@ export default function Referrals() {
 
           <div className="card mt-4">
             {!data.rows.length ? <Empty>No referrals yet.</Empty> : (
-              <Table head={<tr>{['Referrer', 'Parent', 'Status', 'QuizPe payment', 'Free report', 'When', ''].map((h) => <th key={h} className="th">{h}</th>)}</tr>}>
+              <Table head={<tr>{['Referrer', 'Parent (masked) · link', 'Status', 'QuizPe payment', 'Free report', 'Opened QuizPe', ''].map((h) => <th key={h} className="th">{h}</th>)}</tr>}>
                 {data.rows.map((r) => (
                   <tr key={r.id} className="align-top">
                     <td className="td"><div className="font-semibold text-ink">{r.referrer_name || '—'}</div>
                       <div className="tabular text-2xs text-muted">{fmtMobile(r.referrer_mobile)}</div></td>
-                    <td className="td"><div className="text-ink">{r.parent_name}</div>
-                      <div className="tabular text-2xs text-muted">{r.mobile_masked}</div></td>
+                    <td className="td"><div className="tabular text-ink">{r.mobile_masked}</div>
+                      <div className="text-2xs text-muted">{r.code ? `GP-${r.code}` : r.parent_name}</div></td>
                     <td className="td"><Chip tone={TONE[r.status]}>{LABEL[r.status] || r.status}</Chip>
                       {r.status_reason && <div className="mt-0.5 text-2xs text-muted">{r.status_reason}</div>}</td>
                     <td className="td text-2xs text-muted">{r.quizpe_payment ? <>{r.quizpe_payment}<br />₹{r.quizpe_amount}</> : '—'}</td>
                     <td className="td text-2xs">{!r.credit_id ? '—' : r.revoked_at ? 'Revoked'
                       : r.used_at ? <>Used on <b>{r.used_reg_no}</b></> : <span className="text-good-700">Available</span>}</td>
-                    <td className="td text-2xs text-muted">{dateTime(r.created_at)}</td>
+                    <td className="td text-2xs text-muted">{dateTime(r.tapped_at || r.created_at)}</td>
                     <td className="td">
                       {r.credit_id && !r.used_at && !r.revoked_at && allowed(can, 'settings') && (
                         <button className="btn-quiet !px-2 !py-1 text-2xs text-wrong-700" onClick={() => setRevoking(r)}>Revoke</button>
@@ -89,6 +89,8 @@ export default function Referrals() {
               </Table>
             )}
           </div>
+          <Links canEdit={allowed(can, 'settings')} />
+
           {consents && <p className="mt-3 text-2xs text-muted">{count(consents.length)} customers have agreed that QuizPe may message them (exported).</p>}
         </>
       )}
@@ -106,7 +108,7 @@ function RevokeCredit({ r, onClose, onDone }) {
     try { await api.revokeReferralCredit(r.credit_id, reason); onDone(); } catch (e) { setError(e.message); } finally { setBusy(false); }
   };
   return (
-    <Modal title="Revoke this free report?" subtitle={`${r.referrer_name || fmtMobile(r.referrer_mobile)} · referred ${r.parent_name}`}
+    <Modal title="Revoke this free report?" subtitle={`${r.referrer_name || fmtMobile(r.referrer_mobile)} · ${r.mobile_masked}`}
       onClose={onClose} busy={busy}
       footer={<><button className="btn-quiet" onClick={onClose}>Cancel</button>
         <button className="btn-primary !bg-wrong-700" disabled={busy || reason.trim().length < 3} onClick={go}>Revoke</button></>}>
@@ -114,5 +116,44 @@ function RevokeCredit({ r, onClose, onDone }) {
       <textarea className="input mt-3 min-h-[70px]" placeholder="Reason" value={reason} onChange={(e) => setReason(e.target.value)} />
       {error && <Banner tone="wrong" className="mt-3">{error}</Banner>}
     </Modal>
+  );
+}
+
+/* Every referral link — reset (the old link stops) or switch off, audited. */
+function Links({ canEdit }) {
+  const [rows, setRows] = useState(null);
+  const load = useCallback(() => { api.referralLinks().then((d) => setRows(d.rows)).catch(() => setRows([])); }, []);
+  useEffect(load, [load]);
+  const act = async (r, action) => {
+    const reason = action === 'disable' ? window.prompt('Why switch this link off?') : null;
+    if (action === 'disable' && !reason) return;
+    if (action === 'reset' && !window.confirm(`Reset GP-${r.code}? The old link stops working at once.`)) return;
+    await api.referralLinkAction(r.user_id, action, reason); load();
+  };
+  if (!rows) return <Spinner />;
+  return (
+    <div className="card mt-4">
+      <div className="border-b border-line px-4 py-3 text-sm font-semibold text-ink">Referral links</div>
+      {!rows.length ? <Empty>No customer has joined the referral programme yet.</Empty> : (
+        <Table head={<tr>{['Customer', 'Link', 'Opened', 'Parents', 'Rewarded', 'State', ''].map((h) => <th key={h} className="th">{h}</th>)}</tr>}>
+          {rows.map((r) => (
+            <tr key={r.user_id}>
+              <td className="td"><div className="font-semibold text-ink">{r.name || '—'}</div><div className="tabular text-2xs text-muted">{fmtMobile(r.mobile)}</div></td>
+              <td className="td tabular text-2xs">GP-{r.code}</td>
+              <td className="td">{count(r.opened)}</td>
+              <td className="td">{count(r.taps)}</td>
+              <td className="td">{count(r.rewarded)}</td>
+              <td className="td">{r.is_active ? (r.quizpe_consent_at ? <Chip tone="good">Active</Chip> : <Chip tone="watch">Consent withdrawn</Chip>)
+                : <Chip tone="wrong">Off{r.disabled_reason ? ` · ${r.disabled_reason}` : ''}</Chip>}</td>
+              <td className="td text-right">{canEdit && (
+                <span className="flex justify-end gap-1">
+                  <button className="btn-quiet !px-2 !py-1 text-2xs" onClick={() => act(r, 'reset')}>Reset</button>
+                  <button className="btn-quiet !px-2 !py-1 text-2xs" onClick={() => act(r, r.is_active ? 'disable' : 'enable')}>{r.is_active ? 'Switch off' : 'Switch on'}</button>
+                </span>)}</td>
+            </tr>
+          ))}
+        </Table>
+      )}
+    </div>
   );
 }

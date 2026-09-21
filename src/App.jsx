@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard.jsx';
 import Customers from './pages/Customers.jsx';
 import SignIns from './pages/SignIns.jsx';
 import Security from './pages/Security.jsx';
+import Referrals from './pages/Referrals.jsx';
+import ReportAccess from './pages/ReportAccess.jsx';
 import Live from './pages/Live.jsx';
 import Vehicles from './pages/Vehicles.jsx';
 /* Charts are a third of the whole panel's weight and are opened rarely, so the
@@ -42,6 +44,8 @@ export default function App() {
       <Route path="/customers" element={<Customers />} />
       <Route path="/sign-ins" element={<SignIns />} />
       <Route path="/security" element={<Security />} />
+      <Route path="/referrals" element={<Referrals />} />
+      <Route path="/report-access" element={<ReportAccess />} />
       <Route path="/vehicles" element={<Vehicles />} />
       <Route path="/analytics" element={
         <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-muted">Loading charts…</div>}>

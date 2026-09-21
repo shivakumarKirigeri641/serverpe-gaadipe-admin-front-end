@@ -32,6 +32,7 @@ const NAV = [
     items: [
       { to: '/finance', label: 'Revenue & GST', icon: RupeeIcon, cap: 'money' },
       { to: '/documents', label: 'Reports & invoices', icon: DocIcon },
+      { to: '/referrals', label: 'Referrals (QuizPe)', icon: UsersIcon },
     ],
   },
   {
@@ -39,6 +40,8 @@ const NAV = [
     items: [
       { to: '/check', label: 'Check a vehicle', icon: SearchIcon, cap: 'lookup' },
       { to: '/blocks', label: 'Blocked', icon: ShieldIcon },
+      // Owner only, and only while Settings → admin_report_access_enabled is on.
+      { to: '/report-access', label: 'Report access ⚠️', icon: KeyIcon, cap: 'report_access' },
       { to: '/feedback', label: 'Messages', icon: StarIcon },
     ],
   },

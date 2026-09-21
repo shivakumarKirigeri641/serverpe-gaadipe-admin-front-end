@@ -100,6 +100,23 @@ const GROUPS = [
     },
   },
   {
+    title: 'Referral offer (QuizPe)',
+    note: 'Refer QuizPe to a parent → one free full report when they buy QuizPe premium. Nothing is ever sent to the parent. QuizPe is checked read-only.',
+    keys: {
+      report_unlock: 'How a full report is unlocked: pay (₹19 only), both (₹19 or refer), refer (referral only).',
+      referral_enabled: 'Referrals on (true) or paused (false). Earned rewards stay usable.',
+      referral_reward: 'The reward: free_report. (flat_off is reserved for a ₹10/₹20 discount later.)',
+      referral_flat_off_paise: 'For flat_off only: the discount in paise (1000 = ₹10).',
+      referral_monthly_cap: 'Most free reports one customer can earn in a month.',
+      referral_pending_max: 'Most invitations one customer can have waiting at once.',
+      referral_window_days: 'The parent must buy QuizPe premium within this many days of the referral.',
+      referral_credit_valid_days: 'A free report must be used within this many days.',
+      referral_min_quizpe_rupees: 'Smallest QuizPe payment that counts as premium, in rupees.',
+      referral_check_minutes: 'How often QuizPe is checked for new premium parents.',
+      admin_report_access_enabled: 'Show the owner-only “Report access” page (grant or revoke one vehicle’s report). true / false.',
+    },
+  },
+  {
     title: 'Money',
     keys: {
       razorpay_fee_percent: "Razorpay's fee, as a percentage. UPI is nil today; cards about 2%.",

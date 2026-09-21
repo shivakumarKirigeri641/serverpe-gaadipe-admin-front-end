@@ -87,6 +87,19 @@ const GROUPS = [
     },
   },
   {
+    title: 'Emails to customers',
+    note: 'Vehicle updates by email while there is no WhatsApp Business number. Paying customers get the full record daily; others get the basic view every few days. Only confirmed addresses are mailed, and every email has an unsubscribe link.',
+    keys: {
+      customer_email_enabled: 'Customer emails on (true) or off (false).',
+      customer_email_only_to: 'TEST MODE — while this has addresses, customer emails go ONLY to them. Clear it to send to every customer.',
+      customer_email_hour_ist: 'Hour (IST) the evening emails start. 19 = 7 pm.',
+      customer_email_until_hour_ist: 'Hour (IST) after which no evening email is started. 22 = 10 pm.',
+      customer_email_free_every_days: 'Customers who have not paid: one email every this many days.',
+      customer_email_free_active_days: 'Stop the free email once their last check is older than this many days.',
+      customer_email_per_tick: 'At most this many customer emails per minute (Hostinger limits).',
+    },
+  },
+  {
     title: 'Money',
     keys: {
       razorpay_fee_percent: "Razorpay's fee, as a percentage. UPI is nil today; cards about 2%.",

@@ -16,7 +16,7 @@ import { Banner, Chip, Empty, Failed, Modal, Spinner, Stat, Table } from '../com
  *              carries the unsubscribe link; sent a few a minute
  *   Log        every email GaadiPe has sent a customer, of every kind
  */
-const KIND = { confirm: 'Confirm address', daily: 'Daily update (paid)', digest: 'Every-4-days (free)', reward: 'Referral reward', announcement: 'From admin' };
+const KIND = { confirm: 'Confirm address', purchase: 'Thank you (purchase)', daily: 'Daily update (paid)', digest: 'Every-4-days (free)', reward: 'Referral reward', announcement: 'From admin' };
 const TONE = { sent: 'good', pending: 'watch', failed: 'wrong', skipped: 'info' };
 
 export default function CustomerEmails() {

@@ -37,7 +37,7 @@ export default function FreeReports() {
       {error && !data ? <Failed error={error} onRetry={load} /> : !data ? <Spinner /> : (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Stat label="Earned by referral" value={count(t.earned)} sub={`₹${Number(t.quizpe_rupees).toLocaleString('en-IN')} QuizPe premium behind them`} />
+            <Stat label="Earned by referral" value={`${count(t.earned)} free · ${count(t.reduced)} at ₹10.62`} sub={`₹${Number(t.quizpe_rupees).toLocaleString('en-IN')} QuizPe premium behind them`} />
             <Stat label="Granted by admin" value={count(t.granted)} />
             <Stat label="Used · available" value={`${count(t.used)} · ${count(t.available)}`} sub={`${count(t.expired)} expired · ${count(t.revoked)} revoked`} />
             <Stat label="Not charged" value={rupees(t.value_paise)} sub="report price × reports used" />
@@ -51,7 +51,7 @@ export default function FreeReports() {
                     <td className="td"><div className="font-semibold text-ink">{r.name || '—'}</div>
                       <div className="tabular text-2xs text-muted">{fmtMobile(r.mobile)}</div></td>
                     <td className="td text-2xs">{r.source === 'referral'
-                      ? <>Referral · GP-{r.code || '—'}<div className="text-muted">parent {r.parent || '—'}{r.quizpe_amount ? ` · paid ₹${r.quizpe_amount}` : ''}</div>
+                      ? <>{r.reward === 'report_at_price' ? `Report at ${rupees(r.price_paise, { decimals: true })} (Instant Quiz)` : 'Free report (premium)'} · GP-{r.code || '—'}<div className="text-muted">parent {r.parent || '—'}{r.quizpe_amount ? ` · paid ₹${r.quizpe_amount}` : ''}</div>
                           {r.quizpe_payment && <div className="text-muted">{r.quizpe_payment}</div>}</>
                       : <>Granted by {r.admin_name || 'admin'}{r.note && <div className="max-w-[14rem] text-muted">“{r.note}”</div>}</>}</td>
                     <td className="td text-2xs text-muted">{dateTime(r.earned_at)}{r.tapped_at && <div>opened {dateTime(r.tapped_at)}</div>}</td>

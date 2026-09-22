@@ -33,6 +33,7 @@ const GROUPS = [
   {
     title: 'Reports and alerts',
     keys: {
+      free_view_detail: 'How much a FREE check gives away: labels (names the lapsed documents and challan count), count (only how many things need attention — recommended), none (vehicle identity only). Applies to the vehicle page, My vehicles and the every-few-days email.',
       report_valid_days: 'How many days a paid report can be downloaded again.',
       document_number_start: 'Where each day’s invoice and report numbers begin (default 1: GP1, GP2…). Never lower it below a number already issued today — an invoice number must not repeat.',
       watch_check_interval_minutes: 'Default gap between checks of a watched vehicle.',

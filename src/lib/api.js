@@ -218,6 +218,7 @@ export const api = {
   cancelCustomerEmail: (id) => call(`/customer-emails/campaigns/${id}/cancel`, { method: 'POST', body: {} }),
   broadcasts: (params) => call(`/broadcasts${qs(params)}`),
   broadcastTargets: (id) => call(`/broadcasts/${id}/targets`),
+  setTemplateStatus: (body) => call('/broadcasts/templates/status', { method: 'POST', body }),
   previewBroadcast: (body) => call('/broadcasts/preview', { method: 'POST', body }),
   sendBroadcast: (body) => call('/broadcasts/send', { method: 'POST', body }),
   cancelBroadcast: (id) => call(`/broadcasts/${id}/cancel`, { method: 'POST', body: {} }),

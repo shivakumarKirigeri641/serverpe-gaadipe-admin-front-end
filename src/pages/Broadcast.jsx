@@ -149,7 +149,10 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
             onChange={(e) => { const [n, l] = e.target.value.split('|'); setName(n); setLang(l); }}>
             <option value="|">Choose a template…</option>
             {templates.map((t) => (
-              <option key={`${t.name}|${t.language}`} value={`${t.name}|${t.language}`} disabled={!t.sendable}>
+              /* Any template can be SELECTED — you have to open one to read it,
+                 and to record Meta's decision about it. Sending an unapproved
+                 one is refused by the server, which is where it belongs. */
+              <option key={`${t.name}|${t.language}`} value={`${t.name}|${t.language}`}>
                 {t.name} · {t.language} {t.sendable ? '' : `· ${t.status}`}
               </option>
             ))}
@@ -167,11 +170,21 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
           {/* The whole message as it will arrive: header, body, footer. */}
           <pre className="mt-3 whitespace-pre-wrap rounded-lg border border-line bg-shell p-3 text-2xs text-body">
 {tpl.header_text ? `${tpl.header_text}\n\n` : ''}{tpl.body}{tpl.footer ? `\n\n— ${tpl.footer}` : ''}</pre>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <Chip tone={tpl.status === 'APPROVED' ? 'good' : tpl.status === 'NOT RAISED' ? 'wrong' : 'watch'}>
               {tpl.status}
             </Chip>
             {tpl.category && <Chip tone="info">{tpl.category}</Chip>}
+            {/* While Meta's live list cannot be read, its decision is recorded by hand. */}
+            {data.templates.source === 'stored' && (
+              <select className="input !w-auto !py-1 text-2xs" value={tpl.status}
+                onChange={async (e) => {
+                  await api.setTemplateStatus({ name: tpl.name, language: tpl.language, status: e.target.value });
+                  onQueued();
+                }}>
+                {['PENDING', 'APPROVED', 'REJECTED', 'PAUSED'].map((v) => <option key={v} value={v}>{v}</option>)}
+              </select>
+            )}
           </div>
           {tpl.buttons?.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">

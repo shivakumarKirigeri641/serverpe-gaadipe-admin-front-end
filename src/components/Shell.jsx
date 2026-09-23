@@ -45,6 +45,7 @@ const NAV = [
       { to: '/report-access', label: 'Report access ⚠️', icon: KeyIcon, cap: 'report_access' },
       { to: '/feedback', label: 'Messages', icon: StarIcon },
       { to: '/customer-emails', label: 'Customer emails', icon: MailIcon },
+      { to: '/broadcast', label: 'Broadcast', icon: SendIcon },
     ],
   },
   {
@@ -150,6 +151,7 @@ function BookIcon() { return <I><path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-
 function KeyIcon() { return <I><circle cx="8" cy="12" r="4" /><path d="M12 12h9l-2 3 2 2" /></I>; }
 function ListIcon() { return <I><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></I>; }
 function DoorIcon() { return <I><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5" /><path d="M10 17l5-5-5-5M15 12H3" /></I>; }
+function SendIcon() { return <I><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></I>; }
 function MailIcon() { return <I><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></I>; }
 function GiftIcon() { return <I><rect x="3" y="8" width="18" height="4" /><path d="M5 12v9h14v-9M12 8v13M12 8S10.5 3 8 3.5 7 8 12 8Zm0 0s1.5-5 4-4.5S17 8 12 8Z" /></I>; }
 function HeartIcon() { return <I><path d="M20.8 6.6a5 5 0 0 0-8.8-1.6A5 5 0 0 0 3.2 6.6C1.9 9.7 4.3 13 12 19c7.7-6 10.1-9.3 8.8-12.4Z" /></I>; }

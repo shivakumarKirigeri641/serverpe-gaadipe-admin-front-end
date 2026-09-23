@@ -3,6 +3,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSession } from './lib/session';
 import SignIn from './pages/SignIn.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import Home from './pages/Home.jsx';
+import Conversations from './pages/Conversations.jsx';
+import Campaigns from './pages/Campaigns.jsx';
 import Customers from './pages/Customers.jsx';
 import SignIns from './pages/SignIns.jsx';
 import Security from './pages/Security.jsx';
@@ -44,7 +47,11 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Dashboard />} />
+      <Route path="/" element={<Home />} />
+      {/* The old numbers screen keeps its place for anyone who wants it. */}
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/conversations" element={<Conversations />} />
+      <Route path="/campaigns" element={<Campaigns />} />
       <Route path="/live" element={<Live />} />
       <Route path="/customers" element={<Customers />} />
       <Route path="/sign-ins" element={<SignIns />} />

@@ -17,7 +17,7 @@ import { Banner, Chip, Empty, Failed, Modal, Spinner, Stat, Table } from '../com
  */
 const TONE = { open: 'watch', replied: 'good', closed: 'info' };
 
-export default function Tickets() {
+export default function Tickets({ tabs }) {
   const { can } = useSession();
   const canReply = allowed(can, 'settings');
   const [status, setStatus] = useState('open');
@@ -33,7 +33,7 @@ export default function Tickets() {
   useEffect(load, [load]);
 
   return (
-    <Shell title="Support" subtitle="What customers have written, and what we told them."
+    <Shell tabs={tabs} title="Support" subtitle="What customers have written, and what we told them."
       actions={
         <>
           <select className="input !w-36 !py-1.5 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>

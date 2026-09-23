@@ -24,7 +24,7 @@ import { Banner, Chip, Empty, Failed, Modal, Spinner, Stat, Table } from '../com
  */
 const TONE = { sent: 'good', pending: 'watch', failed: 'wrong', skipped: 'info' };
 
-export default function Broadcast() {
+export default function Broadcast({ tabs }) {
   const { can } = useSession();
   const canSend = allowed(can, 'settings');
   const [data, setData] = useState(null);
@@ -38,7 +38,7 @@ export default function Broadcast() {
   useEffect(load, [load]);
 
   return (
-    <Shell title="Broadcast" subtitle="Send an approved WhatsApp template to customers who signed in.">
+    <Shell tabs={tabs} title="Broadcast" subtitle="Send an approved WhatsApp template to customers who signed in.">
       {error && !data ? <Failed error={error} onRetry={load} /> : !data ? <Spinner /> : (
         <>
           {!data.whatsapp_enabled && (

@@ -155,6 +155,7 @@ export const api = {
   session: () => call('/session'),
   signOut: () => call('/session', { method: 'DELETE' }),
 
+  home: () => call('/home'),
   dashboard: () => call('/dashboard'),
   health: () => call('/health'),
   series: (params) => call(`/series${qs(params)}`),

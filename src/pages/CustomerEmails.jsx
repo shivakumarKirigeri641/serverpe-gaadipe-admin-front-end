@@ -19,7 +19,7 @@ import { Banner, Chip, Empty, Failed, Modal, Spinner, Stat, Table } from '../com
 const KIND = { confirm: 'Confirm address', purchase: 'Thank you (purchase)', daily: 'Daily update (paid)', digest: 'Every-4-days (free)', reward: 'Referral reward', announcement: 'From admin' };
 const TONE = { sent: 'good', pending: 'watch', failed: 'wrong', skipped: 'info' };
 
-export default function CustomerEmails() {
+export default function CustomerEmails({ tabs }) {
   const { can } = useSession();
   const canEdit = allowed(can, 'settings');
   const [data, setData] = useState(null);
@@ -36,7 +36,7 @@ export default function CustomerEmails() {
   const sent30 = (k) => (data?.totals || []).filter((t) => t.status === 'sent' && (!k || t.kind === k)).reduce((s, t) => s + t.n, 0);
 
   return (
-    <Shell title="Customer emails" subtitle="Write to customers, and see every email GaadiPe sends them.">
+    <Shell tabs={tabs} title="Customer emails" subtitle="Write to customers, and see every email GaadiPe sends them.">
       {error && !data ? <Failed error={error} onRetry={load} /> : !data ? <Spinner /> : (
         <>
           <Switches canEdit={canEdit} />

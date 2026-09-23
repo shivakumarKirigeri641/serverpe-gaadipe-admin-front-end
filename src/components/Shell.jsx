@@ -17,14 +17,20 @@ import { BusyBar } from './ui.jsx';
  */
 const NAV = [
   {
-    group: 'Watch',
+    group: 'Every day',
     items: [
-      { to: '/', label: 'Dashboard', end: true, icon: GridIcon },
+      { to: '/', label: 'Home', end: true, icon: GridIcon },
       { to: '/live', label: 'Live', icon: PulseIcon },
-      { to: '/customers', label: 'Customers', icon: UsersIcon },
-      { to: '/sign-ins', label: 'Sign-ins', icon: DoorIcon },
-      { to: '/vehicles', label: 'Vehicles', icon: CarIcon },
       { to: '/analytics', label: 'Analytics', icon: ChartIcon },
+    ],
+  },
+  {
+    group: 'Customers',
+    items: [
+      { to: '/customers', label: 'Customers', icon: UsersIcon },
+      { to: '/vehicles', label: 'Vehicles', icon: CarIcon },
+      { to: '/sign-ins', label: 'Sign-ins', icon: DoorIcon },
+      { to: '/check', label: 'Check a vehicle', icon: SearchIcon, cap: 'lookup' },
     ],
   },
   {
@@ -33,28 +39,24 @@ const NAV = [
       { to: '/finance', label: 'Revenue & GST', icon: RupeeIcon, cap: 'money' },
       { to: '/documents', label: 'Reports & invoices', icon: DocIcon },
       { to: '/referrals', label: 'Referrals', icon: UsersIcon },
-      { to: '/referrals-quizpe', label: 'Referrals (QuizPe) — off', icon: UsersIcon },
       { to: '/free-reports', label: 'Free reports', icon: GiftIcon },
     ],
   },
   {
-    group: 'Operate',
+    group: 'Talking to customers',
     items: [
-      { to: '/check', label: 'Check a vehicle', icon: SearchIcon, cap: 'lookup' },
-      { to: '/blocks', label: 'Blocked', icon: ShieldIcon },
-      // Owner only, and only while Settings → admin_report_access_enabled is on.
-      { to: '/report-access', label: 'Report access ⚠️', icon: KeyIcon, cap: 'report_access' },
-      { to: '/tickets', label: 'Support', icon: LifebuoyIcon },
-      { to: '/feedback', label: 'Messages', icon: StarIcon },
-      { to: '/customer-emails', label: 'Customer emails', icon: MailIcon },
-      { to: '/broadcast', label: 'Broadcast', icon: SendIcon },
+      { to: '/conversations', label: 'Conversations', icon: LifebuoyIcon },
+      { to: '/campaigns', label: 'Campaigns', icon: SendIcon },
     ],
   },
   {
-    group: 'Administer',
+    group: 'Now and then',
     items: [
       { to: '/settings', label: 'Prices & settings', icon: CogIcon, cap: 'settings' },
       { to: '/policies', label: 'Policies & terms', icon: BookIcon, cap: 'settings' },
+      { to: '/blocks', label: 'Blocked', icon: ShieldIcon },
+      // Owner only, and only while Settings → admin_report_access_enabled is on.
+      { to: '/report-access', label: 'Report access ⚠️', icon: KeyIcon, cap: 'report_access' },
       { to: '/people', label: 'Panel users', icon: KeyIcon, cap: 'admins' },
       { to: '/audit', label: 'Audit trail', icon: ListIcon },
       { to: '/security', label: 'Security', icon: ShieldIcon },
@@ -63,7 +65,7 @@ const NAV = [
   },
 ];
 
-export default function Shell({ title, subtitle, actions, children }) {
+export default function Shell({ title, subtitle, actions, tabs, children }) {
   const { me, can, signOut } = useSession();
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
@@ -126,6 +128,9 @@ export default function Shell({ title, subtitle, actions, children }) {
           </div>
         </header>
 
+        {/* A screen made of tabs passes them here, so they sit under the
+            header rather than floating over the sidebar. */}
+        {tabs && <div className="border-b border-line bg-white px-4 lg:px-6">{tabs}</div>}
         <main className="px-4 py-5 lg:px-6">{children}</main>
       </div>
     </div>

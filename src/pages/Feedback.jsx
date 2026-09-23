@@ -13,10 +13,10 @@ import { Empty, Spinner, Failed, Hint, Pager, PAGE_SIZE, Chip } from '../compone
  * is how they stop being read. Each one gets its own card, in full, newest
  * first, with who said it and how to answer them.
  */
-export default function Feedback() {
+export default function Feedback({ tabs }) {
   const [tab, setTab] = useState('contact');
   return (
-    <Shell title="Messages" subtitle="The website's Contact form, and feedback from customers">
+    <Shell tabs={tabs} title="Messages" subtitle="The website's Contact form, and feedback from customers">
       <div className="mb-4 flex gap-1 border-b border-line">
         {[['contact', 'Contact form'], ['feedback', 'Feedback']].map(([k, label]) => (
           <button key={k} type="button" onClick={() => setTab(k)}

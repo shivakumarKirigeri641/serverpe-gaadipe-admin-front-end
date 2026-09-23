@@ -8,6 +8,7 @@ import SignIns from './pages/SignIns.jsx';
 import Security from './pages/Security.jsx';
 import Referrals from './pages/Referrals.jsx';
 import GpReferrals from './pages/GpReferrals.jsx';
+import Tickets from './pages/Tickets.jsx';
 import ReportAccess from './pages/ReportAccess.jsx';
 import CustomerEmails from './pages/CustomerEmails.jsx';
 import Broadcast from './pages/Broadcast.jsx';
@@ -54,6 +55,7 @@ export default function App() {
       <Route path="/report-access" element={<ReportAccess />} />
       <Route path="/customer-emails" element={<CustomerEmails />} />
       <Route path="/broadcast" element={<Broadcast />} />
+      <Route path="/tickets" element={<Tickets />} />
       <Route path="/free-reports" element={<FreeReports />} />
       <Route path="/vehicles" element={<Vehicles />} />
       <Route path="/analytics" element={

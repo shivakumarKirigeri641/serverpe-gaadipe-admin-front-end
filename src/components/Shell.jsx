@@ -32,7 +32,8 @@ const NAV = [
     items: [
       { to: '/finance', label: 'Revenue & GST', icon: RupeeIcon, cap: 'money' },
       { to: '/documents', label: 'Reports & invoices', icon: DocIcon },
-      { to: '/referrals', label: 'Referrals (QuizPe)', icon: UsersIcon },
+      { to: '/referrals', label: 'Referrals', icon: UsersIcon },
+      { to: '/referrals-quizpe', label: 'Referrals (QuizPe) — off', icon: UsersIcon },
       { to: '/free-reports', label: 'Free reports', icon: GiftIcon },
     ],
   },

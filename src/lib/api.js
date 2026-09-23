@@ -203,6 +203,7 @@ export const api = {
   signIns: (params) => call(`/sign-ins${qs(params)}`),
   sessions: (params) => call(`/sessions${qs(params)}`),
   securityEvents: (params) => call(`/security-events${qs(params)}`),
+  gpReferrals: (params) => call(`/gp-referrals${qs(params)}`),
   referrals: (params) => call(`/referrals${qs(params)}`),
   revokeReferralCredit: (id, reason) => call(`/referrals/credits/${id}/revoke`, { method: 'POST', body: { reason } }),
   quizpeConsents: () => call('/quizpe-consents'),

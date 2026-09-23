@@ -7,6 +7,7 @@ import Customers from './pages/Customers.jsx';
 import SignIns from './pages/SignIns.jsx';
 import Security from './pages/Security.jsx';
 import Referrals from './pages/Referrals.jsx';
+import GpReferrals from './pages/GpReferrals.jsx';
 import ReportAccess from './pages/ReportAccess.jsx';
 import CustomerEmails from './pages/CustomerEmails.jsx';
 import Broadcast from './pages/Broadcast.jsx';
@@ -47,7 +48,9 @@ export default function App() {
       <Route path="/customers" element={<Customers />} />
       <Route path="/sign-ins" element={<SignIns />} />
       <Route path="/security" element={<Security />} />
-      <Route path="/referrals" element={<Referrals />} />
+      <Route path="/referrals" element={<GpReferrals />} />
+      {/* QuizPe is switched off; its history stays reachable for anyone holding a credit. */}
+      <Route path="/referrals-quizpe" element={<Referrals />} />
       <Route path="/report-access" element={<ReportAccess />} />
       <Route path="/customer-emails" element={<CustomerEmails />} />
       <Route path="/broadcast" element={<Broadcast />} />

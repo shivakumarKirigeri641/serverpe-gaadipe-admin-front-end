@@ -126,7 +126,7 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
   if (!data.templates?.ok) {
     return (
       <Banner tone="wrong" className="mt-4">
-        <b>Could not read your templates from Meta.</b> {data.templates?.message || 'Unknown error.'}
+        <b>Could not read your templates.</b> {data.templates?.message || 'Unknown error.'}
       </Banner>
     );
   }
@@ -135,8 +135,12 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
     <div className="card mt-4 p-4">
       <div className="text-sm font-semibold text-ink">1 · The template</div>
       <p className="mt-0.5 text-2xs text-muted">
-        Read from your WhatsApp Business account. Only APPROVED templates with a text (or no) header can be sent from here.
+        {data.templates.source === 'stored'
+          ? 'Recorded by GaadiPe. Meta decides whether a template may actually be sent — nothing here is sendable until it says APPROVED.'
+          : 'Read live from your WhatsApp Business account. Only APPROVED templates with a text (or no) header can be sent from here.'}
       </p>
+      {/* Meta unreachable: say so plainly rather than showing an empty list. */}
+      {data.templates.warning && <Banner tone="watch" className="mt-2">{data.templates.warning}</Banner>}
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className="block">
@@ -160,8 +164,15 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
 
       {tpl && (
         <>
-          <pre className="mt-3 whitespace-pre-wrap rounded-lg border border-line bg-shell p-3 text-2xs text-body">{tpl.body}
-            {tpl.footer ? `\n\n— ${tpl.footer}` : ''}</pre>
+          {/* The whole message as it will arrive: header, body, footer. */}
+          <pre className="mt-3 whitespace-pre-wrap rounded-lg border border-line bg-shell p-3 text-2xs text-body">
+{tpl.header_text ? `${tpl.header_text}\n\n` : ''}{tpl.body}{tpl.footer ? `\n\n— ${tpl.footer}` : ''}</pre>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            <Chip tone={tpl.status === 'APPROVED' ? 'good' : tpl.status === 'NOT RAISED' ? 'wrong' : 'watch'}>
+              {tpl.status}
+            </Chip>
+            {tpl.category && <Chip tone="info">{tpl.category}</Chip>}
+          </div>
           {tpl.buttons?.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {tpl.buttons.map((b) => <Chip key={b} tone="info">{b}</Chip>)}

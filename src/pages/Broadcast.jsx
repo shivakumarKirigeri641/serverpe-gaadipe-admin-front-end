@@ -83,12 +83,18 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
     () => templates.find((t) => t.name === name && t.language === lang) || null,
     [templates, name, lang]);
 
-  /* A new template has its own variables; start them at a sensible guess. */
+  /*
+   * WHAT FILLS THE BLANKS IS PER TEMPLATE, NOT A HOUSE RULE. The server
+   * suggests a mapping only for a template it knows — one named in KNOWN, or
+   * one broadcast before. Every other template starts blank, because a {{1}}
+   * that means an amount must never be silently filled with somebody's name.
+   */
   useEffect(() => {
     if (!tpl) { setVars([]); return; }
-    setVars(tpl.variables.map((_, i) => (i === 0 ? 'first_name' : i === 1 ? 'last_vehicle' : '')));
+    const suggested = (data.defaults || {})[`${tpl.name}|${tpl.language}`];
+    setVars(tpl.variables.map((_, i) => (suggested?.[i] ?? '')));
     setPreview(null);
-  }, [tpl]);
+  }, [tpl, data.defaults]);
 
   const rows = data.recipients?.rows || [];
   const fields = data.recipients?.fields || {};
@@ -165,6 +171,10 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
           {tpl.variables.length > 0 && (
             <>
               <div className="mt-4 text-sm font-semibold text-ink">2 · What fills each blank</div>
+              <p className="mt-0.5 text-2xs text-muted">
+                Filled from GaadiPe's own record. WhatsApp gives no profile name until someone messages you,
+                so a customer who never typed a name is greeted as &ldquo;there&rdquo; — the preview shows exactly who.
+              </p>
               <div className="mt-2 grid gap-3 sm:grid-cols-2">
                 {tpl.variables.map((n, i) => (
                   <label key={n} className="block">

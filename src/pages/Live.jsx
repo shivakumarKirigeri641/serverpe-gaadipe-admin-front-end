@@ -3,7 +3,7 @@ import { api } from '../lib/api';
 import { mobile as fmtMobile, ago, dateTime, count, plate as fmtPlate, duration } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import CustomerActivity from '../components/CustomerActivity.jsx';
-import { Chip, Empty, Spinner, Failed, Hint, Modal } from '../components/ui.jsx';
+import { Banner, Chip, Empty, Spinner, Failed, Hint, Modal } from '../components/ui.jsx';
 
 /**
  * What is happening right now.
@@ -76,11 +76,27 @@ export default function Live() {
 
       {error && !rows ? <Failed error={error} onRetry={loadRows} /> : (
         <>
+          {pulse && !pulse.whatsapp_on && (
+            <Banner tone="watch" className="mb-3 rise">
+              <b>The chat is switched off.</b> Conversations and the message stream below will stay empty —
+              that is WHATSAPP_ENABLED, not a fault. What is real right now is <b>On site</b>: people using
+              the website.
+            </Banner>
+          )}
+
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Tile label="Active now" value={count(pulse?.active_15m ?? 0)} note="People whose last message arrived in the last 15 minutes." />
-            <Tile label="In the 24-hour window" value={count(pulse?.active_24h ?? 0)} note="People GaadiPe may still reply to freely. Outside this window only an approved template delivers." />
-            <Tile label="Checks, last 15 min" value={count(pulse?.checks_15m ?? 0)} />
-            <Tile label="Paying right now" value={count(pulse?.paying_now ?? 0)} note="Payment links opened in the last 30 minutes that have not completed yet." />
+            <Tile label="Active in chat" value={pulse?.whatsapp_on ? count(pulse?.active_15m ?? 0) : '—'}
+              note={pulse?.whatsapp_on
+                ? 'People whose last WhatsApp message arrived in the last 15 minutes.'
+                : 'Nothing to count: WhatsApp is switched off, so nobody can be in a conversation.'} />
+            <Tile label="In the 24-hour window" value={pulse?.whatsapp_on ? count(pulse?.active_24h ?? 0) : '—'}
+              note={pulse?.whatsapp_on
+                ? 'People GaadiPe may still reply to freely. Outside this window only an approved template delivers.'
+                : 'The 24-hour window only exists once the chat is running.'} />
+            <Tile label="Checks, last 15 min" value={count(pulse?.checks_15m ?? 0)}
+              note="Vehicle lookups in the last quarter of an hour, from the website and the chat both." />
+            <Tile label="Paying right now" value={count(pulse?.paying_now ?? 0)}
+              note="Payment links opened in the last 30 minutes that have not completed yet. This is the number worth watching." />
           </div>
 
           <OnSite rows={visitors} onOpen={setOpenVisit} />
@@ -93,11 +109,15 @@ export default function Live() {
                 <h2 className="text-sm font-semibold text-ink">Conversations</h2>
                 <span className="text-2xs text-muted">Tap to read the whole thread</span>
               </div>
-              {!rows ? <Spinner /> : !rows.length ? <Empty>Nobody has messaged yet.</Empty> : (
+              {!rows ? <Spinner /> : !rows.length ? (
+                <Empty>{pulse?.whatsapp_on
+                  ? 'Nobody has messaged yet.'
+                  : 'Nothing here while the chat is switched off.'}</Empty>
+              ) : (
                 <div className="divide-y divide-line">
                   {rows.map((r) => (
                     <button key={r.id} onClick={() => setOpenMobile(r.mobile)}
-                      className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-shell/70">
+                      className="row-hover flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-shell/70">
                       <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
                         r.in_window ? 'bg-good-500' : 'bg-line'}`} />
                       <span className="min-w-0 flex-1">
@@ -129,13 +149,17 @@ export default function Live() {
               <div className="flex items-center justify-between border-b border-line px-4 py-3">
                 <h2 className="text-sm font-semibold text-ink">As it happens</h2>
                 {!paused && <span className="flex items-center gap-1.5 text-2xs text-muted">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-good-500" />live</span>}
+                  <span className="breathe h-1.5 w-1.5 rounded-full bg-good-500" />live</span>}
               </div>
               <div className="max-h-[60vh] overflow-y-auto">
-                {!stream.length ? <Empty>Waiting for the next message…</Empty> : (
+                {!stream.length ? (
+                  <Empty>{pulse?.whatsapp_on
+                    ? 'Waiting for the next message…'
+                    : 'No messages can arrive: the chat is switched off.'}</Empty>
+                ) : (
                   <ul className="divide-y divide-line">
                     {[...stream].reverse().map((m) => (
-                      <li key={m.id} className="px-4 py-2">
+                      <li key={m.id} className="fade px-4 py-2">
                         <div className="flex items-center gap-2 text-2xs">
                           <span className={m.direction === 'out' ? 'text-brand-deep' : 'text-ink'}>
                             {m.direction === 'out' ? 'out' : 'in'}

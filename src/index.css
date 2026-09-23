@@ -74,3 +74,50 @@
   .cv-rise, .cv-row, .cv-unfold, .cv-plate::after { animation: none !important; }
   .cv-tile, .cv-tile:hover { transition: none !important; transform: none !important; }
 }
+
+/* ───────────────────────────────────────────────────────── motion ── */
+
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sweep { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+
+/* Content arriving. Staggered by a few milliseconds per card so a screen
+   assembles rather than flashing into place all at once. */
+.rise { animation: rise .28s cubic-bezier(.2, .7, .3, 1) both; }
+.rise-1 { animation-delay: .04s; }
+.rise-2 { animation-delay: .08s; }
+.rise-3 { animation-delay: .12s; }
+.rise-4 { animation-delay: .16s; }
+.fade { animation: fade .2s ease both; }
+
+/* A card that can be opened says so by lifting under the pointer. One that
+   cannot must not move, or the lift stops meaning anything. */
+.lift { transition: transform .16s ease, box-shadow .16s ease; }
+.lift:hover { transform: translateY(-2px); }
+
+/* A row worth clicking. Cheaper than a lift and right for dense tables. */
+.row-hover { transition: background-color .12s ease; }
+
+/* Waiting, shaped like the thing that is coming — a table looks like a table
+   while it loads, so nothing jumps when the data lands. */
+.skeleton {
+  background: linear-gradient(90deg, #eef3f2 25%, #f7fbfa 37%, #eef3f2 63%);
+  background-size: 400% 100%;
+  animation: sweep 1.4s ease-in-out infinite;
+  border-radius: .375rem;
+}
+
+/* Something happening right now. */
+.breathe { animation: breathe 2s ease-in-out infinite; }
+
+/*
+ * EVERY ONE OF THESE STOPS when the reader has asked for less motion. Not
+ * slowed down — stopped: the point is that nothing moves.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .rise, .fade, .skeleton, .breathe { animation: none !important; }
+  .lift { transition: none; }
+  .lift:hover { transform: none; }
+  * { scroll-behavior: auto !important; }
+}

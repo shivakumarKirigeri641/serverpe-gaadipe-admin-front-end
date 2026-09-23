@@ -68,7 +68,18 @@ export const Banner = ({ tone = 'info', children, className = '' }) => (
   <div className={`rounded-lg border px-4 py-2.5 text-sm ${TONES[tone]} ${className}`}>{children}</div>
 );
 
-export const Chip = ({ tone = 'info', children }) => (
+/**
+ * A status word, and — where the word alone is not enough — what it means.
+ *
+ * "skipped", "not_eligible", "PENDING" are all perfectly clear to whoever
+ * wrote them and to nobody else. A note costs a hover and saves a support
+ * conversation with yourself in three months.
+ */
+export const Chip = ({ tone = 'info', children, note }) => (note ? (
+  <Hint note={note}><ChipBody tone={tone}>{children}</ChipBody></Hint>
+) : <ChipBody tone={tone}>{children}</ChipBody>);
+
+const ChipBody = ({ tone = 'info', children }) => (
   <span className={`chip border ${TONES[tone]}`}>{children}</span>
 );
 
@@ -123,7 +134,7 @@ export function Modal({ title, subtitle, onClose, children, footer, wide = false
  * A number on its own is trivia: 14 checks today means nothing until it is
  * beside yesterday's 9. The comparison is part of the tile, not an afterthought.
  */
-export function Stat({ label, value, sub, tone = 'info', note, onClick }) {
+export function Stat({ label, value, sub, tone = 'info', note, onClick, delay = 0 }) {
   const body = (
     <>
       <div className="text-2xs font-semibold uppercase tracking-wider text-muted">{label}</div>
@@ -133,7 +144,8 @@ export function Stat({ label, value, sub, tone = 'info', note, onClick }) {
   );
   return (
     <Hint note={note}>
-      <div className={`card px-4 py-3 ${onClick ? 'cursor-pointer transition hover:shadow-pop' : ''}`}
+      <div className={`card rise px-4 py-3 ${delay ? `rise-${delay}` : ''} ${
+        onClick ? 'lift cursor-pointer hover:shadow-pop' : ''}`}
         onClick={onClick}>{body}</div>
     </Hint>
   );
@@ -146,6 +158,38 @@ export const Empty = ({ children = 'Nothing here yet.' }) => (
 
 export const Spinner = ({ label = 'Loading…' }) => (
   <div className="px-4 py-10 text-center text-sm text-muted">{label}</div>
+);
+
+/**
+ * Waiting, shaped like the thing that is coming.
+ *
+ * A table that looks like a table while it loads means nothing jumps when the
+ * data lands — and the reader can see how much is on its way, which a spinner
+ * never tells them.
+ */
+export const Skeleton = ({ rows = 5, cols = 4 }) => (
+  <div className="fade px-4 py-3">
+    {Array.from({ length: rows }).map((_, r) => (
+      <div key={r} className="flex gap-3 py-3">
+        {Array.from({ length: cols }).map((_, c) => (
+          <div key={c} className="skeleton h-4"
+            style={{ width: c === 0 ? '22%' : `${14 + ((r + c) % 3) * 6}%` }} />
+        ))}
+      </div>
+    ))}
+  </div>
+);
+
+/** A card-shaped wait, for a screen made of cards rather than rows. */
+export const SkeletonCards = ({ n = 4 }) => (
+  <div className="fade grid grid-cols-2 gap-3 lg:grid-cols-4">
+    {Array.from({ length: n }).map((_, i) => (
+      <div key={i} className="card px-4 py-3">
+        <div className="skeleton h-3 w-20" />
+        <div className="skeleton mt-2 h-6 w-14" />
+      </div>
+    ))}
+  </div>
 );
 
 /** A page-level error that still lets the reader try again. */

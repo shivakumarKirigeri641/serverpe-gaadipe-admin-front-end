@@ -4,7 +4,7 @@ import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tool
 import { api } from '../lib/api';
 import { count, rupees } from '../lib/format';
 import Shell from '../components/Shell.jsx';
-import { Chip, Failed, Spinner } from '../components/ui.jsx';
+import { Chip, Failed, Hint, SkeletonCards } from '../components/ui.jsx';
 import { TOOLTIP, AXIS } from './analytics/kit.jsx';
 
 /**
@@ -38,7 +38,14 @@ export default function Home() {
   }, []);
 
   if (error && !data) return <Shell title="Home"><Failed error={error} onRetry={load} /></Shell>;
-  if (!data) return <Shell title="Home"><Spinner /></Shell>;
+  if (!data) {
+    return (
+      <Shell title="Home" subtitle="What needs you, and how today is going.">
+        <div className="card skeleton h-24" />
+        <div className="mt-4"><SkeletonCards n={5} /></div>
+      </Shell>
+    );
+  }
 
   const t = data.today;
   const most = Math.max(1, ...data.funnel.map((f) => f.n));
@@ -60,8 +67,13 @@ export default function Home() {
         <div className="card divide-y divide-line">
           <div className="px-5 py-3 text-sm font-semibold text-ink">Needs you</div>
           {data.attention.map((a, i) => (
-            <Link key={i} to={a.to} className="flex items-start gap-3 px-5 py-3 transition hover:bg-shell">
-              <Chip tone={LEVEL[a.level] || 'info'}>
+            <Link key={i} to={a.to}
+              className={`row-hover rise flex items-start gap-3 px-5 py-3 hover:bg-shell ${
+                i < 4 ? `rise-${i + 1}` : ''}`}>
+              <Chip tone={LEVEL[a.level] || 'info'} note={
+                a.level === 'wrong' ? 'Costs money or a customer if it waits. Do this one first.'
+                  : a.level === 'watch' ? 'Worth doing today, but nothing breaks if it waits.'
+                  : 'Nothing is wrong. This is a setting you chose, shown so it is not forgotten.'}>
                 {a.level === 'wrong' ? 'Fix' : a.level === 'watch' ? 'Soon' : 'FYI'}
               </Chip>
               <div className="min-w-0">
@@ -76,35 +88,48 @@ export default function Home() {
 
       {/* ───────────────────────────────────────────── today ── */}
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Number label="Signed up" now={t.signed_up} before={t.signed_up_before} />
-        <Number label="Checks" now={t.checks} before={t.checks_before} />
-        <Number label="Paid" now={t.paid} before={t.paid_before} />
-        <Number label="Earned" now={t.earned_paise} before={t.earned_before_paise} money />
+        <Number label="Signed up" now={t.signed_up} before={t.signed_up_before} delay={1}
+          note="New accounts created today, in India's day. Somebody who signed in again is not counted." />
+        <Number label="Checks" now={t.checks} before={t.checks_before} delay={2}
+          note="Vehicle lookups today — not people. One person checking four plates is four checks." />
+        <Number label="Paid" now={t.paid} before={t.paid_before} delay={3}
+          note="Payments that actually completed today. A payment started and abandoned is not here; it is under Needs you." />
+        <Number label="Earned" now={t.earned_paise} before={t.earned_before_paise} money delay={4}
+          note="Money received today, GST included — this is what the customer paid, not what GaadiPe keeps." />
         <Number label="Being monitored" now={t.monitoring} flat
+          note="Vehicles with monitoring still running. It ends 28 days after each payment unless they renew."
           sub={`${count(t.customers)} customers · ${count(t.vehicles)} vehicles`} />
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Today's funnel: the shape matters more than the numbers. */}
-        <div className="card p-5">
+        <div className="card rise rise-1 p-5">
           <div className="text-sm font-semibold text-ink">How far people got today</div>
           <p className="mt-0.5 text-2xs text-muted">Where they stop is where the money is.</p>
           <div className="mt-4 space-y-2">
-            {data.funnel.map((f) => (
-              <div key={f.step} className="flex items-center gap-3">
-                <div className="w-36 shrink-0 text-2xs text-muted">{f.step}</div>
-                <div className="h-6 flex-1 rounded bg-shell">
-                  <div className="h-6 rounded bg-brand/80 transition-all"
-                    style={{ width: `${Math.max(f.n / most * 100, f.n ? 4 : 0)}%` }} />
+            {data.funnel.map((f, i) => (
+              <Hint key={f.step} note={FUNNEL_NOTE[f.step]} className="block">
+                <div className="row-hover flex items-center gap-3 rounded px-1 py-0.5 hover:bg-shell">
+                  <div className="w-36 shrink-0 text-2xs text-muted">{f.step}</div>
+                  <div className="h-6 flex-1 rounded bg-shell">
+                    {/* Grows to width as the screen settles: the shape of the
+                        drop-off is the point, and a bar that grows shows it. */}
+                    <div className="h-6 rounded bg-brand/80"
+                      style={{
+                        width: `${Math.max(f.n / most * 100, f.n ? 4 : 0)}%`,
+                        transition: 'width .5s cubic-bezier(.2,.7,.3,1)',
+                        transitionDelay: `${i * 70}ms`,
+                      }} />
+                  </div>
+                  <div className="tabular w-8 shrink-0 text-right text-sm font-semibold text-ink">{f.n}</div>
                 </div>
-                <div className="w-8 shrink-0 text-right text-sm font-semibold text-ink">{f.n}</div>
-              </div>
+              </Hint>
             ))}
           </div>
         </div>
 
         {/* A fortnight, so a bad day reads as a bad day and not a trend. */}
-        <div className="card p-5">
+        <div className="card rise rise-2 p-5">
           <div className="text-sm font-semibold text-ink">The last two weeks</div>
           <p className="mt-0.5 text-2xs text-muted">Sign-ups and checks, day by day.</p>
           <div className="mt-3 h-44">
@@ -123,7 +148,7 @@ export default function Home() {
       </div>
 
       {/* Payments are rare enough that a bar per day reads better than a line. */}
-      <div className="card mt-4 p-5">
+      <div className="card rise rise-3 mt-4 p-5">
         <div className="text-sm font-semibold text-ink">Payments, day by day</div>
         <div className="mt-3 h-36">
           <ResponsiveContainer width="100%" height="100%">
@@ -142,13 +167,13 @@ export default function Home() {
 }
 
 /** A number, and whether it is better or worse than the day before. */
-function Number({ label, now, before, money = false, flat = false, sub }) {
+function Number({ label, now, before, money = false, flat = false, sub, note, delay = 0 }) {
   // Money keeps its paise and wears its sign in front of the symbol: "-₹10.62",
   // never "₹-11", which reads as a price and rounds away what changed.
   const show = (v) => (money ? `${v < 0 ? '-' : ''}₹${(Math.abs(v) / 100).toFixed(Math.abs(v) % 100 ? 2 : 0)}` : count(v));
   const diff = flat || before === undefined ? null : now - before;
-  return (
-    <div className="card p-4">
+  const card = (
+    <div className={`card rise p-4 ${delay ? `rise-${delay}` : ''}`}>
       <div className="text-2xs uppercase tracking-wider text-muted">{label}</div>
       <div className="mt-1 text-xl font-bold text-ink">{show(now)}</div>
       {sub && <div className="mt-0.5 text-2xs text-muted">{sub}</div>}
@@ -159,7 +184,17 @@ function Number({ label, now, before, money = false, flat = false, sub }) {
       )}
     </div>
   );
+  return note ? <Hint note={note} className="block">{card}</Hint> : card;
 }
+
+/** What each funnel step actually counts. */
+const FUNNEL_NOTE = {
+  'Arrived': 'People who opened the site today, signed in or not.',
+  'Checked a vehicle': 'Looked up at least one number and saw a result.',
+  'Opened Buy': 'Tapped the button and saw the billing form. This is the step most people never reach.',
+  'Tapped Pay': 'Filled the form and went to Razorpay.',
+  'Paid': 'Money actually received.',
+};
 
 /**
  * Who is here right now.
@@ -170,7 +205,10 @@ function Number({ label, now, before, money = false, flat = false, sub }) {
  */
 function LiveNow({ live }) {
   return (
-    <Link to="/live" className="flex items-center gap-3 rounded-lg border border-line bg-white px-3 py-1.5">
+    <Hint note={live.whatsapp_on
+      ? 'People in a WhatsApp conversation in the last half hour, and on the website in the last five minutes.'
+      : 'People on the website in the last five minutes. WhatsApp is switched off, so nobody can be in a chat.'}>
+    <Link to="/live" className="lift flex items-center gap-3 rounded-lg border border-line bg-white px-3 py-1.5">
       <span className="relative flex h-2 w-2">
         <span className={`absolute inline-flex h-2 w-2 rounded-full ${
           live.on_site || live.in_chat ? 'animate-ping bg-good-500/60' : 'bg-line'}`} />
@@ -183,5 +221,6 @@ function LiveNow({ live }) {
           : <>{count(live.on_site)} on site · <span className="text-muted">chat off</span></>}
       </span>
     </Link>
+    </Hint>
   );
 }

@@ -4,13 +4,14 @@ import { api } from '../../lib/api';
 import { useSession, allowed } from '../../lib/session';
 import { useAutoRefresh } from '../../lib/useAutoRefresh';
 import Shell from '../../components/Shell.jsx';
-import { Chip, Hint, Failed, Skeleton, Empty, Pager, Modal, Field } from '../../components/ui.jsx';
+import { Chip, Hint, Failed, Skeleton, Empty, Pager, Modal, Field, Drawer, FilterChip } from '../../components/ui.jsx';
 import { snack } from '../../components/Live.jsx';
 import { count, dateTime, ago } from '../../lib/format';
 import {
   NA, inr, DocChip, PAY_TONE, PAY_WORD, CHANNEL, TAG_WORD, useVehicleMeta, copy, linkTo,
 } from './common.jsx';
 import { TagDialog, NoteDialog, ListDialog, AssignDialog, Confirm, ExportDialog } from './actions.jsx';
+import { useRowChanges } from '../../lib/motion.jsx';
 
 /**
  * VEHICLE EXPLORER (user, 2026-09-25) — every vehicle GaadiPe has seen, one
@@ -105,6 +106,7 @@ export default function Explorer() {
   const [saved, setSaved] = useState([]);
   const [selected, setSelected] = useState(new Set());
   const [dialog, setDialog] = useState(null);
+  const [clearing, setClearing] = useState(false);
 
   const set = useCallback((patch, keepPage = false) => {
     const next = { ...params, ...patch };
@@ -168,6 +170,7 @@ export default function Explorer() {
   };
 
   const rows = data?.rows || [];
+  const flash = useRowChanges(data?.rows);
   const allOnPage = rows.length > 0 && rows.every((r) => selected.has(r.id));
   const toggleAll = () => setSelected(allOnPage ? new Set() : new Set(rows.map((r) => r.id)));
   const toggle = (id) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -238,13 +241,16 @@ export default function Explorer() {
           ))}
         </div>
         {activeFilters.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
+          <div className={`mt-2 flex flex-wrap items-center gap-1.5 ${clearing ? 'm-chip-out' : ''}`}>
             {activeFilters.map((k) => (
-              <span key={k} className="chip border border-line bg-shell text-body">
-                {labelOf(k)}: {valueWord(k, params[k], meta)}
-                <button className="opacity-60 hover:opacity-100" onClick={() => set({ [k]: '' })} aria-label={`Clear ${labelOf(k)}`}>✕</button>
-              </span>
+              <FilterChip key={k} onRemove={() => set({ [k]: '' })}>{labelOf(k)}: {valueWord(k, params[k], meta)}</FilterChip>
             ))}
+            {activeFilters.length > 1 && (
+              <button className="text-2xs text-brand hover:underline" onClick={() => {
+                setClearing(true);
+                setTimeout(() => { setClearing(false); set(Object.fromEntries(activeFilters.map((k) => [k, '']))); }, 150);
+              }}>Clear all</button>
+            )}
           </div>
         )}
       </div>
@@ -296,7 +302,7 @@ export default function Explorer() {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {rows.map((r) => (
-                    <tr key={r.id} className={`group hover:bg-shell/60 ${selected.has(r.id) ? 'bg-brand/5' : ''}`}>
+                    <tr key={r.id} className={`group hover:bg-shell/60 ${selected.has(r.id) ? 'bg-brand/5' : ''} ${flash(r)}`}>
                       <td className="px-3 py-2"><input type="checkbox" checked={selected.has(r.id)} onChange={() => toggle(r.id)} aria-label={`Select ${r.display}`} /></td>
                       {cols.map((c) => (
                         <td key={c.key} className={`truncate px-3 py-2 align-middle ${c.num ? 'text-right tabular' : ''}`}>
@@ -485,17 +491,12 @@ function valueWord(k, v, meta) {
 function FilterDrawer({ params, meta, onClose, onApply }) {
   const [f, setF] = useState(() => Object.fromEntries(FILTER_KEYS.map((k) => [k, params[k] || ''])));
   const put = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
-  useEffect(() => {
-    const key = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
-  }, [onClose]);
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-ink/20" onClick={onClose}>
-      <aside className="rise h-full w-full max-w-md overflow-y-auto border-l border-line bg-white shadow-pop" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 z-[1] flex items-center justify-between border-b border-line bg-white px-5 py-3">
-          <h2 className="text-base font-semibold text-ink">Filters</h2>
-          <button className="btn-quiet !px-3 !py-1.5 text-2xs" onClick={onClose}>Close</button>
-        </div>
+    <Drawer title="Filters" onClose={onClose}
+      footer={<>
+        <button className="btn-quiet" onClick={() => setF(Object.fromEntries(FILTER_KEYS.map((k) => [k, ''])))}>Clear all</button>
+        <button className="btn-primary m-press" onClick={() => onApply(f)}>Apply</button>
+      </>}>
         <div className="space-y-4 px-5 py-4">
           <div className="grid grid-cols-2 gap-3">
             <Field label="Active from"><input type="date" className="input !py-2" value={f.from} onChange={put('from')} /></Field>
@@ -539,12 +540,7 @@ function FilterDrawer({ params, meta, onClose, onApply }) {
           </div>
           <p className="text-2xs text-muted">Referral filters are left out: GaadiPe has no referral programme for now.</p>
         </div>
-        <div className="sticky bottom-0 flex justify-end gap-2 border-t border-line bg-shell/80 px-5 py-3 backdrop-blur">
-          <button className="btn-quiet" onClick={() => setF(Object.fromEntries(FILTER_KEYS.map((k) => [k, ''])))}>Clear all</button>
-          <button className="btn-primary" onClick={() => onApply(f)}>Apply</button>
-        </div>
-      </aside>
-    </div>
+    </Drawer>
   );
 }
 

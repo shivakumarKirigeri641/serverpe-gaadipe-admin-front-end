@@ -9,6 +9,7 @@ import { dateTime, ago } from '../../lib/format';
 import { Confirm } from '../vehicles/actions.jsx';
 import { num } from './common.jsx';
 import { ms } from '../vehicles/common.jsx';
+import { useRowChanges } from '../../lib/motion.jsx';
 
 /**
  * JOBS (user, 2026-09-25) — every background job: its state (RUNNING,
@@ -23,6 +24,7 @@ export default function Jobs() {
   const { can } = useSession();
   const may = allowed(can, 'system.manage');
   const [d, setD] = useState(null);
+  const flash = useRowChanges(d?.rows, (j) => j.name, (j) => `${j.status}:${j.last_run}`);
   const [error, setError] = useState(null);
   const [log, setLog] = useState(null);
   const [ask, setAsk] = useState(null);
@@ -35,7 +37,7 @@ export default function Jobs() {
         {error && !d ? <Failed error={error} onRetry={load} /> : !d ? <Skeleton rows={8} /> : !d.rows.length ? <Empty>No job has registered yet — they start with the server.</Empty> : (
           <Table head={<tr>{['Job', 'Status', 'Every', 'Last run', 'Next run', 'Duration', 'Processed', '24 h: runs · failed', 'Last error', ''].map((h, i) => <th key={i} className="th">{h}</th>)}</tr>}>
             {d.rows.map((j) => (
-              <tr key={j.name}>
+              <tr key={j.name} className={flash(j)}>
                 <td className="td"><div className="font-semibold text-ink">{j.label}</div><div className="text-2xs text-muted">{j.about || j.name}</div></td>
                 <td className="td"><Chip tone={TONE[j.status]}>{j.status}</Chip></td>
                 <td className="td tabular text-2xs">{j.every_s >= 3600 ? `${j.every_s / 3600} h` : j.every_s >= 60 ? `${j.every_s / 60} min` : `${j.every_s} s`}</td>

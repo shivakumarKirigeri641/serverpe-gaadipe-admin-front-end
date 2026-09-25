@@ -219,3 +219,15 @@ html[data-motion="reduced"] .m-dot-healthy, html[data-motion="reduced"] .m-dot-w
 tbody tr { transition: background-color var(--m-fast) ease; }
 /* A new row that is also a problem: it slides in and flashes amber. */
 .m-row-new.m-row-warn { animation: m-row-new var(--m-emph) var(--ease-out) both, m-highlight-warn 1.2s var(--ease-out) both; }
+/* The icon-button tooltip (IconTips.jsx): the tooltip's look, sized to its words. */
+.tip-body { display: block; padding: .3rem .55rem; border-radius: .5rem; border: 1px solid #e3ecea; background: #fff;
+  box-shadow: 0 8px 20px rgba(11,31,28,.12); font-size: 11.5px; line-height: 1.3; color: #41514e; white-space: nowrap;
+  animation: hint-in var(--m-fast) var(--ease-out); }
+/* Phones and small tablets: shorter, simpler motion — rows fade rather than
+   slide, groups arrive together, nothing large moves. */
+@media (max-width: 767px) {
+  :root { --m-slide: 12px; --m-rise: 3px; }
+  .m-row-new { animation: m-fade var(--m-fast) var(--ease-out) both, m-highlight 1s var(--ease-out) both; }
+  .m-stagger > * { animation-delay: 0ms; }
+  .m-grow-x { animation-duration: var(--m-normal); }
+}

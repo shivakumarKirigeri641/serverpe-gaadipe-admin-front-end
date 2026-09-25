@@ -6,6 +6,7 @@ import { usePeriod } from '../../components/Period.jsx';
 import { Chip, Failed, Skeleton, Empty, Table, Pager, PAGE_SIZE } from '../../components/ui.jsx';
 import { dateTime } from '../../lib/format';
 import { inr, ms, show } from './common.jsx';
+import { AnimatedAPIStatus } from '../../components/Status.jsx';
 
 /**
  * VEHICLE API LOGS (user, 2026-09-25) — every records-API call, newest first,
@@ -59,6 +60,7 @@ export default function ApiLogs() {
                   {openId === c.id && (
                     <tr className="bg-shell/40"><td /><td className="td" colSpan={9}>
                       <div className="grid gap-x-6 gap-y-1 text-2xs sm:grid-cols-3">
+                        <div className="sm:col-span-3"><AnimatedAPIStatus ok={c.ok} cached={c.cache_hit} ms={c.duration_ms} /></div>
                         {[['Dataset', c.dataset], ['Outcome', c.outcome], ['Served from cache', c.cache_hit ? 'Yes' : 'No'], ['Retries', 'Not recorded'],
                           ['Error code', c.error_code], ['Error', c.error_message]].map(([k, x]) => <div key={k}><span className="text-muted">{k}: </span>{show(x)}</div>)}
                       </div>

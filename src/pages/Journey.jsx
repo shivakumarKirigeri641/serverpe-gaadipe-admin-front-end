@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
 import { Hint, Failed, Empty, Chip, Skeleton } from '../components/ui.jsx';
 import { count, dateTime, date, mobile as fmtMobile, ago } from '../lib/format';
+import { JourneyStages } from '../components/Status.jsx';
 
 /**
  * CUSTOMER JOURNEY (user, 2026-09-25, command center phase 3).
@@ -121,6 +122,12 @@ export default function Journey() {
             <Touch title="Converted" note="The first payment, and the channel it happened in."
               t={data.attribution.conversion && { at: data.attribution.conversion.at, channel: data.attribution.conversion.channel, source: 'paid' }}
               empty="Not paid yet" />
+          </div>
+
+          {/* Where they got to, from their real events (motion system). */}
+          <div className="card mt-3 px-4 py-3">
+            <div className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted">Journey so far</div>
+            <JourneyStages items={data.items} />
           </div>
 
           {/* Team notes on this customer (operations module). */}

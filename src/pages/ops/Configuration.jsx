@@ -107,6 +107,12 @@ function EditDialog({ edit, onClose, onDone }) {
       <Field label={edit.kind === 'plan' ? 'Price in rupees, GST included' : edit.kind === 'gst' ? 'GST %' : 'Value'} hint={edit.kind === 'plan' ? `Now ${rs(edit.plan.price_paise)}. New checkouts use the new price; paid ones are unchanged.` : edit.item?.note || null}>
         <input className="input" autoFocus value={value} onChange={(e) => setValue(e.target.value)} inputMode="decimal" />
       </Field>
+      {edit.kind === 'plan' && value !== '' && Number(value) * 100 !== edit.plan.price_paise && Number.isFinite(Number(value)) && (
+        <div className="m-drop rounded-lg border border-watch-500/40 bg-watch-50 px-3 py-2 text-sm text-watch-700" role="alert">
+          <div>Current: <b>{rs(edit.plan.price_paise)}</b> → New: <b>{rs(Math.round(Number(value) * 100))}</b></div>
+          <div className="text-2xs">Impact: every new checkout is charged the new price from now on. Payments already made are unchanged.</div>
+        </div>
+      )}
       {edit.kind === 'gst' && <Field label="From (IST date)"><input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>}
       {err && <p className="text-sm text-wrong-700">{err}</p>}
     </Modal>

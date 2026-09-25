@@ -7,6 +7,8 @@ import { Chip, Failed, Skeleton, Empty, Table, Pager, Modal, Field, Banner } fro
 import { snack } from '../../components/Live.jsx';
 import { dateTime, ago } from '../../lib/format';
 import { rs, num } from './common.jsx';
+import { useRowChanges } from '../../lib/motion.jsx';
+import { CopyButton } from '../../components/ui.jsx';
 
 /**
  * PAYMENT RECONCILIATION (user, 2026-09-25) — GaadiPe's payment records
@@ -28,6 +30,7 @@ export default function Reconciliation() {
   const [filter, setFilter] = useState('problems');
   const [page, setPage] = useState(1);
   const [d, setD] = useState(null);
+  const flash = useRowChanges(d?.rows);
   const [error, setError] = useState(null);
   const [days, setDays] = useState(7);
   const [review, setReview] = useState(null);
@@ -87,11 +90,11 @@ export default function Reconciliation() {
           <>
             <Table head={<tr>{['Result', 'Internal ID', 'Order', 'Gateway payment', 'Customer', 'Vehicle', 'Amount', 'Gateway amount', 'Status (ours / theirs)', 'Refund', 'Webhook', 'Created', 'Reviewed', ''].map((h, i) => <th key={i} className="th">{h}</th>)}</tr>}>
               {d.rows.map((x) => (
-                <tr key={x.id}>
+                <tr key={x.id} className={flash(x)}>
                   <td className="td"><Chip tone={RESULT[x.result]?.[1]} note={x.detail?.note}>{RESULT[x.result]?.[0] || x.result}</Chip></td>
                   <td className="td font-mono text-2xs">{x.payment_row_id ? `#${x.payment_row_id}` : '—'}</td>
                   <td className="td font-mono text-2xs">{x.order_id || '—'}</td>
-                  <td className="td font-mono text-2xs">{x.gateway_payment_id || '—'}</td>
+                  <td className="td font-mono text-2xs">{x.gateway_payment_id || '—'}{x.gateway_payment_id && <CopyButton value={x.gateway_payment_id} label="Copy payment ID" className="ml-1 align-middle" />}</td>
                   <td className="td font-mono">{x.mobile || '—'}</td>
                   <td className="td font-mono">{x.reg_no ? <Link className="text-brand-deep hover:underline" to={`/vehicles/${x.reg_no}#payments`}>{x.reg_no}</Link> : '—'}</td>
                   <td className="td tabular">{x.internal_amount == null ? '—' : rs(x.internal_amount)}</td>

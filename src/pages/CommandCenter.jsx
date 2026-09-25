@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
-import { motionLevel } from '../lib/motion.jsx';
+import { motionLevel, AnimatedNumber } from '../lib/motion.jsx';
 import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
 import { Hint, Modal, Table, Failed, SkeletonCards, Empty, Chip, saveBlob } from '../components/ui.jsx';
@@ -207,7 +207,7 @@ export function Funnel({ stages, compare, onOpen }) {
                 style={{ width: `${Math.max(s.n / most * 100, s.n ? 2 : 0)}%`, transition: 'width .5s cubic-bezier(.2,.7,.3,1)', transitionDelay: `${i * 40}ms` }} />
             )}
           </div>
-          <div className="tabular w-12 shrink-0 text-right text-sm font-semibold text-ink">{s.n == null ? '—' : count(s.n)}</div>
+          <div className="tabular w-12 shrink-0 text-right text-sm font-semibold text-ink">{s.n == null ? '—' : <AnimatedNumber value={s.n} />}</div>
           <Hint right note={s.conversion_pct == null ? null
             : `${s.conversion_pct}% of “${s.from_stage}” reached this stage; ${s.drop_pct}% did not.`}>
             <div className="w-24 shrink-0 text-right text-2xs">

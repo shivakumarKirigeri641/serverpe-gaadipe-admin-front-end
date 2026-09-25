@@ -3,6 +3,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { ConnectionStatus, RefreshButton } from './HeaderStatus.jsx';
 import { Hint } from './ui.jsx';
 import { onBusyChange } from '../lib/api';
+import IconTips from './IconTips.jsx';
 import { useSession, allowed } from '../lib/session';
 import { BusyBar } from './ui.jsx';
 import { useLive, Toasts } from './Live.jsx';
@@ -306,6 +307,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
         <main className="m-enter px-4 py-5 lg:px-6">{children}</main>
       </div>
       <Toasts />
+      <IconTips />
     </div>
   );
 }

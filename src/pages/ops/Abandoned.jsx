@@ -6,6 +6,7 @@ import Shell from '../../components/Shell.jsx';
 import { Failed, Skeleton, Empty, Table, Pager, Banner, Chip } from '../../components/ui.jsx';
 import { dateTime, ago } from '../../lib/format';
 import { rs } from './common.jsx';
+import { useRowChanges } from '../../lib/motion.jsx';
 
 /**
  * ABANDONED PAYMENTS (user, 2026-09-25) — people who started paying and did
@@ -21,6 +22,7 @@ export default function Abandoned() {
   const [win, setWin] = useState('today');
   const [page, setPage] = useState(1);
   const [d, setD] = useState(null);
+  const flash = useRowChanges(d?.rows);
   const [error, setError] = useState(null);
   const load = useCallback(async () => { try { setError(null); setD(await api.abandoned({ window: win, limit: SIZE, offset: (page - 1) * SIZE })); } catch (e) { setError(e); } }, [win, page]);
   useEffect(() => { load(); }, [load]);
@@ -35,7 +37,7 @@ export default function Abandoned() {
           <>
             <Table head={<tr>{['Customer', 'Vehicle', 'Amount', 'Payment', 'Started', 'Last activity', 'Source · campaign', 'Channel', 'Reason', 'Since', ''].map((h, i) => <th key={i} className="th">{h}</th>)}</tr>}>
               {d.rows.map((x) => (
-                <tr key={x.id}>
+                <tr key={x.id} className={flash(x)}>
                   <td className="td font-mono">{x.mobile || '—'}</td>
                   <td className="td font-mono">{x.reg_no ? <Link className="text-brand-deep hover:underline" to={`/vehicles/${x.reg_no}`}>{x.reg_no}</Link> : '—'}</td>
                   <td className="td tabular">{rs(x.amount_paise)}</td>

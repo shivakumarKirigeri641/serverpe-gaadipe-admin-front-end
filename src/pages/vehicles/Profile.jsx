@@ -4,9 +4,10 @@ import { api, quietly } from '../../lib/api';
 import { useSession, allowed } from '../../lib/session';
 import { useAutoRefresh } from '../../lib/useAutoRefresh';
 import Shell from '../../components/Shell.jsx';
-import { Chip, Hint, Failed, Skeleton, Empty, Table, Modal, Banner, openBlob, saveBlob } from '../../components/ui.jsx';
+import { Chip, Hint, Failed, Skeleton, Empty, Table, Modal, Banner, openBlob, saveBlob, CopyButton } from '../../components/ui.jsx';
 import { snack } from '../../components/Live.jsx';
 import { count, dateTime, ago } from '../../lib/format';
+import { AnimatedAPIStatus } from '../../components/Status.jsx';
 import {
   NA, show, inr, ms, day, DOC_STATE, DOC_NOTE, docWords, PAY_TONE, PAY_WORD, CHANNEL, TAG_WORD, Section, useVehicleMeta, copy, linkTo,
 } from './common.jsx';
@@ -190,7 +191,7 @@ function Header({ p, may, open }) {
     <div className="card overflow-hidden">
       <div className="flex flex-wrap items-start gap-4 border-b border-line px-5 py-4">
         <div className="min-w-0 flex-1">
-          <div className="font-mono text-2xl font-bold tracking-wide text-ink">{v.display}</div>
+          <div className="flex items-center gap-1.5 font-mono text-2xl font-bold tracking-wide text-ink">{v.display}<CopyButton value={v.reg_no} label="Copy vehicle number" /></div>
           <div className="mt-0.5 text-sm text-body">
             {[v.maker, v.model, v.fuel, v.vehicle_class].filter(Boolean).join(' · ') || 'Vehicle details not returned yet'}
             <span className="text-muted"> · Variant: not returned by the records API</span>
@@ -587,7 +588,7 @@ function Reports({ rows }) {
       <Table head={<tr>{['Report', 'Generated', 'Channel', 'Customer', 'Type', 'Payment', 'Delivery', 'Status', ''].map((h, i) => <th key={i} className="th">{h}</th>)}</tr>}>
         {rows.map((r) => (
           <tr key={r.id}>
-            <td className="td font-mono text-2xs">{r.report_number}</td>
+            <td className="td font-mono text-2xs">{r.report_number}<CopyButton value={r.report_number} label="Copy report ID" className="ml-1 align-middle" /></td>
             <td className="td whitespace-nowrap">{dateTime(r.created_at)}</td>
             <td className="td">{CHANNEL[r.channel] || r.channel}</td>
             <td className="td font-mono">{r.customer || '—'}</td>
@@ -640,6 +641,7 @@ function ApiHistory({ rows, reg }) {
             {openId === c.id && (
               <tr className="bg-shell/40"><td /><td className="td" colSpan={10}>
                 <div className="grid gap-x-6 gap-y-1 text-2xs sm:grid-cols-3">
+                  <div className="sm:col-span-3"><AnimatedAPIStatus ok={c.ok} cached={c.cache_hit} ms={c.duration_ms} /></div>
                   {[['Dataset', c.dataset], ['Outcome', c.outcome], ['Served from cache', c.cache_hit ? 'Yes' : 'No'], ['Error code', c.error_code], ['Error', c.error]]
                     .map(([k, x]) => <div key={k}><span className="text-muted">{k}: </span>{show(x)}</div>)}
                 </div>
@@ -663,6 +665,7 @@ function Timeline({ events }) {
   const [only, setOnly] = useState('all');
   const strands = [...new Set(events.map((e) => e.strand))];
   const list = folded(events.filter((e) => only === 'all' || e.strand === only));
+  const [openEv, setOpenEv] = useState(null);
   if (!events.length) return <Empty>No events recorded for this vehicle.</Empty>;
   return (
     <div className="p-4">
@@ -673,9 +676,10 @@ function Timeline({ events }) {
           </button>
         ))}
       </div>
-      <ol className="relative space-y-2 border-l border-line pl-4">
-        {list.map((e) => (
-          <li key={e.id} className="relative">
+      <ol className="m-stagger relative space-y-2 border-l border-line pl-4">
+        {list.map((e, idx) => (
+          <li key={e.id} className="relative cursor-pointer rounded-md transition-colors duration-150 hover:bg-shell/60" style={{ '--i': idx }}
+            onClick={() => setOpenEv(openEv === e.id ? null : e.id)} aria-expanded={openEv === e.id}>
             <span className={`absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full ring-2 ring-white ${STRAND[e.strand]?.[1] || 'bg-muted'}`} />
             <div className="flex flex-wrap items-baseline gap-x-2 text-sm">
               <span className="tabular text-2xs text-muted">{dateTime(e.at)}</span>
@@ -685,6 +689,14 @@ function Timeline({ events }) {
                   e.status, e.duration_ms != null && ms(e.duration_ms), e.amount_paise != null && inr(e.amount_paise), e.report_number].filter(Boolean).join(' · ')}
               </span>
             </div>
+            {openEv === e.id && (
+              <div className="m-drop mt-1 grid gap-x-4 gap-y-0.5 rounded-md bg-shell/60 px-2 py-1.5 text-2xs sm:grid-cols-3">
+                {[['Event', e.name], ['Channel', CHANNEL[e.channel] || e.channel], ['Customer', e.customer], ['Browser', e.visitor], ['Source', e.source],
+                  ['Campaign', e.campaign], ['Status', e.status], ['Error', e.error_code], ['Took', e.duration_ms != null ? ms(e.duration_ms) : null],
+                  ['Payment', e.payment_id ? `#${e.payment_id}` : null], ['Report', e.report_number], ['Page', e.page]]
+                  .filter(([, v]) => v != null && v !== '').map(([k, v]) => <div key={k}><span className="text-muted">{k}: </span>{v}</div>)}
+              </div>
+            )}
           </li>
         ))}
       </ol>

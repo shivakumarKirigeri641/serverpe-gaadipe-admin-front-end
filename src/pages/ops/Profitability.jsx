@@ -6,11 +6,12 @@ import { api } from '../../lib/api';
 import { useSession, allowed } from '../../lib/session';
 import Shell from '../../components/Shell.jsx';
 import { usePeriod } from '../../components/Period.jsx';
-import { Chip, Failed, Skeleton, SkeletonCards, Empty, Table, Pager, Modal, Hint, saveBlob } from '../../components/ui.jsx';
+import { Chip, Failed, Skeleton, SkeletonCards, Empty, Table, Pager, Modal, Hint, saveBlob, CopyButton } from '../../components/ui.jsx';
 import { snack } from '../../components/Live.jsx';
 import { dateTime } from '../../lib/format';
 import { rs, num, NO_DATA } from './common.jsx';
 import { EntityNotes } from './Notes.jsx';
+import { AnimatedPaymentStatus, AnimatedReportStatus } from '../../components/Status.jsx';
 
 /**
  * PROFITABILITY (user, 2026-09-25): what each report earns after GST, the
@@ -196,6 +197,10 @@ export function TransactionModal({ id, onClose }) {
     <Modal wide title={`Transaction #${id}`} subtitle={e ? `${dateTime(e.paid_at || e.created_at)} · ${e.kind === 'free' ? 'free report' : e.status}` : ' '} onClose={onClose}>
       {error ? <Failed error={error} /> : !d ? <Skeleton rows={6} /> : (
         <div className="grid gap-4 lg:grid-cols-2">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-line px-3 py-2 lg:col-span-2">
+            <AnimatedPaymentStatus status={d.payment.status} createdAt={d.payment.created_at} failed={Boolean(d.payment.error_code) || d.events.some((x) => x.name === 'payment_failed')} />
+            {e.kind === 'paid' && <AnimatedReportStatus events={d.events} report={d.report} />}
+          </div>
           <div className="rounded-xl border border-line p-3">
             <div className="mb-1 text-2xs font-semibold uppercase tracking-wider text-muted">Where the money went</div>
             {line('Gross customer payment', rs(e.gross_paise))}
@@ -216,7 +221,7 @@ export function TransactionModal({ id, onClose }) {
                 ['Gateway status', d.payment.gateway_status], ['Invoice', d.invoice?.invoice_number], ['Report', d.report?.report_number],
                 ['Customer', e.mobile], ['Vehicle', e.reg_no], ['First touch', e.first_touch ? [e.first_touch.source, e.first_touch.campaign].filter(Boolean).join(' · ') : 'Direct (no website visit)'],
                 ['Last touch', e.last_touch ? [e.last_touch.source, e.last_touch.campaign].filter(Boolean).join(' · ') : '—'], ['Conversion channel', e.channel]]
-                .map(([k, v]) => <div key={k} className="flex justify-between gap-2 py-0.5"><span className="text-2xs text-muted">{k}</span><span className="text-right font-mono text-2xs">{v || NO_DATA}</span></div>)}
+                .map(([k, v]) => <div key={k} className="flex justify-between gap-2 py-0.5"><span className="text-2xs text-muted">{k}</span><span className="flex items-center gap-1 text-right font-mono text-2xs">{v || NO_DATA}{v && /ID|Invoice|Report|Vehicle/.test(k) && <CopyButton value={v} label={`Copy ${k.toLowerCase()}`} />}</span></div>)}
             </div>
             <div className="flex flex-wrap gap-2">
               {e.reg_no && <Link className="btn-quiet !py-1 text-2xs" to={`/vehicles/${e.reg_no}#payments`}>Vehicle</Link>}

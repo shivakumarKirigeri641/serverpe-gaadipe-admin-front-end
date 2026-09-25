@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
 import { Hint, Failed, Empty, Chip, Skeleton } from '../components/ui.jsx';
@@ -98,6 +98,16 @@ export default function Journey() {
                 <span>Bot state <b className="text-ink">{p.state || '—'}</b></span>
                 <span>Browsers <b className="text-ink">{p.visitors.length || 'none linked'}</b></span>
               </div>
+              {/* Lifetime (operations module, 2026-09-25). */}
+              {p.searches != null && (
+                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-2xs text-muted">
+                  <span>Searches <b className="text-ink">{count(p.searches)}</b> ({count(p.unique_vehicles)} different)</span>
+                  <span>Days active <b className="text-ink">{count(p.days_active)}</b></span>
+                  <span>Payment failures <b className={p.payment_failures ? 'text-wrong-700' : 'text-ink'}>{count(p.payment_failures)}</b></span>
+                  <span>Last vehicle <b className="text-ink">{p.last_vehicle ? <Link className="text-brand-deep hover:underline" to={`/vehicles/${p.last_vehicle}`}>{p.last_vehicle}</Link> : '—'}</b></span>
+                  <span>Last channel <b className="text-ink">{p.last_channel === 'web' ? 'Website' : p.last_channel === 'whatsapp' ? 'WhatsApp' : '—'}</b></span>
+                </div>
+              )}
             </div>
             <Stat label="Spent" value={inr(p.spent_paise)} sub={`${count(p.payments)} payment${p.payments === 1 ? '' : 's'}`} />
             <Stat label="Vehicles · reports" value={`${count(p.vehicles)} · ${count(p.reports)}`} sub="checked · full reports" />

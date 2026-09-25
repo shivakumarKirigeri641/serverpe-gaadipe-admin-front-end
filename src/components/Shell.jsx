@@ -56,6 +56,10 @@ const NAV = [
     items: [
       { to: '/customers', label: 'Customers', icon: UsersIcon },
       { to: '/journey', label: 'Customer journey', icon: PulseIcon },
+      { to: '/customer-intelligence', label: 'Customer intelligence', icon: UsersIcon, cap: 'customers.view' },
+      { to: '/retention', label: 'Retention & repeat', icon: ChartIcon, cap: 'customers.view' },
+      { to: '/attribution', label: 'Campaigns & attribution', icon: SendIcon, cap: 'customers.view' },
+      { to: '/drop-off', label: 'Conversion drop-off', icon: ChartIcon },
       { to: '/lookups', label: 'Vehicle lookups', icon: SearchIcon },
       { to: '/check', label: 'Check a vehicle', icon: SearchIcon, cap: 'lookup' },
     ],

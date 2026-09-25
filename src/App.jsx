@@ -33,6 +33,10 @@ import Reconciliation from './pages/ops/Reconciliation.jsx';
 import PaymentFailures from './pages/ops/PaymentFailures.jsx';
 import Abandoned from './pages/ops/Abandoned.jsx';
 import Refunds from './pages/ops/Refunds.jsx';
+import DropOff from './pages/ops/DropOff.jsx';
+import CustomerIntel from './pages/ops/CustomerIntel.jsx';
+import Retention from './pages/ops/Retention.jsx';
+import Attribution from './pages/ops/Attribution.jsx';
 import VehicleProfile from './pages/vehicles/Profile.jsx';
 import VehicleLists from './pages/vehicles/Lists.jsx';
 import VehicleInsights from './pages/vehicles/Insights.jsx';
@@ -82,6 +86,10 @@ export default function App() {
       <Route path="/payments/failures" element={<PaymentFailures />} />
       <Route path="/payments/abandoned" element={<Abandoned />} />
       <Route path="/payments/refunds" element={<Refunds />} />
+      <Route path="/drop-off" element={<DropOff />} />
+      <Route path="/customer-intelligence" element={<CustomerIntel />} />
+      <Route path="/retention" element={<Retention />} />
+      <Route path="/attribution" element={<Attribution />} />
       <Route path="/overview" element={<Home />} />
       <Route path="/journey" element={<Journey />} />
       <Route path="/whatsapp" element={<WhatsAppCenter />} />

@@ -186,7 +186,7 @@ function Kpi({ k, compareLabel, delay, onOpen, onOpenPrevious }) {
 
 /* ──────────────────────────────────────────────── funnel ── */
 
-function Funnel({ stages, compare, onOpen }) {
+export function Funnel({ stages, compare, onOpen }) {
   const most = Math.max(1, ...stages.map((s) => s.n || 0));
   return (
     <div className="divide-y divide-line">
@@ -343,7 +343,7 @@ function Counter({ label, note, v, bad = false }) {
 
 /* ──────────────────────────────────────────────── drill-down ── */
 
-function Drill({ drill, params, onClose }) {
+export function Drill({ drill, params, onClose }) {
   const navigate = useNavigate();
   const [out, setOut] = useState(null);
   const [error, setError] = useState(null);

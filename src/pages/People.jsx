@@ -16,10 +16,12 @@ import { useSession } from '../lib/session';
  * takes effect when they close the tab is not disabled.
  */
 const ROLES = [
-  ['owner', 'Owner', 'Everything, including adding and removing panel users.'],
+  ['owner', 'Owner (super admin)', 'Everything, including adding and removing panel users.'],
   ['admin', 'Admin', 'Everything except managing panel users.'],
-  ['finance', 'Finance', 'Money, invoices and reports. No settings, no blocking.'],
-  ['viewer', 'Viewer', 'Read-only. Cannot change anything or look a vehicle up.'],
+  ['operations', 'Operations', 'Runs the service: settings, blocking, vehicle checks. No money.'],
+  ['finance', 'Finance', "Money, invoices and reports. Customers' mobiles are masked."],
+  ['support', 'Support', 'Helps customers: reads everything and can check a vehicle. Changes nothing.'],
+  ['viewer', 'Read only', "Read-only, customers' mobiles masked. Cannot change anything or look a vehicle up."],
 ];
 
 export default function People() {

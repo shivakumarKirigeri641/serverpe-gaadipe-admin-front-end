@@ -44,6 +44,8 @@ export default function CommandCenter() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [drill, setDrill] = useState(null);
+  const [layout, setLayout] = useLayout();
+  const [customizing, setCustomizing] = useState(false);
 
   const params = range === 'custom' ? { range, compare, from, to } : { range, compare };
 
@@ -84,24 +86,34 @@ export default function CommandCenter() {
           </select>
           <button className="btn-quiet !py-1.5 text-2xs" onClick={load} disabled={busy}>{busy ? 'Refreshing…' : 'Refresh'}</button>
           {data && <ExportMenu range={data.range} />}
+          <button className="btn-quiet !py-1.5 text-2xs" onClick={() => setCustomizing((v) => !v)}>Customise</button>
         </>
       }>
 
-      <LiveNow />
+      {customizing && <Customize layout={layout} setLayout={setLayout} kpis={data?.kpis || []} onClose={() => setCustomizing(false)} />}
 
-      {error && !data ? <Failed error={error} onRetry={load} /> : !data ? <SkeletonCards n={8} /> : (
-        <>
-          {/* ─────────────────────────────── the KPIs ── */}
-          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-            {data.kpis.map((k, i) => (
+      {/* On a phone: the six numbers that matter, before anything else (phase 7). */}
+      {data && <MobileSummary data={data} />}
+
+      {layout.order.map((block) => {
+        if (layout.hidden.includes(block)) return null;
+        if (block === 'live') return <LiveNow key="live" />;
+        if (!data) return error ? <Failed key={block} error={error} onRetry={load} /> : <SkeletonCards key={block} n={8} />;
+        if (block === 'kpis') return (
+          <div key="kpis" className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+            {data.kpis.filter((k) => !layout.hiddenKpis.includes(k.key)).map((k, i) => (
               <Kpi key={k.key} k={k} compareLabel={data.compare?.label} delay={i}
                 onOpen={() => open(k.drill, k.label)} onOpenPrevious={() => open(k.drill, `${k.label} — ${data.compare?.label || 'previous'}`, true)} />
             ))}
           </div>
-
-          <div className="mt-4 grid gap-4 xl:grid-cols-3">
+        );
+        const showJourney = !layout.hidden.includes('journey');
+        const showMoney = !layout.hidden.includes('money');
+        if (block !== 'flow' || (!showJourney && !showMoney)) return null;
+        return (
+          <div key="flow" className="mt-4 grid gap-4 xl:grid-cols-3">
             {/* ─────────────────────────────── the journey ── */}
-            <div className="card xl:col-span-2">
+            {showJourney && <div className={`card ${showMoney ? 'xl:col-span-2' : 'xl:col-span-3'}`}>
               <div className="flex items-center justify-between border-b border-line px-4 py-3">
                 <div>
                   <h2 className="text-sm font-semibold text-ink">The customer journey</h2>
@@ -109,19 +121,19 @@ export default function CommandCenter() {
                 </div>
               </div>
               <Funnel stages={data.funnel} compare={data.compare} onOpen={(s) => open(s.drill, s.label)} />
-            </div>
+            </div>}
 
             {/* ─────────────────────────────── the money ── */}
-            <div className="card">
+            {showMoney && <div className={`card ${showJourney ? '' : 'xl:col-span-3'}`}>
               <div className="border-b border-line px-4 py-3">
                 <h2 className="text-sm font-semibold text-ink">What is left</h2>
                 <p className="text-2xs text-muted">From what customers paid, worked out by the server</p>
               </div>
               <Money m={data.money} compareLabel={data.compare?.label} onOpen={() => open('payment_success', 'Payments')} />
-            </div>
+            </div>}
           </div>
-        </>
-      )}
+        );
+      })}
 
       {drill && (
         <Drill drill={drill} params={params} onClose={() => setDrill(null)} />
@@ -375,6 +387,105 @@ function Drill({ drill, params, onClose }) {
         <p className="px-4 py-2 text-2xs text-muted">Showing the latest {count(out.rows.length)} of {count(out.total)}.</p>
       )}
     </Modal>
+  );
+}
+
+/* ─────────────────────────────────────────── personalisation (phase 7) ── */
+
+const BLOCKS = { live: 'Live now', kpis: 'KPI cards', flow: 'Journey & money' };
+const PARTS = { live: 'Live now', kpis: 'KPI cards', journey: 'The customer journey', money: 'What is left' };
+const DEFAULT_LAYOUT = { order: ['live', 'kpis', 'flow'], hidden: [], hiddenKpis: [] };
+const LAYOUT_KEY = 'gp.cc.layout';
+
+/** Which blocks show, in what order, and which KPI cards — per browser. */
+function useLayout() {
+  const [layout, set] = useState(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem(LAYOUT_KEY) || 'null');
+      if (v && Array.isArray(v.order) && v.order.length === DEFAULT_LAYOUT.order.length) return { ...DEFAULT_LAYOUT, ...v };
+    } catch { /* private window or an old value */ }
+    return DEFAULT_LAYOUT;
+  });
+  const save = (v) => {
+    set(v);
+    try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(v)); } catch { /* private window */ }
+  };
+  return [layout, save];
+}
+
+function Customize({ layout, setLayout, kpis, onClose }) {
+  const toggle = (list, key) => (layout[list].includes(key) ? layout[list].filter((x) => x !== key) : [...layout[list], key]);
+  const move = (i, d) => {
+    const o = [...layout.order]; const j = i + d;
+    if (j < 0 || j >= o.length) return;
+    [o[i], o[j]] = [o[j], o[i]];
+    setLayout({ ...layout, order: o });
+  };
+  return (
+    <div className="card fade mb-4 p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-ink">Customise this screen</h2>
+        <div className="flex gap-2">
+          <button className="btn-quiet !py-1 text-2xs" onClick={() => setLayout(DEFAULT_LAYOUT)}>Reset</button>
+          <button className="btn-primary !py-1 text-2xs" onClick={onClose}>Done</button>
+        </div>
+      </div>
+      <p className="mt-1 text-2xs text-muted">Saved in this browser. The period you pick is remembered too.</p>
+      <div className="mt-3 grid gap-4 md:grid-cols-3">
+        <div>
+          <div className="text-2xs font-semibold uppercase tracking-wider text-muted">Order</div>
+          {layout.order.map((b, i) => (
+            <div key={b} className="mt-1 flex items-center justify-between rounded border border-line px-2 py-1 text-sm">
+              <span>{BLOCKS[b]}</span>
+              <span className="flex gap-1">
+                <button className="btn-quiet !px-1.5 !py-0 text-2xs" disabled={!i} onClick={() => move(i, -1)} aria-label="Move up">↑</button>
+                <button className="btn-quiet !px-1.5 !py-0 text-2xs" disabled={i === layout.order.length - 1} onClick={() => move(i, 1)} aria-label="Move down">↓</button>
+              </span>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div className="text-2xs font-semibold uppercase tracking-wider text-muted">Show</div>
+          {Object.entries(PARTS).map(([k, l]) => (
+            <label key={k} className="mt-1 flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={!layout.hidden.includes(k)} onChange={() => setLayout({ ...layout, hidden: toggle('hidden', k) })} /> {l}
+            </label>
+          ))}
+        </div>
+        <div>
+          <div className="text-2xs font-semibold uppercase tracking-wider text-muted">KPI cards</div>
+          <div className="mt-1 grid grid-cols-2 gap-x-2">
+            {kpis.map((k) => (
+              <label key={k.key} className="flex items-center gap-1.5 text-2xs">
+                <input type="checkbox" checked={!layout.hiddenKpis.includes(k.key)}
+                  onChange={() => setLayout({ ...layout, hiddenKpis: toggle('hiddenKpis', k.key) })} /> {k.label}
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* A phone gets the six numbers that matter first; the rest follows below. */
+function MobileSummary({ data }) {
+  const k = Object.fromEntries(data.kpis.map((x) => [x.key, x]));
+  const num = (v) => (v == null ? '—' : count(v));
+  const cells = [
+    ['Revenue', inr(k.revenue_paise?.value)], ['Payments', num(k.paid?.value)],
+    ['Reports', num(k.reports?.value)], ['Visitors', num(k.visitors?.value)],
+    ['WhatsApp', num(k.chatting?.value)], ['Net', inr(k.net_paise?.value)],
+  ];
+  return (
+    <div className="card mb-3 grid grid-cols-3 gap-2 p-3 md:hidden">
+      {cells.map(([l, v]) => (
+        <div key={l}>
+          <div className="text-[10px] uppercase tracking-wider text-muted">{l}</div>
+          <div className="tabular text-base font-bold text-ink">{v}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 

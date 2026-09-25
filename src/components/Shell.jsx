@@ -25,6 +25,7 @@ const NAV = [
       { to: '/live', label: 'Live', icon: PulseIcon },
       { to: '/alerts', label: 'Alerts', icon: BellIcon, badge: 'alerts' },
       { to: '/analytics', label: 'Analytics', icon: ChartIcon },
+      { to: '/where', label: 'Where', icon: CarIcon },
     ],
   },
   {
@@ -43,7 +44,6 @@ const NAV = [
       { to: '/payments', label: 'Payments', icon: RupeeIcon, cap: 'money', badge: 'payments' },
       { to: '/finance', label: 'Revenue & GST', icon: RupeeIcon, cap: 'money' },
       { to: '/documents', label: 'Reports & invoices', icon: DocIcon },
-      { to: '/referrals', label: 'Referrals', icon: UsersIcon },
       { to: '/free-reports', label: 'Free reports', icon: GiftIcon },
     ],
   },

@@ -29,6 +29,7 @@ const NAV = [
     group: 'Customers',
     items: [
       { to: '/customers', label: 'Customers', icon: UsersIcon },
+      { to: '/journey', label: 'Customer journey', icon: PulseIcon },
       { to: '/vehicles', label: 'Vehicles', icon: CarIcon },
       { to: '/check', label: 'Check a vehicle', icon: SearchIcon, cap: 'lookup' },
     ],

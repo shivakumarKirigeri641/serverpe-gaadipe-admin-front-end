@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
-import { Hint, Modal, Table, Failed, SkeletonCards, Empty, Chip } from '../components/ui.jsx';
+import { Hint, Modal, Table, Failed, SkeletonCards, Empty, Chip, saveBlob } from '../components/ui.jsx';
 import { count, dateTime, mobile as fmtMobile, ago } from '../lib/format';
 
 /**
@@ -82,6 +83,7 @@ export default function CommandCenter() {
             {COMPARES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
           <button className="btn-quiet !py-1.5 text-2xs" onClick={load} disabled={busy}>{busy ? 'Refreshing…' : 'Refresh'}</button>
+          {data && <ExportMenu range={data.range} />}
         </>
       }>
 
@@ -330,6 +332,7 @@ function Counter({ label, note, v, bad = false }) {
 /* ──────────────────────────────────────────────── drill-down ── */
 
 function Drill({ drill, params, onClose }) {
+  const navigate = useNavigate();
   const [out, setOut] = useState(null);
   const [error, setError] = useState(null);
   useEffect(() => {
@@ -346,7 +349,11 @@ function Drill({ drill, params, onClose }) {
             <tr>{['When', 'What', 'Who', 'Vehicle', 'Source', 'Amount', 'Status'].map((h) => <th key={h} className="th">{h}</th>)}</tr>
           }>
             {out.rows.map((e) => (
-              <tr key={e.id}>
+              <tr key={e.id}
+                className={e.mobile || e.visitor_id ? 'cursor-pointer hover:bg-shell/70' : ''}
+                title={e.mobile || e.visitor_id ? "Open this person's journey" : undefined}
+                onClick={() => (e.mobile ? navigate(`/journey?mobile=${e.mobile}`)
+                  : e.visitor_id ? navigate(`/journey?visitor=${e.visitor_id}`) : null)}>
                 <td className="td tabular text-2xs text-muted">{dateTime(e.occurred_at)}</td>
                 <td className="td text-sm">{e.words}{e.page && e.channel === 'web' ? <span className="text-2xs text-muted"> · {e.page}</span> : null}</td>
                 <td className="td text-2xs">
@@ -368,6 +375,38 @@ function Drill({ drill, params, onClose }) {
         <p className="px-4 py-2 text-2xs text-muted">Showing the latest {count(out.rows.length)} of {count(out.total)}.</p>
       )}
     </Modal>
+  );
+}
+
+/* ──────────────────────────────────────────────── exports ── */
+
+const EXPORTS = [
+  ['events', 'All events'], ['customers', 'Customers'], ['payments', 'Payments'],
+  ['searches', 'Vehicle lookups'], ['api', 'API usage'], ['whatsapp', 'WhatsApp messages'],
+];
+/* IST calendar day of an instant, as YYYY-MM-DD. */
+const istDay = (t) => new Date(new Date(t).getTime() + 330 * 60000).toISOString().slice(0, 10);
+
+/** CSV for the period on screen. Every export is recorded in the audit trail. */
+function ExportMenu({ range }) {
+  const [busy, setBusy] = useState(false);
+  const go = async (kind) => {
+    if (!kind) return;
+    setBusy(true);
+    try {
+      const { blob, filename } = await api.exportCsv(kind, {
+        from: istDay(range.from), to: istDay(new Date(new Date(range.to).getTime() - 1)),
+      });
+      saveBlob(blob, filename);
+    } catch (e) { alert(e.message || 'Export failed.'); }
+    setBusy(false);
+  };
+  return (
+    <select className="input !w-auto !py-1.5 text-sm" value="" disabled={busy}
+      onChange={(e) => go(e.target.value)} title="Download a CSV for this period">
+      <option value="">{busy ? 'Exporting…' : 'Export CSV…'}</option>
+      {EXPORTS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+    </select>
   );
 }
 

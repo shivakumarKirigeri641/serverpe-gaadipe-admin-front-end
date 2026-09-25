@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { rupees, count, mobile as fmtMobile, plate, dateTime, ago, daysTo, date, duration } from '../lib/format';
@@ -19,7 +20,19 @@ import { useSession, allowed } from '../lib/session';
  * The detail comes back in ONE request, because a panel that fetches a person
  * and then asks eight follow-up questions makes the reader wait eight times.
  */
+/* Who to look at (phase 3) — the back end holds what each one means. */
+const SEGMENTS = [
+  ['new', 'New (last 7 days)'], ['returning', 'Returning'], ['paid', 'Paid'], ['unpaid', 'Never paid'],
+  ['wa_active', 'WhatsApp active (24 h)'], ['wa_inactive', 'WhatsApp quiet'],
+  ['pay_failed', 'Payment not completed'], ['suspicious', 'Worth a look'],
+];
+const WA_STATUS = {
+  active: ['In window', 'good'], inactive: ['Quiet', 'info'], stopped: ['STOP', 'wrong'],
+};
+
 export default function Customers() {
+  const navigate = useNavigate();
+  const [exporting, setExporting] = useState(false);
   const [q, setQ] = useState('');
   const [sort, setSort] = useState('last_seen');
   const [filter, setFilter] = useState('all');
@@ -37,6 +50,7 @@ export default function Customers() {
       const params = { q, sort, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE };
       if (filter === 'paying') params.paying = 1;
       if (filter === 'blocked') params.blocked = 1;
+      if (SEGMENTS.some(([k]) => k === filter)) params.segment = filter;
       setData(await api.customers(params));
     } catch (e) { setError(e); }
   }, [q, sort, filter, page]);
@@ -66,9 +80,17 @@ export default function Customers() {
           </select>
           <select className="input !w-auto !py-1.5 text-sm" value={filter} onChange={(e) => setFilter(e.target.value)}>
             <option value="all">Everyone</option>
-            <option value="paying">Paying now</option>
+            {SEGMENTS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            <option value="paying">Monitoring active</option>
             <option value="blocked">Blocked</option>
           </select>
+          <button className="btn-quiet !py-1.5 text-2xs" disabled={exporting} title="Every customer, as CSV (recorded in the audit trail)"
+            onClick={async () => {
+              setExporting(true);
+              try { const { blob, filename } = await api.exportCsv('customers', {}); saveBlob(blob, filename); }
+              catch (e) { alert(e.message || 'Export failed.'); }
+              setExporting(false);
+            }}>{exporting ? 'Exporting…' : 'Export CSV'}</button>
         </div>
       }>
 
@@ -85,6 +107,7 @@ export default function Customers() {
                 <th className="th">Reports</th>
                 <th className="th">Paid</th>
                 <th className="th">WhatsApp</th>
+                <th className="th">Came from</th>
                 <th className="th">Last seen</th>
                 <th className="th">State</th>
               </tr>
@@ -94,7 +117,11 @@ export default function Customers() {
                   onClick={() => setOpenId(r.id)}>
                   <td className="td">
                     <div className="font-semibold text-ink">{r.name || 'Unknown'}</div>
-                    <div className="tabular text-2xs text-muted">{fmtMobile(r.mobile)}</div>
+                    <div className="tabular text-2xs text-muted">
+                      {fmtMobile(r.mobile)}
+                      <button className="ml-2 text-brand-deep hover:underline" title="Everything this person did, in order"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/journey?mobile=${r.mobile}`); }}>Journey →</button>
+                    </div>
                   </td>
                   <td className="td tabular">{count(r.vehicles_checked)}</td>
                   <td className="td tabular">
@@ -124,6 +151,15 @@ export default function Customers() {
                         </span>
                       </Hint>
                     ) : <span className="text-muted">—</span>}
+                    {WA_STATUS[r.wa_status] && (
+                      <div className="mt-0.5"><Chip tone={WA_STATUS[r.wa_status][1]}>{WA_STATUS[r.wa_status][0]}</Chip></div>
+                    )}
+                  </td>
+                  <td className="td text-2xs">
+                    <Hint note="Where they first came from: a website visit's source, a WhatsApp ad, or straight to the WhatsApp number.">
+                      <span className="text-body">{String(r.first_source || '—').replace(/_/g, ' ')}</span>
+                    </Hint>
+                    {r.pay_failed && <div className="mt-0.5"><Chip tone="watch">Unfinished payment</Chip></div>}
                   </td>
                   <td className="td text-2xs text-muted">
                     <Hint note={dateTime(r.last_seen_at)}>

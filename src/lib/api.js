@@ -160,6 +160,10 @@ export const api = {
   commandOverview: (params) => call(`/command/overview${qs(params)}`, { quiet: true }),
   commandLive: (since) => call(`/command/live${qs({ since })}`, { quiet: true }),
   commandEvents: (params) => call(`/command/events${qs(params)}`),
+  // One person's whole journey, and CSV exports (phase 3). An export is a file,
+  // fetched like a PDF so the session token never sits in a URL.
+  journey: (params) => call(`/journey${qs(params)}`),
+  exportCsv: (kind, params) => pdf(`/export/${kind}${qs(params)}`),
   dashboard: () => call('/dashboard'),
   health: () => call('/health'),
   series: (params) => call(`/series${qs(params)}`),

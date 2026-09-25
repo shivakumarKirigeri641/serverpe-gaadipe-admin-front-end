@@ -5,6 +5,7 @@ import SignIn from './pages/SignIn.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Home from './pages/Home.jsx';
 import CommandCenter from './pages/CommandCenter.jsx';
+import Journey from './pages/Journey.jsx';
 import Conversations from './pages/Conversations.jsx';
 import Campaigns from './pages/Campaigns.jsx';
 import Customers from './pages/Customers.jsx';
@@ -56,6 +57,7 @@ export default function App() {
           "Needs you" list, stays as Overview. */}
       <Route path="/" element={<CommandCenter />} />
       <Route path="/overview" element={<Home />} />
+      <Route path="/journey" element={<Journey />} />
       {/* The old numbers screen keeps its place for anyone who wants it. */}
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/conversations" element={<Conversations />} />

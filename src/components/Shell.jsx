@@ -260,6 +260,12 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
   useLayoutEffect(() => {
     const el = navRef.current?.querySelector('[data-active="1"]');
     const next = el ? { top: el.offsetTop, height: el.offsetHeight } : null;
+    // The open screen's item is always in view inside the menu's own scroll.
+    const box = asideRef.current;
+    if (el && box) {
+      const top = el.offsetTop; const bottom = top + el.offsetHeight;
+      if (top < box.scrollTop || bottom > box.scrollTop + box.clientHeight) box.scrollTop = Math.max(0, top - box.clientHeight / 3);
+    }
     const raf = requestAnimationFrame(() => { setMarker(next); navMemory.marker = next; });
     return () => cancelAnimationFrame(raf);
   }, [pathname, search, collapsed, folded]);
@@ -268,9 +274,9 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
     <div className="min-h-screen lg:flex">
       <BusyBar />
 
-      <aside ref={asideRef} onScroll={(e) => { navMemory.scroll = e.currentTarget.scrollTop; }}
-        className={`fixed inset-y-0 left-0 z-40 w-60 shrink-0 overflow-y-auto overflow-x-hidden border-r border-line bg-white transition-[width,transform] duration-200 ease-out lg:static lg:translate-x-0 ${collapsed ? 'lg:w-16' : 'lg:w-60'} ${open ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex h-14 items-center gap-2.5 border-b border-line px-5">
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-60 shrink-0 flex-col overflow-hidden border-r border-line bg-white transition-[width,transform] duration-200 ease-out lg:sticky lg:top-0 lg:translate-x-0 ${collapsed ? 'lg:w-16' : 'lg:w-60'} ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-line px-5">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-brand text-xs font-bold text-white">GP</span>
           <div className={`leading-tight transition-opacity duration-150 ${collapsed ? 'lg:pointer-events-none lg:opacity-0' : ''}`}>
             <div className="text-sm font-semibold text-ink">GaadiPe</div>
@@ -286,7 +292,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
 
         {/* Search the menu (not the data — that is the header's search). */}
         {!collapsed && (
-          <div className="border-b border-line px-3 py-2.5">
+          <div className="shrink-0 border-b border-line px-3 py-2.5">
             <div className="relative">
               <input value={q} onChange={(e) => { setQ(e.target.value); setHit(0); }}
                 onKeyDown={(e) => {
@@ -309,6 +315,8 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
           </div>
         )}
 
+        {/* Only the menu scrolls — the logo and the search stay in view. */}
+        <div ref={asideRef} onScroll={(e) => { navMemory.scroll = e.currentTarget.scrollTop; }} className="nav-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
         <nav ref={navRef} className="relative px-3 py-3">
           {/* The active marker: one bar that glides to whichever item is open. */}
           {marker && <span aria-hidden="true" className="absolute left-1 w-1 rounded-full bg-brand transition-all duration-300 ease-out"
@@ -374,6 +382,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
             );
           })}
         </nav>
+        </div>
       </aside>
 
       {open && <div className="fixed inset-0 z-30 bg-ink/20 lg:hidden" onClick={() => setOpen(false)} />}

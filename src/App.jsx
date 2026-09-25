@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSession } from './lib/session';
 import SignIn from './pages/SignIn.jsx';
@@ -18,9 +18,13 @@ import Broadcast from './pages/Broadcast.jsx';
 import FreeReports from './pages/FreeReports.jsx';
 import Live from './pages/Live.jsx';
 import Vehicles from './pages/Vehicles.jsx';
-/* Charts are a third of the whole panel's weight and are opened rarely, so the
-   analytics screen is fetched only when somebody asks for it. */
-const Analytics = lazy(() => import('./pages/Analytics.jsx'));
+/* Imported like every other screen, NOT lazily (user, 2026-09-25). It used to
+   be lazy(() => import('./pages/Analytics.jsx')) to keep the charts out of the
+   first download — but the production obfuscator encodes that path string
+   before Vite sees it, so no chunk was built and the browser asked for
+   /assets/pages/Analytics.jsx, got index.html back, and the screen never
+   opened. Only production was affected: development is not obfuscated. */
+import Analytics from './pages/Analytics.jsx';
 import Finance from './pages/Finance.jsx';
 import Documents from './pages/Documents.jsx';
 import Check from './pages/Check.jsx';

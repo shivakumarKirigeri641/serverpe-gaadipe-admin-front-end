@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { EntityNotes } from './ops/Notes.jsx';
 import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
 import { Hint, Failed, Empty, Chip, Skeleton } from '../components/ui.jsx';
@@ -121,6 +122,15 @@ export default function Journey() {
               t={data.attribution.conversion && { at: data.attribution.conversion.at, channel: data.attribution.conversion.channel, source: 'paid' }}
               empty="Not paid yet" />
           </div>
+
+          {/* Team notes on this customer (operations module). */}
+          {p.user_id && (
+            <div className="card mt-3 p-4">
+              <div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-semibold text-ink">Team notes</h2>
+                <Link className="text-2xs text-brand hover:underline" to={`/tasks?new=1&type=customer&id=${p.user_id}`}>Add a task →</Link></div>
+              <EntityNotes type="customer" id={String(p.user_id)} />
+            </div>
+          )}
 
           {/* ─────────────────────────────── the timeline ── */}
           <div className="card mt-4">

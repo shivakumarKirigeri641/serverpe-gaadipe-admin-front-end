@@ -9,6 +9,7 @@ import { Chip, Failed, Skeleton, SkeletonCards, Empty, Table, Pager, Modal, Hint
 import { snack } from '../../components/Live.jsx';
 import { dateTime } from '../../lib/format';
 import { rs, num, NO_DATA } from './common.jsx';
+import { EntityNotes } from './Notes.jsx';
 
 /**
  * PROFITABILITY (user, 2026-09-25): what each report earns after GST, the
@@ -222,6 +223,10 @@ export function TransactionModal({ id, onClose }) {
               {e.reg_no && <Link className="btn-quiet !py-1 text-2xs" to={`/vehicles/${e.reg_no}#api`}>API calls</Link>}
               {e.reg_no && <Link className="btn-quiet !py-1 text-2xs" to={`/vehicles/${e.reg_no}#whatsapp`}>WhatsApp conversation</Link>}
             </div>
+          </div>
+          <div className="lg:col-span-2">
+            <div className="mb-1 text-2xs font-semibold uppercase tracking-wider text-muted">Team notes on this payment</div>
+            <EntityNotes type="payment" id={id} />
           </div>
           <div className="lg:col-span-2">
             <div className="mb-1 text-2xs font-semibold uppercase tracking-wider text-muted">What happened around it ({d.events.length})</div>

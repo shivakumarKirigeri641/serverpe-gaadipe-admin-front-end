@@ -40,28 +40,37 @@ export default function Audit() {
   const [rows, setRows] = useState(null);
   const [error, setError] = useState(null);
   const [action, setAction] = useState('');
+  // Filters (operations module): what it touched, and when.
+  const [q, setQ] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
 
-  useEffect(() => { setPage(1); }, [action]);
+  useEffect(() => { setPage(1); }, [action, q, from, to]);
 
   const load = useCallback(async () => {
     try {
       setError(null);
-      const out = await api.audit({ action, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+      const out = await api.audit({ action, q: q || undefined, from: from || undefined, to: to || undefined, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
       setRows(out.rows); setTotal(out.total || 0);
     } catch (e) { setError(e); }
-  }, [action, page]);
+  }, [action, page, q, from, to]);
   useEffect(() => { load(); }, [load]);
   useAutoRefresh(load);
 
   return (
     <Shell title="Audit trail" subtitle="Every change, and every customer record opened"
       actions={
-        <select className="input !w-auto !py-1.5 text-sm" value={action} onChange={(e) => setAction(e.target.value)}>
-          <option value="">Everything</option>
-          {Object.entries(LABELS).map(([key, [label]]) => <option key={key} value={key}>{label}</option>)}
-        </select>
+        <>
+          <input className="input !w-44 !py-1.5 text-sm" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Vehicle, payment, name…" />
+          <input type="date" className="input !w-auto !py-1.5 text-sm" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From" />
+          <input type="date" className="input !w-auto !py-1.5 text-sm" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To" />
+          <select className="input !w-auto !py-1.5 text-sm" value={action} onChange={(e) => setAction(e.target.value)}>
+            <option value="">Everything</option>
+            {Object.entries(LABELS).map(([key, [label]]) => <option key={key} value={key}>{label}</option>)}
+          </select>
+        </>
       }>
       <div className="card">
         {error ? <Failed error={error} onRetry={load} />

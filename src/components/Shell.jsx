@@ -89,6 +89,11 @@ const NAV = [
   {
     group: 'Now and then',
     items: [
+      { to: '/configuration', label: 'Business configuration', icon: RupeeIcon, cap: 'settings.manage' },
+      { to: '/flags', label: 'Feature flags', icon: KeyIcon, cap: 'dashboard.view' },
+      { to: '/alert-rules', label: 'Alert rules', icon: BellIcon, cap: 'dashboard.view' },
+      { to: '/tasks', label: 'Tasks', icon: ListIcon, cap: 'dashboard.view' },
+      { to: '/notes', label: 'Admin notes', icon: BookIcon, cap: 'dashboard.view' },
       { to: '/settings', label: 'Prices & settings', icon: CogIcon, cap: 'settings' },
       { to: '/policies', label: 'Policies & terms', icon: BookIcon, cap: 'settings' },
       { to: '/blocks', label: 'Blocked', icon: ShieldIcon },
@@ -97,7 +102,8 @@ const NAV = [
       // Owner only, and only while Settings → admin_report_access_enabled is on.
       { to: '/report-access', label: 'Report access ⚠️', icon: KeyIcon, cap: 'report_access' },
       { to: '/people', label: 'Panel users', icon: KeyIcon, cap: 'admins' },
-      { to: '/audit', label: 'Audit trail', icon: ListIcon },
+      { to: '/permissions', label: 'Permissions', icon: ShieldIcon, cap: 'audit.view' },
+      { to: '/audit', label: 'Audit trail', icon: ListIcon, cap: 'audit.view' },
       { to: '/security', label: 'Security', icon: ShieldIcon },
       { to: '/api-monitor', label: 'API monitor', icon: PulseIcon },
       { to: '/api-providers', label: 'API providers', icon: ChartIcon, cap: 'api.view' },

@@ -43,6 +43,12 @@ import ApiProviders from './pages/ops/ApiProviders.jsx';
 import Jobs from './pages/ops/Jobs.jsx';
 import Infrastructure from './pages/ops/Infrastructure.jsx';
 import Backups from './pages/ops/Backups.jsx';
+import Configuration from './pages/ops/Configuration.jsx';
+import FeatureFlags from './pages/ops/FeatureFlags.jsx';
+import AlertRules from './pages/ops/AlertRules.jsx';
+import Tasks from './pages/ops/Tasks.jsx';
+import Notes from './pages/ops/Notes.jsx';
+import Permissions from './pages/ops/Permissions.jsx';
 import VehicleProfile from './pages/vehicles/Profile.jsx';
 import VehicleLists from './pages/vehicles/Lists.jsx';
 import VehicleInsights from './pages/vehicles/Insights.jsx';
@@ -102,6 +108,12 @@ export default function App() {
       <Route path="/jobs" element={<Jobs />} />
       <Route path="/infrastructure" element={<Infrastructure />} />
       <Route path="/backups" element={<Backups />} />
+      <Route path="/configuration" element={<Configuration />} />
+      <Route path="/flags" element={<FeatureFlags />} />
+      <Route path="/alert-rules" element={<AlertRules />} />
+      <Route path="/tasks" element={<Tasks />} />
+      <Route path="/notes" element={<Notes />} />
+      <Route path="/permissions" element={<Permissions />} />
       <Route path="/overview" element={<Home />} />
       <Route path="/journey" element={<Journey />} />
       <Route path="/whatsapp" element={<WhatsAppCenter />} />

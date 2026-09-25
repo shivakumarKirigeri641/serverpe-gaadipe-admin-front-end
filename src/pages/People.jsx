@@ -21,6 +21,7 @@ const ROLES = [
   ['operations', 'Operations', 'Runs the service: settings, blocking, vehicle checks, the whole Vehicles module. No money.'],
   ['finance', 'Finance', "Money, invoices and reports; can view and export vehicles. Customers' mobiles are masked."],
   ['support', 'Support', 'Helps customers: reads everything, checks a vehicle, reveals a number, adds vehicle notes and tags.'],
+  ['technical', 'Technical', 'The servers, the records API and the jobs: health, infrastructure, API logs, running a job. No customers, no money.'],
   ['viewer', 'Read only', "Read-only, customers' mobiles masked. Cannot change anything or look a vehicle up."],
 ];
 

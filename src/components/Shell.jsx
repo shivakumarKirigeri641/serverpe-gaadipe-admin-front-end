@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { useSession, allowed } from '../lib/session';
 import { BusyBar } from './ui.jsx';
 import { useLive, Toasts } from './Live.jsx';
-import VehicleSearch from './VehicleSearch.jsx';
+import GlobalSearch from './GlobalSearch.jsx';
+import Notifications from './Notifications.jsx';
 
 /*
  * The frame every screen sits in: a fixed sidebar on a desk, a drawer on a
@@ -17,101 +18,140 @@ import VehicleSearch from './VehicleSearch.jsx';
  * AND ONLY WHAT YOU MAY OPEN. `cap` is the capability the screen's API demands;
  * an item the role lacks is not drawn at all.
  */
+/*
+ * THE SIDEBAR (user, 2026-09-25, operations module §42): Dashboard,
+ * Customers, Vehicles, WhatsApp, Reports, Payments, Analytics, Technical,
+ * Operations, Finance, System. Every screen the panel had keeps a place.
+ * Referrals is not a group: GaadiPe has no referral programme for now.
+ * Groups fold; which are folded is remembered in this browser, and the group
+ * holding the open screen always shows.
+ */
+const view = (v) => (p, s) => p === '/vehicles' && new URLSearchParams(s).get('view') === v;
 const NAV = [
   {
-    group: 'Every day',
+    group: 'Dashboard',
     items: [
       { to: '/', label: 'Business Health', end: true, icon: HeartIcon, cap: 'dashboard.view' },
       { to: '/command', label: 'Live Command Center', icon: GridIcon },
-      { to: '/profitability', label: 'Profitability', icon: RupeeIcon, cap: 'finance.view' },
-      { to: '/finance/export', label: 'GST / Accounting export', icon: DocIcon, cap: 'finance.export' },
+      { to: '/activity', label: 'Live activity', icon: PulseIcon, cap: 'dashboard.view' },
       { to: '/overview', label: 'Overview', icon: ListIcon },
-      { to: '/live', label: 'Live', icon: PulseIcon },
-      { to: '/alerts', label: 'Alerts', icon: BellIcon, badge: 'alerts' },
-      { to: '/analytics', label: 'Analytics', icon: ChartIcon },
+      { to: '/live', label: 'Live chats', icon: LifebuoyIcon },
       { to: '/where', label: 'Where', icon: CarIcon },
-    ],
-  },
-  {
-    // The Vehicles module (user, 2026-09-25). Each view is the explorer with a
-    // preset, told apart by its ?view= — so each is highlighted on its own.
-    group: '🚗 My Vehicles',
-    items: [
-      { to: '/vehicles', label: 'Vehicle Explorer', icon: CarIcon, cap: 'vehicles.view', badge: 'vehicles',
-        match: (p, s) => (p === '/vehicles' && !/[?&](view|list)=/.test(s))
-          || (/^\/vehicles\/[^/]+$/.test(p) && !/^\/vehicles\/(lists|insights|api-logs)$/.test(p)) },
-      ...[['recent', 'Recent vehicles', PulseIcon], ['paid', 'Paid reports', RupeeIcon], ['unpaid', 'Unpaid lookups', SearchIcon],
-        ['whatsapp', 'WhatsApp vehicles', SendIcon], ['web', 'Web vehicles', DoorIcon], ['expired', 'Expired documents', DocIcon],
-        ['challans', 'Challan vehicles', BookIcon], ['blacklisted', 'Blacklisted vehicles', ShieldIcon], ['loan', 'Loan / hypothecation', KeyIcon]]
-        .map(([v, label, icon]) => ({ to: `/vehicles?view=${v}`, label, icon, cap: 'vehicles.view',
-          match: (p, s) => p === '/vehicles' && new URLSearchParams(s).get('view') === v })),
-      { to: '/vehicles/lists', label: 'Saved vehicle lists', icon: StarIcon, cap: 'vehicles.view',
-        match: (p, s) => p === '/vehicles/lists' || (p === '/vehicles' && /[?&]list=/.test(s)) },
-      { to: '/vehicles/insights', label: 'Patterns & signals', icon: ChartIcon, cap: 'vehicles.view' },
-      { to: '/vehicles/api-logs', label: 'Vehicle API logs', icon: ListIcon, cap: 'vehicles.api_logs' },
     ],
   },
   {
     group: 'Customers',
     items: [
       { to: '/customers', label: 'Customers', icon: UsersIcon },
-      { to: '/journey', label: 'Customer journey', icon: PulseIcon },
+      { to: '/journey', label: 'Customer journeys', icon: PulseIcon },
       { to: '/customer-intelligence', label: 'Customer intelligence', icon: UsersIcon, cap: 'customers.view' },
       { to: '/retention', label: 'Retention & repeat', icon: ChartIcon, cap: 'customers.view' },
-      { to: '/attribution', label: 'Campaigns & attribution', icon: SendIcon, cap: 'customers.view' },
-      { to: '/drop-off', label: 'Conversion drop-off', icon: ChartIcon },
+    ],
+  },
+  {
+    group: 'Vehicles',
+    items: [
+      { to: '/vehicles', label: 'Vehicle Explorer', icon: CarIcon, cap: 'vehicles.view', badge: 'vehicles',
+        match: (p, s) => (p === '/vehicles' && !/[?&](view|list)=/.test(s))
+          || (/^\/vehicles\/[^/]+$/.test(p) && !/^\/vehicles\/(lists|insights|api-logs)$/.test(p)) },
+      { to: '/vehicles?view=recent', label: 'Recent vehicles', icon: PulseIcon, cap: 'vehicles.view', match: view('recent') },
+      { to: '/vehicles?view=expired', label: 'Expired documents', icon: DocIcon, cap: 'vehicles.view', match: view('expired') },
+      { to: '/vehicles?view=challans', label: 'Challans', icon: BookIcon, cap: 'vehicles.view', match: view('challans') },
+      { to: '/vehicles/lists', label: 'Saved vehicles', icon: StarIcon, cap: 'vehicles.view',
+        match: (p, s) => p === '/vehicles/lists' || (p === '/vehicles' && /[?&]list=/.test(s)) },
+      ...[['paid', 'Paid reports', RupeeIcon], ['unpaid', 'Unpaid lookups', SearchIcon], ['whatsapp', 'WhatsApp vehicles', SendIcon],
+        ['web', 'Web vehicles', DoorIcon], ['blacklisted', 'Blacklisted vehicles', ShieldIcon], ['loan', 'Loan / hypothecation', KeyIcon]]
+        .map(([v, label, icon]) => ({ to: `/vehicles?view=${v}`, label, icon, cap: 'vehicles.view', match: view(v) })),
+      { to: '/vehicles/insights', label: 'Patterns & signals', icon: ChartIcon, cap: 'vehicles.view' },
       { to: '/lookups', label: 'Vehicle lookups', icon: SearchIcon },
       { to: '/check', label: 'Check a vehicle', icon: SearchIcon, cap: 'lookup' },
     ],
   },
   {
-    group: 'Money',
+    group: 'WhatsApp',
     items: [
-      { to: '/payments', label: 'Payments', end: true, icon: RupeeIcon, cap: 'money', badge: 'payments' },
-      { to: '/payments/reconciliation', label: 'Payment reconciliation', icon: ShieldIcon, cap: 'payments.view' },
-      { to: '/payments/failures', label: 'Payment funnel & failures', icon: ChartIcon, cap: 'payments.view' },
-      { to: '/payments/abandoned', label: 'Abandoned payments', icon: DoorIcon, cap: 'payments.view' },
-      { to: '/payments/refunds', label: 'Refunds', icon: RupeeIcon, cap: 'payments.view' },
-      { to: '/finance', label: 'Revenue & GST', icon: RupeeIcon, cap: 'money' },
-      { to: '/documents', label: 'Reports & invoices', icon: DocIcon },
-      { to: '/free-reports', label: 'Free reports', icon: GiftIcon },
-    ],
-  },
-  {
-    group: 'Talking to customers',
-    items: [
-      { to: '/whatsapp', label: 'WhatsApp', end: true, icon: SendIcon, badge: 'whatsapp' },
-      { to: '/whatsapp/operations', label: 'WhatsApp operations', icon: RupeeIcon, cap: 'dashboard.view' },
+      { to: '/whatsapp', label: 'WhatsApp Command Center', end: true, icon: SendIcon, badge: 'whatsapp' },
       { to: '/conversations', label: 'Conversations', icon: LifebuoyIcon },
+      { to: '/whatsapp/operations', label: 'Message analytics & cost', icon: RupeeIcon, cap: 'dashboard.view' },
       { to: '/campaigns', label: 'Campaigns', icon: SendIcon },
     ],
   },
   {
-    group: 'Now and then',
+    group: 'Reports',
     items: [
-      { to: '/configuration', label: 'Business configuration', icon: RupeeIcon, cap: 'settings.manage' },
-      { to: '/flags', label: 'Feature flags', icon: KeyIcon, cap: 'dashboard.view' },
+      { to: '/documents', label: 'Reports', icon: DocIcon },
+      { to: '/reports/delivery', label: 'Delivery status', icon: SendIcon, cap: 'dashboard.view' },
+      { to: '/free-reports', label: 'Free reports', icon: GiftIcon },
+    ],
+  },
+  {
+    group: 'Payments',
+    items: [
+      { to: '/payments', label: 'Transactions', end: true, icon: RupeeIcon, cap: 'money', badge: 'payments' },
+      { to: '/payments/reconciliation', label: 'Payment reconciliation', icon: ShieldIcon, cap: 'payments.view' },
+      { to: '/payments/abandoned', label: 'Abandoned payments', icon: DoorIcon, cap: 'payments.view' },
+      { to: '/payments/refunds', label: 'Refunds', icon: RupeeIcon, cap: 'payments.view' },
+      { to: '/payments/failures', label: 'Payment funnel & failures', icon: ChartIcon, cap: 'payments.view' },
+    ],
+  },
+  {
+    group: 'Analytics',
+    items: [
+      { to: '/analytics', label: 'Website analytics', icon: ChartIcon },
+      { to: '/attribution', label: 'Campaigns & attribution', icon: SendIcon, cap: 'customers.view' },
+      { to: '/drop-off', label: 'Conversion funnel', icon: ChartIcon },
+      { to: '/profitability', label: 'Revenue', icon: RupeeIcon, cap: 'finance.view',
+        match: (p, s) => p === '/profitability' && new URLSearchParams(s).get('tab') !== 'transactions' },
+      { to: '/profitability?tab=transactions', label: 'Profitability', icon: ListIcon, cap: 'finance.view',
+        match: (p, s) => p === '/profitability' && new URLSearchParams(s).get('tab') === 'transactions' },
+    ],
+  },
+  {
+    group: 'Technical',
+    items: [
+      { to: '/api-monitor', label: 'API monitor', icon: PulseIcon },
+      { to: '/api-providers', label: 'API providers', icon: ChartIcon, cap: 'api.view' },
+      { to: '/vehicles/api-logs', label: 'API request log', icon: ListIcon, cap: 'api.view' },
+      { to: '/data-quality', label: 'Data quality', icon: ShieldIcon, cap: 'api.view' },
+      { to: '/jobs', label: 'Jobs', icon: ListIcon, cap: 'system.view' },
+      { to: '/health', label: 'System health', icon: HeartIcon },
+      { to: '/infrastructure', label: 'Infrastructure', icon: CogIcon, cap: 'system.view' },
+    ],
+  },
+  {
+    group: 'Operations',
+    items: [
+      { to: '/alerts', label: 'Alerts', icon: BellIcon, badge: 'alerts' },
       { to: '/alert-rules', label: 'Alert rules', icon: BellIcon, cap: 'dashboard.view' },
       { to: '/tasks', label: 'Tasks', icon: ListIcon, cap: 'dashboard.view' },
       { to: '/notes', label: 'Admin notes', icon: BookIcon, cap: 'dashboard.view' },
-      { to: '/settings', label: 'Prices & settings', icon: CogIcon, cap: 'settings' },
-      { to: '/policies', label: 'Policies & terms', icon: BookIcon, cap: 'settings' },
+      { to: '/exports', label: 'Exports', icon: DocIcon, cap: 'dashboard.view' },
       { to: '/blocks', label: 'Blocked', icon: ShieldIcon },
+      { to: '/security', label: 'Security', icon: ShieldIcon },
       // Website logins: kept, but not where customers are while GaadiPe is WhatsApp-first.
       { to: '/sign-ins', label: 'Website sign-ins', icon: DoorIcon },
+    ],
+  },
+  {
+    group: 'Finance',
+    items: [
+      { to: '/finance', label: 'Finance summary', icon: RupeeIcon, cap: 'money' },
+      { to: '/finance/export', label: 'GST / accounting export', icon: DocIcon, cap: 'finance.export' },
+    ],
+  },
+  {
+    group: 'System',
+    items: [
+      { to: '/configuration', label: 'Configuration', icon: RupeeIcon, cap: 'settings.manage' },
+      { to: '/flags', label: 'Feature flags', icon: KeyIcon, cap: 'dashboard.view' },
+      { to: '/settings', label: 'Prices & settings', icon: CogIcon, cap: 'settings' },
+      { to: '/policies', label: 'Policies & terms', icon: BookIcon, cap: 'settings' },
+      { to: '/people', label: 'Admin users', icon: KeyIcon, cap: 'admins' },
+      { to: '/permissions', label: 'Permissions', icon: ShieldIcon, cap: 'audit.view' },
+      { to: '/audit', label: 'Audit logs', icon: ListIcon, cap: 'audit.view' },
+      { to: '/backups', label: 'Backup / recovery', icon: ShieldIcon, cap: 'system.view' },
       // Owner only, and only while Settings → admin_report_access_enabled is on.
       { to: '/report-access', label: 'Report access ⚠️', icon: KeyIcon, cap: 'report_access' },
-      { to: '/people', label: 'Panel users', icon: KeyIcon, cap: 'admins' },
-      { to: '/permissions', label: 'Permissions', icon: ShieldIcon, cap: 'audit.view' },
-      { to: '/audit', label: 'Audit trail', icon: ListIcon, cap: 'audit.view' },
-      { to: '/security', label: 'Security', icon: ShieldIcon },
-      { to: '/api-monitor', label: 'API monitor', icon: PulseIcon },
-      { to: '/api-providers', label: 'API providers', icon: ChartIcon, cap: 'api.view' },
-      { to: '/data-quality', label: 'Data quality', icon: ShieldIcon, cap: 'api.view' },
-      { to: '/health', label: 'System health', icon: HeartIcon },
-      { to: '/jobs', label: 'Jobs', icon: ListIcon, cap: 'system.view' },
-      { to: '/infrastructure', label: 'Infrastructure', icon: CogIcon, cap: 'system.view' },
-      { to: '/backups', label: 'Backup & recovery', icon: ShieldIcon, cap: 'system.view' },
     ],
   },
 ];
@@ -134,6 +174,14 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
   const { badges } = useLive();
   const [open, setOpen] = useState(false);
   const { pathname, search } = useLocation();
+  // Folded groups, remembered in this browser.
+  const [folded, setFolded] = useState(() => { try { return JSON.parse(localStorage.getItem('gp.nav.folded') || '[]'); } catch { return []; } });
+  const fold = (g) => setFolded((f) => {
+    const next = f.includes(g) ? f.filter((x) => x !== g) : [...f, g];
+    try { localStorage.setItem('gp.nav.folded', JSON.stringify(next)); } catch { /* private window */ }
+    return next;
+  });
+  const isOn = (item) => (item.match ? item.match(pathname, search) : (item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`)));
 
   return (
     <div className="min-h-screen lg:flex">
@@ -152,12 +200,15 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
           {NAV.map((section) => {
             const items = section.items.filter((i) => allowed(can, i.cap));
             if (!items.length) return null;
+            // The group holding the open screen always shows.
+            const shut = folded.includes(section.group) && !items.some(isOn);
             return (
-              <div key={section.group} className="mb-5">
-                <div className="px-2 pb-1.5 text-2xs font-semibold uppercase tracking-wider text-muted">
-                  {section.group}
-                </div>
-                {items.map((item) => (
+              <div key={section.group} className="mb-3">
+                <button type="button" onClick={() => fold(section.group)} aria-expanded={!shut}
+                  className="flex w-full items-center justify-between px-2 pb-1.5 text-2xs font-semibold uppercase tracking-wider text-muted hover:text-ink">
+                  {section.group}<span className={`transition ${shut ? '' : 'rotate-90'}`}>›</span>
+                </button>
+                {!shut && items.map((item) => (
                   <NavLink key={item.to} to={item.to} end={item.end}
                     onClick={() => setOpen(false)}
                     className={({ isActive }) => `mb-0.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition ${
@@ -184,16 +235,9 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
             <h1 className="truncate text-sm font-semibold text-ink">{title}</h1>
             {subtitle && <p className="truncate text-2xs text-muted">{subtitle}</p>}
           </div>
-          {allowed(can, 'vehicles.view') && <div className="no-print"><VehicleSearch /></div>}
+          {allowed(can, 'dashboard.view') && <div className="no-print"><GlobalSearch /></div>}
           <div className="no-print flex items-center gap-2">{actions}</div>
-          <Link to="/alerts" className="no-print relative rounded-lg p-1.5 text-body hover:bg-shell" title="Alerts" aria-label="Alerts">
-            <BellIcon />
-            {badges?.alerts_open > 0 && (
-              <span className={`absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-bold text-white ${badges.alerts_critical ? 'bg-wrong-500' : 'bg-watch-500'}`}>
-                {badges.alerts_open}
-              </span>
-            )}
-          </Link>
+          <Notifications Icon={BellIcon} />
           <div className="no-print hidden items-center gap-2 border-l border-line pl-3 sm:flex">
             <div className="text-right leading-tight">
               <div className="text-2xs font-semibold text-ink">{me?.name}</div>

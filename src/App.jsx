@@ -49,6 +49,10 @@ import AlertRules from './pages/ops/AlertRules.jsx';
 import Tasks from './pages/ops/Tasks.jsx';
 import Notes from './pages/ops/Notes.jsx';
 import Permissions from './pages/ops/Permissions.jsx';
+import SearchResults from './pages/ops/SearchResults.jsx';
+import LiveActivity from './pages/ops/LiveActivity.jsx';
+import ExportCenter from './pages/ops/ExportCenter.jsx';
+import Delivery from './pages/ops/Delivery.jsx';
 import VehicleProfile from './pages/vehicles/Profile.jsx';
 import VehicleLists from './pages/vehicles/Lists.jsx';
 import VehicleInsights from './pages/vehicles/Insights.jsx';
@@ -114,6 +118,10 @@ export default function App() {
       <Route path="/tasks" element={<Tasks />} />
       <Route path="/notes" element={<Notes />} />
       <Route path="/permissions" element={<Permissions />} />
+      <Route path="/search" element={<SearchResults />} />
+      <Route path="/activity" element={<LiveActivity />} />
+      <Route path="/exports" element={<ExportCenter />} />
+      <Route path="/reports/delivery" element={<Delivery />} />
       <Route path="/overview" element={<Home />} />
       <Route path="/journey" element={<Journey />} />
       <Route path="/whatsapp" element={<WhatsAppCenter />} />

@@ -63,7 +63,11 @@ const NAV = [
   {
     group: 'Money',
     items: [
-      { to: '/payments', label: 'Payments', icon: RupeeIcon, cap: 'money', badge: 'payments' },
+      { to: '/payments', label: 'Payments', end: true, icon: RupeeIcon, cap: 'money', badge: 'payments' },
+      { to: '/payments/reconciliation', label: 'Payment reconciliation', icon: ShieldIcon, cap: 'payments.view' },
+      { to: '/payments/failures', label: 'Payment funnel & failures', icon: ChartIcon, cap: 'payments.view' },
+      { to: '/payments/abandoned', label: 'Abandoned payments', icon: DoorIcon, cap: 'payments.view' },
+      { to: '/payments/refunds', label: 'Refunds', icon: RupeeIcon, cap: 'payments.view' },
       { to: '/finance', label: 'Revenue & GST', icon: RupeeIcon, cap: 'money' },
       { to: '/documents', label: 'Reports & invoices', icon: DocIcon },
       { to: '/free-reports', label: 'Free reports', icon: GiftIcon },

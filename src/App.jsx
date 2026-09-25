@@ -29,6 +29,10 @@ import VehicleExplorer from './pages/vehicles/Explorer.jsx';
 import BusinessHealth from './pages/ops/BusinessHealth.jsx';
 import Profitability from './pages/ops/Profitability.jsx';
 import FinanceExport from './pages/ops/FinanceExport.jsx';
+import Reconciliation from './pages/ops/Reconciliation.jsx';
+import PaymentFailures from './pages/ops/PaymentFailures.jsx';
+import Abandoned from './pages/ops/Abandoned.jsx';
+import Refunds from './pages/ops/Refunds.jsx';
 import VehicleProfile from './pages/vehicles/Profile.jsx';
 import VehicleLists from './pages/vehicles/Lists.jsx';
 import VehicleInsights from './pages/vehicles/Insights.jsx';
@@ -74,6 +78,10 @@ export default function App() {
       <Route path="/command" element={<CommandCenter />} />
       <Route path="/profitability" element={<Profitability />} />
       <Route path="/finance/export" element={<FinanceExport />} />
+      <Route path="/payments/reconciliation" element={<Reconciliation />} />
+      <Route path="/payments/failures" element={<PaymentFailures />} />
+      <Route path="/payments/abandoned" element={<Abandoned />} />
+      <Route path="/payments/refunds" element={<Refunds />} />
       <Route path="/overview" element={<Home />} />
       <Route path="/journey" element={<Journey />} />
       <Route path="/whatsapp" element={<WhatsAppCenter />} />

@@ -78,6 +78,7 @@ const GROUPS = [
     note: 'Sent from the noreply mailbox. Switch any of them off here; it takes effect within a minute.',
     keys: {
       admin_alert_emails: 'Who receives them — comma-separated. Empty means ADMINMAIL from the server settings.',
+      notify_wa_only_from: 'TEST MODE — while this has numbers (comma-separated), the WhatsApp emails below are sent only for activity from them. Clear it to be emailed about every customer.',
       notify_wa_hi: 'WhatsApp — an email each time someone says Hi, marked "New contact" the first time they write.',
       notify_wa_checks: 'WhatsApp — an email for every vehicle checked: the number, make and model, and whether it was found.',
       notify_payments: 'An email for every successful payment, with the full breakdown and the invoice attached.',

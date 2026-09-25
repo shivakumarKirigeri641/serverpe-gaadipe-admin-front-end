@@ -88,8 +88,8 @@ export default function Home() {
 
       {/* ───────────────────────────────────────────── today ── */}
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Number label="Signed up" now={t.signed_up} before={t.signed_up_before} delay={1}
-          note="New accounts created today, in India's day. Somebody who signed in again is not counted." />
+        <Number label="New customers" now={t.signed_up} before={t.signed_up_before} delay={1}
+          note="People who wrote to GaadiPe on WhatsApp for the first time today, in India's day. Someone who wrote before is not counted again." />
         <Number label="Checks" now={t.checks} before={t.checks_before} delay={2}
           note="Vehicle lookups today — not people. One person checking four plates is four checks." />
         <Number label="Paid" now={t.paid} before={t.paid_before} delay={3}
@@ -105,7 +105,7 @@ export default function Home() {
         {/* Today's funnel: the shape matters more than the numbers. */}
         <div className="card rise rise-1 p-5">
           <div className="text-sm font-semibold text-ink">How far people got today</div>
-          <p className="mt-0.5 text-2xs text-muted">Where they stop is where the money is.</p>
+          <p className="mt-0.5 text-2xs text-muted">On WhatsApp, one person per number. Where they stop is where the money is.</p>
           <div className="mt-4 space-y-2">
             {data.funnel.map((f, i) => (
               <Hint key={f.step} note={FUNNEL_NOTE[f.step]} className="block">
@@ -131,7 +131,7 @@ export default function Home() {
         {/* A fortnight, so a bad day reads as a bad day and not a trend. */}
         <div className="card rise rise-2 p-5">
           <div className="text-sm font-semibold text-ink">The last two weeks</div>
-          <p className="mt-0.5 text-2xs text-muted">Sign-ups and checks, day by day.</p>
+          <p className="mt-0.5 text-2xs text-muted">New customers and checks, day by day.</p>
           <div className="mt-3 h-44">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data.recent} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
@@ -140,7 +140,7 @@ export default function Home() {
                 <YAxis tick={AXIS} tickLine={false} axisLine={false} allowDecimals={false} />
                 <Tooltip {...TOOLTIP} />
                 <Area type="monotone" dataKey="checks" name="Checks" stroke="#0d9488" fill="#0d9488" fillOpacity={0.15} />
-                <Area type="monotone" dataKey="signed_up" name="Signed up" stroke="#0b4f4a" fill="#0b4f4a" fillOpacity={0.12} />
+                <Area type="monotone" dataKey="signed_up" name="New customers" stroke="#0b4f4a" fill="#0b4f4a" fillOpacity={0.12} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -189,10 +189,11 @@ function Number({ label, now, before, money = false, flat = false, sub, note, de
 
 /** What each funnel step actually counts. */
 const FUNNEL_NOTE = {
-  'Arrived': 'People who opened the site today, signed in or not.',
-  'Checked a vehicle': 'Looked up at least one number and saw a result.',
-  'Opened Buy': 'Tapped the button and saw the billing form. This is the step most people never reach.',
-  'Tapped Pay': 'Filled the form and went to Razorpay.',
+  'Said Hi': 'Wrote to GaadiPe on WhatsApp today and were shown the terms.',
+  'Agreed to terms': 'Tapped Agree & continue.',
+  'Checked a vehicle': 'Sent a number and got the basic details back.',
+  'Tapped full report': 'Tapped the ₹19 full report button. This is the step most people never reach.',
+  'Got payment link': 'Were sent the payment link.',
   'Paid': 'Money actually received.',
 };
 

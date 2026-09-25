@@ -62,8 +62,7 @@ export default function Customers() {
             <option value="paid">Paid most</option>
             <option value="checks">Most checks</option>
             <option value="reports">Most reports</option>
-            <option value="sign_ins">Most sign-ins</option>
-            <option value="time">Most time on site</option>
+            <option value="messages">Most WhatsApp messages</option>
           </select>
           <select className="input !w-auto !py-1.5 text-sm" value={filter} onChange={(e) => setFilter(e.target.value)}>
             <option value="all">Everyone</option>
@@ -85,7 +84,7 @@ export default function Customers() {
                 <th className="th">Checks</th>
                 <th className="th">Reports</th>
                 <th className="th">Paid</th>
-                <th className="th">Sign-ins</th>
+                <th className="th">WhatsApp</th>
                 <th className="th">Last seen</th>
                 <th className="th">State</th>
               </tr>
@@ -111,13 +110,17 @@ export default function Customers() {
                       </Hint>
                     ) : <span className="text-muted">—</span>}
                   </td>
+                  {/* WhatsApp-first (user, 2026-09-25): messages, not web sign-ins —
+                      the chat is where customers are. Web visits stay in the
+                      customer's detail, under Sign-ins & visits. */}
                   <td className="td tabular">
-                    {r.sign_ins ? (
-                      <Hint note={`${r.sign_ins} sign-in${r.sign_ins === 1 ? '' : 's'} · ${duration(r.seconds_on_site)} on the site in all. Last signed in ${r.last_sign_in_at ? dateTime(r.last_sign_in_at) : '—'}; last signed out ${r.last_sign_out_at ? dateTime(r.last_sign_out_at) : 'never'}.`}>
+                    {r.messages ? (
+                      <Hint note={`${r.messages} WhatsApp message${r.messages === 1 ? '' : 's'}, in and out. Last one ${r.last_message_at ? dateTime(r.last_message_at) : '—'}.${r.sign_ins ? ` Also ${r.sign_ins} website sign-in${r.sign_ins === 1 ? '' : 's'}.` : ''}`}>
                         <span className="inline-flex items-center gap-1.5">
-                          {r.online && <span className="h-2 w-2 animate-pulse rounded-full bg-good-500" title="Online now" />}
-                          <span className="font-semibold text-ink">{r.sign_ins}</span>
-                          <span className="text-2xs text-muted">· {duration(r.seconds_on_site)}</span>
+                          {r.last_message_at && Date.now() - new Date(r.last_message_at) < 15 * 60 * 1000
+                            && <span className="h-2 w-2 animate-pulse rounded-full bg-good-500" title="Messaged in the last 15 minutes" />}
+                          <span className="font-semibold text-ink">{count(r.messages)}</span>
+                          <span className="text-2xs text-muted">· {ago(r.last_message_at)}</span>
                         </span>
                       </Hint>
                     ) : <span className="text-muted">—</span>}
@@ -131,7 +134,7 @@ export default function Customers() {
                     <div className="flex flex-wrap gap-1">
                       {r.blocked && <Chip tone="wrong">Blocked</Chip>}
                       {r.is_paused && <Chip tone="watch">Paused</Chip>}
-                      {r.active && <Hint note="Vehicle alerts (daily updates) are running from a report. Not the same as being signed in — see the Sign-ins column for that."><Chip tone="good">🔔 Alerts on{r.alerts_until ? ` · until ${date(r.alerts_until)}` : ''}</Chip></Hint>}
+                      {r.active && <Hint note="Vehicle alerts (daily updates) are running from a report. Not the same as chatting now — see the WhatsApp column for that."><Chip tone="good">🔔 Alerts on{r.alerts_until ? ` · until ${date(r.alerts_until)}` : ''}</Chip></Hint>}
                       {r.is_internal && <Chip tone="brand">Internal</Chip>}
                     </div>
                   </td>

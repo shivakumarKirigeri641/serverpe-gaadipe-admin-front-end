@@ -29,7 +29,6 @@ const NAV = [
     items: [
       { to: '/customers', label: 'Customers', icon: UsersIcon },
       { to: '/vehicles', label: 'Vehicles', icon: CarIcon },
-      { to: '/sign-ins', label: 'Sign-ins', icon: DoorIcon },
       { to: '/check', label: 'Check a vehicle', icon: SearchIcon, cap: 'lookup' },
     ],
   },
@@ -55,6 +54,8 @@ const NAV = [
       { to: '/settings', label: 'Prices & settings', icon: CogIcon, cap: 'settings' },
       { to: '/policies', label: 'Policies & terms', icon: BookIcon, cap: 'settings' },
       { to: '/blocks', label: 'Blocked', icon: ShieldIcon },
+      // Website logins: kept, but not where customers are while GaadiPe is WhatsApp-first.
+      { to: '/sign-ins', label: 'Website sign-ins', icon: DoorIcon },
       // Owner only, and only while Settings → admin_report_access_enabled is on.
       { to: '/report-access', label: 'Report access ⚠️', icon: KeyIcon, cap: 'report_access' },
       { to: '/people', label: 'Panel users', icon: KeyIcon, cap: 'admins' },

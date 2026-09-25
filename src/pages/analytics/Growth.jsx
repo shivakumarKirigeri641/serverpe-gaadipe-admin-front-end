@@ -28,9 +28,9 @@ const METRICS = [
   ['conversion', 'Conversion', (v) => `${v}%`, false, 'Payments as a share of the people who checked a vehicle.'],
   ['checks', 'Vehicle checks', count, false, 'Every lookup made by a customer.'],
   ['active_users', 'People checking', count, false, 'Distinct customers who checked at least one vehicle.'],
-  ['new_users', 'New customers', count, false, 'Accounts created.'],
+  ['wa_chats', 'WhatsApp chats', count, false, 'Distinct people who messaged GaadiPe on WhatsApp.'],
+  ['new_users', 'New customers', count, false, 'People who wrote to GaadiPe for the first time.'],
   ['new_vehicles', 'New vehicles', count, false, 'Vehicles GaadiPe had never seen before.'],
-  ['sign_ins', 'Sign-ins', count, false, 'Website sessions started.'],
   ['reports', 'Reports issued', count, false, 'Full reports produced.'],
   ['abandoned', 'Abandoned payments', count, true, 'Payments started and not finished.'],
   ['feedback', 'Feedback', count, false, 'Messages sent through the feedback button.'],
@@ -42,7 +42,7 @@ export default function Growth({ data }) {
   const p = data[period];
   const cur = p.current; const same = p.previous_same_point; const full = p.previous_full;
 
-  const chartKeys = ['checks', 'active_users', 'new_users', 'payments', 'reports', 'sign_ins'];
+  const chartKeys = ['checks', 'wa_chats', 'active_users', 'new_users', 'payments', 'reports'];
   const chart = chartKeys.map((k) => {
     const m = METRICS.find((x) => x[0] === k);
     return { name: m[1], [PERIODS[period].label]: cur[k], [`${PERIODS[period].prev} (same point)`]: same[k], [`${PERIODS[period].prev} (full)`]: full[k] };

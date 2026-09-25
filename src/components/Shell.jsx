@@ -19,7 +19,8 @@ const NAV = [
   {
     group: 'Every day',
     items: [
-      { to: '/', label: 'Home', end: true, icon: GridIcon },
+      { to: '/', label: 'Command center', end: true, icon: GridIcon },
+      { to: '/overview', label: 'Overview', icon: ListIcon },
       { to: '/live', label: 'Live', icon: PulseIcon },
       { to: '/analytics', label: 'Analytics', icon: ChartIcon },
     ],

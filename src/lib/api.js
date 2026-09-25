@@ -156,6 +156,10 @@ export const api = {
   signOut: () => call('/session', { method: 'DELETE' }),
 
   home: () => call('/home'),
+  // The Live Command Center (src/admin/command.js on the back end).
+  commandOverview: (params) => call(`/command/overview${qs(params)}`, { quiet: true }),
+  commandLive: (since) => call(`/command/live${qs({ since })}`, { quiet: true }),
+  commandEvents: (params) => call(`/command/events${qs(params)}`),
   dashboard: () => call('/dashboard'),
   health: () => call('/health'),
   series: (params) => call(`/series${qs(params)}`),

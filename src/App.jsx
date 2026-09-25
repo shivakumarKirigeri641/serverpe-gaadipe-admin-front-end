@@ -37,6 +37,9 @@ import DropOff from './pages/ops/DropOff.jsx';
 import CustomerIntel from './pages/ops/CustomerIntel.jsx';
 import Retention from './pages/ops/Retention.jsx';
 import Attribution from './pages/ops/Attribution.jsx';
+import WhatsAppOps from './pages/ops/WhatsAppOps.jsx';
+import DataQuality from './pages/ops/DataQuality.jsx';
+import ApiProviders from './pages/ops/ApiProviders.jsx';
 import VehicleProfile from './pages/vehicles/Profile.jsx';
 import VehicleLists from './pages/vehicles/Lists.jsx';
 import VehicleInsights from './pages/vehicles/Insights.jsx';
@@ -90,6 +93,9 @@ export default function App() {
       <Route path="/customer-intelligence" element={<CustomerIntel />} />
       <Route path="/retention" element={<Retention />} />
       <Route path="/attribution" element={<Attribution />} />
+      <Route path="/whatsapp/operations" element={<WhatsAppOps />} />
+      <Route path="/data-quality" element={<DataQuality />} />
+      <Route path="/api-providers" element={<ApiProviders />} />
       <Route path="/overview" element={<Home />} />
       <Route path="/journey" element={<Journey />} />
       <Route path="/whatsapp" element={<WhatsAppCenter />} />

@@ -80,7 +80,8 @@ const NAV = [
   {
     group: 'Talking to customers',
     items: [
-      { to: '/whatsapp', label: 'WhatsApp', icon: SendIcon, badge: 'whatsapp' },
+      { to: '/whatsapp', label: 'WhatsApp', end: true, icon: SendIcon, badge: 'whatsapp' },
+      { to: '/whatsapp/operations', label: 'WhatsApp operations', icon: RupeeIcon, cap: 'dashboard.view' },
       { to: '/conversations', label: 'Conversations', icon: LifebuoyIcon },
       { to: '/campaigns', label: 'Campaigns', icon: SendIcon },
     ],
@@ -99,6 +100,8 @@ const NAV = [
       { to: '/audit', label: 'Audit trail', icon: ListIcon },
       { to: '/security', label: 'Security', icon: ShieldIcon },
       { to: '/api-monitor', label: 'API monitor', icon: PulseIcon },
+      { to: '/api-providers', label: 'API providers', icon: ChartIcon, cap: 'api.view' },
+      { to: '/data-quality', label: 'Data quality', icon: ShieldIcon, cap: 'api.view' },
       { to: '/health', label: 'System health', icon: HeartIcon },
     ],
   },

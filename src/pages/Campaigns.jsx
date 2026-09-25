@@ -11,13 +11,15 @@ import { TabStrip } from './Conversations.jsx';
  * as a tab, so "who am I about to write to" is asked once rather than twice in
  * two different shapes.
  *
- * EMAIL FIRST, because it is the channel that works today — GaadiPe has no
- * WhatsApp number yet, and the WhatsApp tab says so rather than pretending.
+ * WHATSAPP FIRST (user, 2026-09-25). It opened on Email while GaadiPe had no
+ * WhatsApp number; the chat is the product now, so the WhatsApp broadcast is
+ * what this screen is for and Email is the second tab. (It was easy to miss:
+ * "where is Broadcast?" was answered by a tab nobody saw.)
  */
-const TABS = [['email', 'Email'], ['whatsapp', 'WhatsApp']];
+const TABS = [['whatsapp', 'WhatsApp broadcast'], ['email', 'Email']];
 
 export default function Campaigns() {
-  const [tab, setTab] = useState('email');
+  const [tab, setTab] = useState('whatsapp');
   const Page = tab === 'email' ? CustomerEmails : Broadcast;
   return <Page tabs={<TabStrip tabs={TABS} active={tab} onPick={setTab} />} />;
 }

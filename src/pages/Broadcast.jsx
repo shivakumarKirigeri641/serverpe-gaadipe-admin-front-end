@@ -29,11 +29,12 @@ export default function Broadcast({ tabs }) {
   const canSend = allowed(can, 'settings');
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  const [filter, setFilter] = useState('checked');
+  // Several audiences at once, combined with OR (user, 2026-09-25).
+  const [filter, setFilter] = useState(['checked']);
   const [q, setQ] = useState('');
 
   const load = useCallback(() => {
-    api.broadcasts({ filter, q: q || undefined }).then(setData).catch(setError);
+    api.broadcasts({ filter: filter.join(','), q: q || undefined }).then(setData).catch(setError);
   }, [filter, q]);
   useEffect(load, [load]);
 
@@ -66,6 +67,10 @@ export default function Broadcast({ tabs }) {
 }
 
 /* ───────────────────────────────────────────────────────── composing ── */
+
+/* The audience column: short enough to sit beside a name. */
+const SEGMENT_SHORT = { hi_only: 'Said Hi only', checked: 'Checked, unpaid', lapsed: 'Lapsed', active: 'Active' };
+const SEGMENT_TONE = { hi_only: 'watch', checked: 'info', lapsed: 'wrong', active: 'good' };
 
 function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
   const templates = data.templates?.templates || [];
@@ -224,12 +229,28 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <div className="text-sm font-semibold text-ink">3 · Who receives it</div>
-        <div className="flex flex-wrap gap-2">
-          <select className="input !w-auto !py-1.5 text-sm" value={filter} onChange={(e) => setFilter(e.target.value)}>
-            {Object.entries(data.recipients?.filters || {}).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-          </select>
-          <input className="input !w-auto !py-1.5 text-sm" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name or number" />
-        </div>
+        <input className="input !w-auto !py-1.5 text-sm" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name or number" />
+      </div>
+      {/* Tick any number of audiences: the list is everyone in ANY of them.
+          "Everyone" on its own clears the rest. */}
+      <div className="mt-2 flex flex-wrap gap-2">
+        {Object.entries(data.recipients?.filters || {}).map(([k, label]) => {
+          const on = filter.includes(k);
+          const n = data.recipients?.counts?.[k];
+          return (
+            <button key={k} type="button" aria-pressed={on}
+              className={`rounded-full border px-3 py-1.5 text-2xs font-semibold transition ${on
+                ? 'border-brand bg-brand text-white' : 'border-line bg-white text-body hover:border-brand/40'}`}
+              onClick={() => setFilter((cur) => {
+                if (k === 'all') return ['all'];
+                const next = cur.filter((x) => x !== 'all');
+                const out = next.includes(k) ? next.filter((x) => x !== k) : [...next, k];
+                return out.length ? out : ['all'];
+              })}>
+              {on ? '✓ ' : ''}{label}{n != null ? ` · ${count(n)}` : ''}
+            </button>
+          );
+        })}
       </div>
 
       <Table className="mt-2" head={
@@ -238,7 +259,7 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
             <input type="checkbox" checked={allOn}
               onChange={() => setPicked(allOn ? new Set() : new Set(rows.filter((r) => !r.blocked).map((r) => r.mobile)))} />
           </th>
-          {['Customer', 'Last vehicle', 'Last checked', ''].map((h) => <th key={h} className="th">{h}</th>)}
+          {['Customer', 'Audience', 'Last vehicle', 'Last active', ''].map((h) => <th key={h} className="th">{h}</th>)}
         </tr>}>
         {rows.map((r) => (
           <tr key={r.id} className={r.blocked ? 'opacity-50' : ''}>
@@ -247,11 +268,19 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
                 onChange={() => toggle(r.mobile)} />
             </td>
             <td className="td">
-              <div className="font-semibold text-ink">{r.display_name || '—'}</div>
-              <div className="text-2xs text-muted">{fmtMobile(r.mobile)}</div>
+              <div className="font-semibold text-ink">{r.display_name || r.wa_profile_name || '—'}</div>
+              <div className="text-2xs text-muted">{fmtMobile(r.mobile)}{r.user_id ? '' : ' · WhatsApp only'}</div>
+            </td>
+            <td className="td">
+              <div className="flex flex-wrap gap-1">
+                {(r.segments || []).map((k) => <Chip key={k} tone={SEGMENT_TONE[k]}>{SEGMENT_SHORT[k] || k}</Chip>)}
+              </div>
             </td>
             <td className="td text-2xs">{r.last_vehicle || '—'}{r.vehicles > 1 ? ` +${r.vehicles - 1}` : ''}</td>
-            <td className="td text-2xs text-muted">{r.last_checked ? dateTime(r.last_checked) : 'never'}</td>
+            <td className="td text-2xs text-muted">{(() => {
+              const last = [r.last_checked, r.last_message].filter(Boolean).sort().pop();
+              return last ? dateTime(last) : 'never';
+            })()}</td>
             <td className="td">
               {r.blocked ? <Chip tone="wrong">Blocked</Chip> : r.paid ? <Chip tone="good">Paid</Chip> : null}
             </td>
@@ -285,7 +314,7 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
             </div>
           ))}
           {preview.missing > 0 && (
-            <p className="mt-2 text-2xs text-muted">{count(preview.missing)} chosen number(s) have no account and will be left out.</p>
+            <p className="mt-2 text-2xs text-muted">{count(preview.missing)} chosen number(s) were not found and will be left out.</p>
           )}
         </div>
       )}

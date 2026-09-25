@@ -1,4 +1,4 @@
-import { NavLink, Link, useLocation } from 'react-router-dom';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { ConnectionStatus, RefreshButton } from './HeaderStatus.jsx';
 import { Hint } from './ui.jsx';
@@ -161,6 +161,38 @@ const NAV = [
   },
 ];
 
+/* Each group's icon in the tree. */
+const GROUP_ICON = {
+  Dashboard: GridIcon, Customers: UsersIcon, Vehicles: CarIcon, WhatsApp: SendIcon, Reports: DocIcon, Payments: RupeeIcon,
+  Analytics: ChartIcon, Technical: PulseIcon, Operations: BellIcon, Finance: RupeeIcon, System: CogIcon,
+};
+/* Words people might type for a screen, beyond its name. */
+const ALSO = {
+  '/finance/export': 'gst tax accounting csv', '/finance': 'gst revenue', '/payments': 'razorpay transactions', '/vehicles': 'rc registration number plate',
+  '/health': 'status uptime', '/jobs': 'cron background', '/audit': 'log history who', '/people': 'admins users roles', '/flags': 'switch maintenance',
+  '/configuration': 'price gst fee settings', '/exports': 'csv download', '/where': 'map states rto geo', '/activity': 'stream live events',
+};
+/* Menu items matching the typed words — every word must appear in the name, group or keywords. */
+function menuMatches(nav, q) {
+  const words = String(q || '').toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const out = [];
+  for (const g of nav) {
+    for (const item of g.items) {
+      const hay = `${item.label} ${g.group} ${ALSO[item.to] || ''}`.toLowerCase();
+      if (words.every((w) => hay.includes(w))) out.push({ item, group: g.group, starts: item.label.toLowerCase().startsWith(words[0]) });
+    }
+  }
+  return out.sort((a, b) => Number(b.starts) - Number(a.starts));
+}
+/* The typed text, marked in a result. */
+function highlight(text, q) {
+  const w = String(q || '').trim().split(/\s+/)[0];
+  const i = w ? text.toLowerCase().indexOf(w.toLowerCase()) : -1;
+  if (i < 0) return text;
+  return <>{text.slice(0, i)}<mark className="rounded bg-brand/15 px-0.5 text-brand-deep">{text.slice(i, i + w.length)}</mark>{text.slice(i + w.length)}</>;
+}
+
 /* The count beside a menu item (phase 6): people on WhatsApp now, open alerts
    (red when one is critical), payments in progress. Nothing when zero. */
 function Badge({ kind, b }) {
@@ -203,12 +235,22 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
   const [open, setOpen] = useState(false);
   const { pathname, search } = useLocation();
   // Folded groups, remembered in this browser.
-  const [folded, setFolded] = useState(() => { try { return JSON.parse(localStorage.getItem('gp.nav.folded') || '[]'); } catch { return []; } });
-  const fold = (g) => setFolded((f) => {
-    const next = f.includes(g) ? f.filter((x) => x !== g) : [...f, g];
-    try { localStorage.setItem('gp.nav.folded', JSON.stringify(next)); } catch { /* private window */ }
-    return next;
-  });
+  // THE TREE (user, 2026-09-25): groups are parents; only the group holding
+  // the open screen is expanded by default, and whatever you open or close is
+  // remembered in this browser.
+  const [expanded, setExpanded] = useState(() => { try { return JSON.parse(localStorage.getItem('gp.nav.expanded') || '[]'); } catch { return []; } });
+  const keepExpanded = (next) => { try { localStorage.setItem('gp.nav.expanded', JSON.stringify(next)); } catch { /* private window */ } return next; };
+  const [shutActive, setShutActive] = useState(false);
+  const fold = (g, isActive) => {
+    if (isActive) { setShutActive((v) => !v); return; }
+    setExpanded((e) => keepExpanded(e.includes(g) ? e.filter((x) => x !== g) : [...e, g]));
+  };
+  const folded = expanded;   // the marker effect re-measures when this changes
+  // Menu search.
+  const navigate = useNavigate();
+  const [q, setQ] = useState('');
+  const [hit, setHit] = useState(0);
+  const visibleNav = NAV.map((g) => ({ ...g, items: g.items.filter((i) => allowed(can, i.cap)) })).filter((g) => g.items.length);
   const isOn = (item) => (item.match ? item.match(pathname, search) : (item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`)));
 
   // Restore the sidebar's scroll, then slide the marker to the active item.
@@ -242,36 +284,92 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
           </Hint>
         </div>
 
-        <nav ref={navRef} className="relative px-3 py-4">
+        {/* Search the menu (not the data — that is the header's search). */}
+        {!collapsed && (
+          <div className="border-b border-line px-3 py-2.5">
+            <div className="relative">
+              <input value={q} onChange={(e) => { setQ(e.target.value); setHit(0); }}
+                onKeyDown={(e) => {
+                  const res = menuMatches(visibleNav, q);
+                  if (e.key === 'ArrowDown') { e.preventDefault(); setHit((h) => Math.min(res.length - 1, h + 1)); }
+                  if (e.key === 'ArrowUp') { e.preventDefault(); setHit((h) => Math.max(0, h - 1)); }
+                  if (e.key === 'Escape') { setQ(''); e.currentTarget.blur(); }
+                  if (e.key === 'Enter' && res[hit]) { navigate(res[hit].item.to); setQ(''); setOpen(false); }
+                }}
+                className="input !py-1.5 !pl-8 !text-sm" placeholder="Find a screen…" aria-label="Find a screen in the menu" />
+              <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"><SearchIcon /></span>
+              {q && <button type="button" onClick={() => setQ('')} aria-label="Clear menu search" className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted hover:text-ink">✕</button>}
+            </div>
+            {!q && (
+              <div className="mt-1.5 flex justify-end gap-3 text-[10px] text-muted">
+                <button type="button" className="hover:text-ink" onClick={() => { setShutActive(false); setExpanded(keepExpanded(visibleNav.map((g) => g.group))); }}>Expand all</button>
+                <button type="button" className="hover:text-ink" onClick={() => { setShutActive(true); setExpanded(keepExpanded([])); }}>Collapse all</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <nav ref={navRef} className="relative px-3 py-3">
           {/* The active marker: one bar that glides to whichever item is open. */}
           {marker && <span aria-hidden="true" className="absolute left-1 w-1 rounded-full bg-brand transition-all duration-300 ease-out"
             style={{ top: marker.top + 6, height: Math.max(0, marker.height - 12) }} />}
-          {NAV.map((section) => {
-            const items = section.items.filter((i) => allowed(can, i.cap));
-            if (!items.length) return null;
-            // The group holding the open screen always shows.
-            const shut = folded.includes(section.group) && !items.some(isOn);
+          {q && !collapsed ? (
+            /* Search results: every screen whose name or group matches, with where it lives. */
+            (() => {
+              const res = menuMatches(visibleNav, q);
+              if (!res.length) return <p className="px-2 py-3 text-sm text-muted">No screen matches “{q}”.</p>;
+              return (
+                <ul className="m-stagger space-y-0.5">
+                  {res.map(({ item, group }, i) => (
+                    <li key={item.to} style={{ '--i': i }}>
+                      <NavLink to={item.to} end={item.end} onClick={() => { setQ(''); setOpen(false); }} onMouseEnter={() => setHit(i)}
+                        className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors duration-150 ${i === hit ? 'bg-shell text-ink' : 'text-body hover:bg-shell'}`}>
+                        <item.icon />
+                        <span className="min-w-0">
+                          <span className="block truncate">{highlight(item.label, q)}</span>
+                          <span className="block truncate text-[10px] text-muted">{group} ›</span>
+                        </span>
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()
+          ) : visibleNav.map((section) => {
+            const { items } = section;
+            const hasActive = items.some(isOn);
+            const isOpen = collapsed || (hasActive ? !shutActive : expanded.includes(section.group));
+            const GroupIcon = GROUP_ICON[section.group] || ListIcon;
             return (
-              <div key={section.group} className="mb-3">
-                {collapsed ? <div className="mx-2 mb-1.5 hidden border-t border-line lg:block" /> : null}
-                <button type="button" onClick={() => fold(section.group)} aria-expanded={!shut}
-                  className={`flex w-full items-center justify-between px-2 pb-1.5 text-2xs font-semibold uppercase tracking-wider text-muted hover:text-ink ${collapsed ? 'lg:hidden' : ''}`}>
-                  {section.group}<span className={`transition-transform duration-150 ${shut ? '' : 'rotate-90'}`}>›</span>
+              <div key={section.group} className="mb-1">
+                {collapsed ? <div className="mx-2 my-1.5 hidden border-t border-line lg:block" /> : null}
+                {/* The parent node. */}
+                <button type="button" onClick={() => fold(section.group, hasActive)} aria-expanded={isOpen}
+                  className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold transition-colors duration-150 hover:bg-shell ${hasActive ? 'text-brand-deep' : 'text-ink'} ${collapsed ? 'lg:hidden' : ''}`}>
+                  <span className={`w-3 text-[11px] text-muted transition-transform duration-150 ${isOpen ? 'rotate-90' : ''}`}>▸</span>
+                  <GroupIcon />
+                  <span className="flex-1 truncate text-left">{section.group}</span>
+                  <span className="rounded-full bg-shell px-1.5 text-[10px] font-normal text-muted">{items.length}</span>
                 </button>
-                {!(shut && !collapsed) && items.map((item) => {
-                  const on = isOn(item);
-                  const link = (
-                    <NavLink key={item.to} to={item.to} end={item.end} data-active={on ? '1' : '0'} aria-label={item.label}
-                      onClick={() => setOpen(false)}
-                      className={`mb-0.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors duration-150 ${
-                        on ? 'bg-brand/8 font-semibold text-brand-deep' : 'text-body hover:bg-shell'} ${collapsed ? 'lg:justify-center lg:px-0' : ''}`}>
-                      <item.icon />
-                      <span className={`truncate transition-opacity duration-150 ${collapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
-                      {item.badge && !collapsed && <Badge kind={item.badge} b={badges} />}
-                    </NavLink>
-                  );
-                  return collapsed ? <Hint key={item.to} note={item.label} className="block">{link}</Hint> : link;
-                })}
+                {/* Its screens, indented on a guide line. */}
+                {isOpen && (
+                  <ul className={`${collapsed ? '' : 'm-drop ml-[1.05rem] border-l border-line pl-2'} mb-1 mt-0.5`}>
+                    {items.map((item) => {
+                      const on = isOn(item);
+                      const link = (
+                        <NavLink key={item.to} to={item.to} end={item.end} data-active={on ? '1' : '0'} aria-label={item.label}
+                          onClick={() => setOpen(false)}
+                          className={`mb-0.5 flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] transition-colors duration-150 ${
+                            on ? 'bg-brand/8 font-semibold text-brand-deep' : 'text-body hover:bg-shell'} ${collapsed ? 'lg:justify-center lg:px-0' : ''}`}>
+                          <span className={collapsed ? '' : 'lg:hidden'}><item.icon /></span>
+                          <span className={`truncate transition-opacity duration-150 ${collapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+                          {item.badge && !collapsed && <Badge kind={item.badge} b={badges} />}
+                        </NavLink>
+                      );
+                      return <li key={item.to}>{collapsed ? <Hint note={`${section.group} › ${item.label}`} className="block">{link}</Hint> : link}</li>;
+                    })}
+                  </ul>
+                )}
               </div>
             );
           })}

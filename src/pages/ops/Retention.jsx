@@ -16,7 +16,7 @@ export default function Retention() {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
   const load = useCallback(async () => { try { setError(null); setD(await api.retention(params)); } catch (e) { setError(e); } }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   const tile = (l, v, n) => <Hint key={l} note={n}><div className="card px-4 py-3"><div className="text-2xs font-semibold uppercase tracking-wider text-muted">{l}</div><div className="tabular mt-1 text-xl font-semibold text-ink">{v}</div></div></Hint>;
   return (
     <Shell title="Retention & repeat usage" subtitle={d?.range.label || ' '} actions={controls}>

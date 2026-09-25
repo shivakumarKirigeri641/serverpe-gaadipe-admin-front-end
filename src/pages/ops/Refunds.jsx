@@ -17,7 +17,7 @@ export default function Refunds() {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
   const load = useCallback(async () => { try { setError(null); setD(await api.refunds(params)); } catch (e) { setError(e); } }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   return (
     <Shell title="Refunds" subtitle={d ? `${d.range.label} · ${d.rows.length} refund(s) · ${rs(d.total_paise)}` : ' '} actions={controls}>
       <Banner className="mb-3">{d?.note || 'Read-only.'}</Banner>

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { api, getToken, setToken, onSignedOut } from './api';
+import { loadPrefs } from './motion.jsx';
 
 /**
  * Who is signed in, for the whole panel.
@@ -20,7 +21,7 @@ export function SessionProvider({ children }) {
     if (!getToken()) { setMe(null); setReady(true); return; }
     try {
       const out = await api.session();
-      setMe(out.user);
+      setMe(out.user); loadPrefs();
       setCan(out.can || []);
     } catch {
       setMe(null);
@@ -37,7 +38,7 @@ export function SessionProvider({ children }) {
   const signIn = useCallback((token, user) => {
     setToken(token);
     setMe(user);
-    return api.session().then((out) => { setMe(out.user); setCan(out.can || []); }).catch(() => {});
+    return api.session().then((out) => { setMe(out.user); loadPrefs(); setCan(out.can || []); }).catch(() => {});
   }, []);
 
   const signOut = useCallback(async () => {

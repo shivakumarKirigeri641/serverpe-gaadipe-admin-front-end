@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { chartAnim, legendToggle } from '../../lib/motion.jsx';
 import { count } from '../../lib/format';
 import { Hint } from '../../components/ui.jsx';
 import { Chart, VehicleDrill, TOOLTIP, AXIS, STATE_COLOURS, STATE_WORDS, DOC_COLOURS, GROUP_COLOURS } from './kit.jsx';
@@ -131,9 +132,9 @@ export default function Expiry({ fleet }) {
             <XAxis dataKey="name" tick={AXIS} />
             <YAxis tick={AXIS} allowDecimals={false} />
             <Tooltip contentStyle={TOOLTIP} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
             {STATES.map((s, i) => (
-              <Bar key={s} dataKey={s} name={STATE_WORDS[s]} stackId="a" fill={STATE_COLOURS[s]} cursor="pointer"
+              <Bar {...chartAnim()} key={s} dataKey={s} name={STATE_WORDS[s]} stackId="a" fill={STATE_COLOURS[s]} cursor="pointer"
                 radius={i === STATES.length - 1 ? [3, 3, 0, 0] : 0} onClick={(d) => open(d.key, d.name, s)} />
             ))}
           </BarChart>
@@ -145,9 +146,9 @@ export default function Expiry({ fleet }) {
             <XAxis dataKey="label" tick={AXIS} />
             <YAxis tick={AXIS} allowDecimals={false} />
             <Tooltip contentStyle={TOOLTIP} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
             {DOCS.map(([k, label], i) => (
-              <Bar key={k} dataKey={k} name={label} stackId="a" fill={DOC_COLOURS[k]} radius={i === DOCS.length - 1 ? [3, 3, 0, 0] : 0} cursor="pointer"
+              <Bar {...chartAnim()} key={k} dataKey={k} name={label} stackId="a" fill={DOC_COLOURS[k]} radius={i === DOCS.length - 1 ? [3, 3, 0, 0] : 0} cursor="pointer"
                 onClick={(d) => setDrill({ title: `${label} lapsing ${d.week === 0 ? 'this week' : `in week +${d.week}`}`, doc: k,
                   list: list.filter((v) => { const x = v.docs[k].days; return x != null && x >= d.week * 7 && x < d.week * 7 + 7; }) })} />
             ))}
@@ -160,9 +161,9 @@ export default function Expiry({ fleet }) {
             <XAxis dataKey="label" tick={AXIS} />
             <YAxis tick={AXIS} allowDecimals={false} />
             <Tooltip contentStyle={TOOLTIP} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
             {DOCS.map(([k, label], i) => (
-              <Bar key={k} dataKey={k} name={label} stackId="a" fill={DOC_COLOURS[k]} radius={i === DOCS.length - 1 ? [3, 3, 0, 0] : 0} />
+              <Bar {...chartAnim()} key={k} dataKey={k} name={label} stackId="a" fill={DOC_COLOURS[k]} radius={i === DOCS.length - 1 ? [3, 3, 0, 0] : 0} />
             ))}
           </BarChart>
         </Chart>
@@ -173,9 +174,9 @@ export default function Expiry({ fleet }) {
             <XAxis dataKey="name" tick={AXIS} />
             <YAxis tick={AXIS} allowDecimals={false} />
             <Tooltip contentStyle={TOOLTIP} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
             {DOCS.map(([k, label], i) => (
-              <Bar key={k} dataKey={k} name={label} stackId="a" fill={DOC_COLOURS[k]} radius={i === DOCS.length - 1 ? [3, 3, 0, 0] : 0} />
+              <Bar {...chartAnim()} key={k} dataKey={k} name={label} stackId="a" fill={DOC_COLOURS[k]} radius={i === DOCS.length - 1 ? [3, 3, 0, 0] : 0} />
             ))}
           </BarChart>
         </Chart>

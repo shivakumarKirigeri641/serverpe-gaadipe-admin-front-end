@@ -44,7 +44,7 @@ export default function Geo() {
   const load = useCallback(async () => {
     try { setData(await api.geoStates(params)); setError(null); } catch (e) { setError(e); }
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setData(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   useEffect(() => {
     if (!state) { setRtos(null); return; }
     setRtos(undefined);

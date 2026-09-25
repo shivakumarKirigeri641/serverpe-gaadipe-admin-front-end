@@ -25,6 +25,7 @@ export default function GlobalSearch() {
   const [d, setD] = useState(null);
   const [open, setOpen] = useState(false);
   const [at, setAt] = useState(-1);
+  const [loading, setLoading] = useState(false);
   const box = useRef(null);
 
   useEffect(() => {
@@ -38,7 +39,11 @@ export default function GlobalSearch() {
     const t = q.trim();
     if (t.length < 2) { setD(null); return undefined; }
     let live = true;
-    const timer = setTimeout(() => api.search(t).then((r) => { if (live) { setD(r); setAt(-1); } }).catch(() => live && setD(null)), 250);
+    // The indicator shows only while a request is really running.
+    const timer = setTimeout(() => {
+      setLoading(true);
+      api.search(t).then((r) => { if (live) { setD(r); setAt(-1); } }).catch(() => live && setD(null)).finally(() => live && setLoading(false));
+    }, 250);
     return () => { live = false; clearTimeout(timer); };
   }, [q]);
 
@@ -53,20 +58,22 @@ export default function GlobalSearch() {
   let i = -1;
   return (
     <div className="relative hidden md:block">
+      {open && d && <div className="m-overlay pointer-events-none fixed inset-0 top-14 z-30 bg-ink/5" aria-hidden="true" />}
+      {loading && <span className="m-spin pointer-events-none absolute right-2.5 top-2 z-10 h-4 w-4 rounded-full border-2 border-line border-t-brand" aria-label="Searching" />}
       <input ref={box} value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)} onKeyDown={onKey}
         className="input !w-56 !py-1.5 !text-sm lg:!w-72" placeholder="Search vehicle, customer, payment…  /" aria-label="Search" />
       {open && d && (
-        <div className="absolute right-0 top-10 z-40 max-h-[70vh] w-[28rem] overflow-y-auto rounded-xl border border-line bg-white shadow-pop">
+        <div className="m-drop absolute right-0 top-10 z-40 max-h-[70vh] w-[28rem] overflow-y-auto rounded-xl border border-line bg-white shadow-pop">
           {!flat.length ? <div className="px-4 py-3 text-sm text-muted">Nothing found. Enter shows the full results page.</div> : GROUPS.map(([g, label]) => (
             (d.groups[g] || []).length ? (
-              <div key={g}>
+              <div key={g} className="m-stagger">
                 <div className="bg-shell/70 px-4 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted">{label}</div>
                 {d.groups[g].map((x) => {
                   i += 1; const me = i; const [t1, t2] = describe(g, x);
                   return (
                     <button key={`${g}${x.id || x.reg_no}`} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => go(x.to)} onMouseEnter={() => setAt(me)}
-                      className={`block w-full px-4 py-1.5 text-left ${me === at ? 'bg-shell' : ''}`}>
+                      style={{ '--i': me }} className={`block w-full px-4 py-1.5 text-left transition-colors duration-150 ${me === at ? 'bg-shell' : ''}`}>
                       <div className="truncate font-mono text-sm font-semibold text-ink">{t1}</div>
                       <div className="truncate text-2xs text-muted">{t2}</div>
                     </button>

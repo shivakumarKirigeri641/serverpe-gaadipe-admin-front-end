@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { chartAnim } from '../../lib/motion.jsx';
 import { api } from '../../lib/api';
 import Shell from '../../components/Shell.jsx';
 import { usePeriod } from '../../components/Period.jsx';
@@ -16,7 +17,7 @@ export default function PaymentFailures() {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
   const load = useCallback(async () => { try { setError(null); setD(await api.paymentFunnel(params)); } catch (e) { setError(e); } }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   const main = d?.stages.filter((s) => !s.side) || [];
   const side = d?.stages.filter((s) => s.side) || [];
   const top = Math.max(1, ...main.map((s) => s.n || 0));
@@ -64,7 +65,7 @@ export default function PaymentFailures() {
               <div className="h-56"><ResponsiveContainer>
                 <BarChart data={d.by_hour.map((h) => ({ hour: `${h.hour}`, Started: h.started, Paid: h.success }))}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e3ecea" /><XAxis dataKey="hour" tick={{ fontSize: 11 }} /><YAxis allowDecimals={false} tick={{ fontSize: 11 }} /><Tooltip />
-                  <Bar dataKey="Started" fill="#e3ecea" /><Bar dataKey="Paid" fill="#0f766e" />
+                  <Bar {...chartAnim()} dataKey="Started" fill="#e3ecea" /><Bar {...chartAnim()} dataKey="Paid" fill="#0f766e" />
                 </BarChart>
               </ResponsiveContainer></div>
             )}

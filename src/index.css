@@ -121,3 +121,99 @@
   .lift:hover { transform: none; }
   * { scroll-behavior: auto !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * THE MOTION SYSTEM (user, 2026-09-25). One set of durations and easings for
+ * the whole panel; every animation below uses them. Motion says something
+ * changed, arrived, succeeded, failed or needs attention — nothing moves on
+ * its own for decoration.
+ *
+ * Levels (Settings → Display & motion, per admin; the OS "reduce motion"
+ * always counts as at least Reduced):
+ *   full     everything below
+ *   reduced  no movement — fades, colour and state changes stay
+ *   minimal  nothing animates; changes are instant
+ * ═════════════════════════════════════════════════════════════════════════ */
+:root {
+  --m-instant: 100ms; --m-fast: 150ms; --m-normal: 220ms; --m-emph: 350ms; --m-complex: 500ms;
+  --ease-out: cubic-bezier(.2, .7, .3, 1); --ease-in: cubic-bezier(.4, 0, 1, 1); --ease-io: cubic-bezier(.4, 0, .2, 1);
+  --m-rise: 6px; --m-slide: 24px; --m-scale: .97;
+}
+html[data-motion="reduced"] { --m-rise: 0px; --m-slide: 0px; --m-scale: 1; }
+@media (prefers-reduced-motion: reduce) { :root { --m-rise: 0px; --m-slide: 0px; --m-scale: 1; } }
+html[data-motion="minimal"] *, html[data-motion="minimal"] *::before, html[data-motion="minimal"] *::after {
+  animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important; transition-delay: 0ms !important;
+}
+
+@keyframes m-enter { from { opacity: 0; transform: translateY(var(--m-rise)); } to { opacity: 1; transform: none; } }
+@keyframes m-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes m-scale-in { from { opacity: 0; transform: scale(var(--m-scale)); } to { opacity: 1; transform: none; } }
+@keyframes m-scale-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(var(--m-scale)); } }
+@keyframes m-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes m-drawer-in { from { transform: translateX(var(--m-slide)); opacity: .6; } to { transform: none; opacity: 1; } }
+@keyframes m-drawer-out { from { transform: none; opacity: 1; } to { transform: translateX(var(--m-slide)); opacity: 0; } }
+@keyframes m-drop { from { opacity: 0; transform: translateY(calc(var(--m-rise) * -0.7)); } to { opacity: 1; transform: none; } }
+@keyframes m-toast-in { from { opacity: 0; transform: translateY(calc(var(--m-rise) * 2)); } to { opacity: 1; transform: none; } }
+@keyframes m-row-new { from { opacity: 0; transform: translateX(calc(var(--m-rise) * 1.5)); } to { opacity: 1; transform: none; } }
+@keyframes m-highlight { from { background-color: rgba(18, 161, 80, .12); } to { background-color: transparent; } }
+@keyframes m-highlight-warn { from { background-color: rgba(224, 135, 0, .14); } to { background-color: transparent; } }
+@keyframes m-up { 0% { color: inherit; } 30% { color: #0a6c34; } 100% { color: inherit; } }
+@keyframes m-down { 0% { color: inherit; } 30% { color: #8f5600; } 100% { color: inherit; } }
+@keyframes m-chip-in { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+@keyframes m-chip-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(.85); } }
+@keyframes m-ping { 0% { transform: scale(1); opacity: .55; } 80%, 100% { transform: scale(2.4); opacity: 0; } }
+@keyframes m-breathe { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+@keyframes m-spin { to { transform: rotate(360deg); } }
+@keyframes m-draw { from { stroke-dashoffset: var(--len, 24); } to { stroke-dashoffset: 0; } }
+@keyframes m-badge { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@keyframes m-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Arriving: a page, a card, a panel. */
+.m-enter { animation: m-enter var(--m-normal) var(--ease-out) both; }
+.m-fade { animation: m-fade var(--m-fast) var(--ease-out) both; }
+/* Items that arrive together, a few ms apart: set style={{ '--i': n }}. */
+.m-stagger > * { animation: m-enter var(--m-normal) var(--ease-out) both; animation-delay: calc(min(var(--i, 0), 12) * 35ms); }
+/* Dialogs and their backdrop; drawers from the right; dropdowns. */
+.m-overlay { animation: m-fade var(--m-fast) var(--ease-out) both; }
+.m-overlay-out { animation: m-fade-out var(--m-instant) var(--ease-in) both; }
+.m-modal { animation: m-scale-in var(--m-normal) var(--ease-out) both; }
+.m-modal-out { animation: m-scale-out var(--m-fast) var(--ease-in) both; }
+.m-drawer { animation: m-drawer-in var(--m-normal) var(--ease-out) both; }
+.m-drawer-out { animation: m-drawer-out var(--m-fast) var(--ease-in) both; }
+.m-drop { animation: m-drop var(--m-fast) var(--ease-out) both; transform-origin: top; }
+.m-toast { animation: m-toast-in var(--m-normal) var(--ease-out) both; }
+/* A row that has just arrived, and one that has just changed. */
+.m-row-new { animation: m-row-new var(--m-emph) var(--ease-out) both, m-highlight 1.2s var(--ease-out) both; }
+.m-row-changed { animation: m-highlight 1.2s var(--ease-out) both; }
+.m-row-warn { animation: m-highlight-warn 1.2s var(--ease-out) both; }
+/* A number that just went up or down: a brief tint, never a flashing card. */
+.m-up { animation: m-up var(--m-complex) var(--ease-io); }
+.m-down { animation: m-down var(--m-complex) var(--ease-io); }
+.m-chip-in { animation: m-chip-in var(--m-fast) var(--ease-out) both; }
+.m-chip-out { animation: m-chip-out var(--m-fast) var(--ease-in) both; }
+.m-badge-pop { animation: m-badge var(--m-emph) var(--ease-out); }
+.m-spin { animation: m-spin .8s linear infinite; }
+.m-draw { stroke-dasharray: var(--len, 24); animation: m-draw var(--m-emph) var(--ease-out) both; }
+.m-grow-x { animation: m-grow-x var(--m-complex) var(--ease-out) both; transform-origin: left; }
+
+/* Status dots: calm when healthy, slower amber, controlled red, and a DOWN
+   service does not move at all — it is simply, clearly down. */
+.m-dot { position: relative; display: inline-block; border-radius: 9999px; }
+.m-dot-live::after, .m-dot-critical::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: inherit; animation: m-ping 1.8s var(--ease-out) infinite; }
+.m-dot-healthy { animation: m-breathe 3.2s ease-in-out infinite; }
+.m-dot-warning { animation: m-breathe 2.2s ease-in-out infinite; }
+.m-dot-critical::after { animation-duration: 1.4s; }
+@media (prefers-reduced-motion: reduce) {
+  .m-dot-live::after, .m-dot-critical::after, .m-dot-healthy, .m-dot-warning, .m-spin { animation: none !important; }
+}
+html[data-motion="reduced"] .m-dot-live::after, html[data-motion="reduced"] .m-dot-critical::after,
+html[data-motion="reduced"] .m-dot-healthy, html[data-motion="reduced"] .m-dot-warning { animation: none !important; }
+
+/* Feedback under the finger: a press, a focus ring, a smooth hover. */
+.m-press { transition: transform var(--m-instant) var(--ease-out), background-color var(--m-fast) ease, box-shadow var(--m-fast) ease; }
+.m-press:active { transform: scale(.97); }
+.btn, .chip, .input { transition: background-color var(--m-fast) ease, border-color var(--m-fast) ease, box-shadow var(--m-fast) ease, color var(--m-fast) ease, transform var(--m-instant) ease; }
+.btn:active:not(:disabled) { transform: scale(.98); }
+:focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
+tbody tr { transition: background-color var(--m-fast) ease; }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { chartAnim } from '../lib/motion.jsx';
 import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
 import { usePeriod } from '../components/Period.jsx';
@@ -91,7 +92,7 @@ export default function Payments() {
                       <XAxis dataKey="label" tick={AXIS} />
                       <YAxis tick={AXIS} />
                       <Tooltip contentStyle={TOOLTIP} formatter={(v, n) => (n === 'Revenue' ? `₹${v}` : v)} />
-                      <Bar dataKey="rupees" name="Revenue" fill="#0d9488" radius={[3, 3, 0, 0]} />
+                      <Bar {...chartAnim()} dataKey="rupees" name="Revenue" fill="#0d9488" radius={[3, 3, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}

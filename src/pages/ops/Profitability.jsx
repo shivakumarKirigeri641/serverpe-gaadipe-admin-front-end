@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { chartAnim, legendToggle } from '../../lib/motion.jsx';
 import { api } from '../../lib/api';
 import { useSession, allowed } from '../../lib/session';
 import Shell from '../../components/Shell.jsx';
@@ -45,7 +46,7 @@ function Overview({ params, pkey }) {
   const [error, setError] = useState(null);
   const [by, setBy] = useState('by_source');
   const load = useCallback(async () => { try { setError(null); setD(await api.profitability({ ...params, grain: grain || undefined })); } catch (e) { setError(e); } }, [pkey, grain]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   if (error && !d) return <div className="card"><Failed error={error} onRetry={load} /></div>;
   if (!d) return <SkeletonCards n={8} />;
   const t = d.totals;
@@ -83,11 +84,11 @@ function Overview({ params, pkey }) {
                 <YAxis yAxisId="rs" tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v}`} />
                 <YAxis yAxisId="pct" orientation="right" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} domain={[-100, 100]} />
                 <Tooltip formatter={(v, n) => (n === 'Margin' ? `${v ?? '—'}%` : `₹${Number(v).toFixed(2)}`)} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar yAxisId="rs" dataKey="Revenue" fill="#0f766e" radius={[3, 3, 0, 0]} />
-                <Bar yAxisId="rs" dataKey="Costs" fill="#e08700" radius={[3, 3, 0, 0]} />
-                <Line yAxisId="rs" type="monotone" dataKey="Net" stroke="#0b1f1c" strokeWidth={2} dot={false} />
-                <Line yAxisId="pct" type="monotone" dataKey="Margin" stroke="#12a150" strokeDasharray="4 3" dot={false} />
+                <Legend {...legendToggle()} wrapperStyle={{ fontSize: 12 }} />
+                <Bar {...chartAnim()} yAxisId="rs" dataKey="Revenue" fill="#0f766e" radius={[3, 3, 0, 0]} />
+                <Bar {...chartAnim()} yAxisId="rs" dataKey="Costs" fill="#e08700" radius={[3, 3, 0, 0]} />
+                <Line {...chartAnim()} yAxisId="rs" type="monotone" dataKey="Net" stroke="#0b1f1c" strokeWidth={2} dot={false} />
+                <Line {...chartAnim()} yAxisId="pct" type="monotone" dataKey="Margin" stroke="#12a150" strokeDasharray="4 3" dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>

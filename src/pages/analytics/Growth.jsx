@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { chartAnim, legendToggle } from '../../lib/motion.jsx';
 import { count } from '../../lib/format';
 import { Hint } from '../../components/ui.jsx';
 import { Chart, Delta, delta, inr, TOOLTIP, AXIS } from './kit.jsx';
@@ -91,10 +92,10 @@ export default function Growth({ data }) {
           <XAxis dataKey="name" tick={AXIS} />
           <YAxis tick={AXIS} allowDecimals={false} />
           <Tooltip contentStyle={TOOLTIP} />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
-          <Bar dataKey={PERIODS[period].label} fill="#0d9488" radius={[3, 3, 0, 0]} />
-          <Bar dataKey={`${PERIODS[period].prev} (same point)`} fill="#94a3b8" radius={[3, 3, 0, 0]} />
-          <Bar dataKey={`${PERIODS[period].prev} (full)`} fill="#dbe4e2" radius={[3, 3, 0, 0]} />
+          <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
+          <Bar {...chartAnim()} dataKey={PERIODS[period].label} fill="#0d9488" radius={[3, 3, 0, 0]} />
+          <Bar {...chartAnim()} dataKey={`${PERIODS[period].prev} (same point)`} fill="#94a3b8" radius={[3, 3, 0, 0]} />
+          <Bar {...chartAnim()} dataKey={`${PERIODS[period].prev} (full)`} fill="#dbe4e2" radius={[3, 3, 0, 0]} />
         </BarChart>
       </Chart>
 

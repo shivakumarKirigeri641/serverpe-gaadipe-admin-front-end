@@ -40,7 +40,7 @@ export default function Reconciliation() {
     } catch (e) { setError(e); }
   }, [run, filter, page]);
   useEffect(() => { loadRuns(); }, [loadRuns]);
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   useEffect(() => { setPage(1); }, [run, filter]);
   const running = runs?.some((r) => r.status === 'running');
   useAutoRefresh(() => { loadRuns(); if (running) load(); }, running ? 4000 : 30000);

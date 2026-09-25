@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { motionLevel } from '../lib/motion.jsx';
 import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
 import { Hint, Modal, Table, Failed, SkeletonCards, Empty, Chip, saveBlob } from '../components/ui.jsx';
@@ -523,11 +524,15 @@ function ExportMenu({ range }) {
 
 /* A number that counts up to its new value — briefly, and only when it changes. */
 function useCountUp(target, ms = 500) {
-  const [v, setV] = useState(target || 0);
-  const from = useRef(target || 0);
+  // Motion system: counts up from 0 the first time, then from the old value to
+  // the new one — never back to zero; instant for Reduced / Minimal motion.
+  const still = motionLevel() !== 'full';
+  const [v, setV] = useState(still ? target || 0 : 0);
+  const from = useRef(still ? target || 0 : 0);
   useEffect(() => {
     const start = performance.now(); const a = from.current; const b = Number(target || 0);
     if (a === b) return undefined;
+    if (motionLevel() !== 'full') { from.current = b; setV(b); return undefined; }
     let raf;
     const tick = (t) => {
       const p = Math.min(1, (t - start) / ms);

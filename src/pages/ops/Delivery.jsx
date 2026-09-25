@@ -18,7 +18,7 @@ export default function Delivery() {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
   const load = useCallback(async () => { try { setError(null); setD(await api.reportDelivery(params)); } catch (e) { setError(e); } }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   const t = d?.totals;
   return (
     <Shell title="Report delivery" subtitle={d?.range.label || ' '} actions={controls}>

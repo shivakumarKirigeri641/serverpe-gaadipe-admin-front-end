@@ -124,7 +124,7 @@ export default function Explorer() {
   const load = useCallback(async () => {
     try { setError(null); setData(await api.vehicles(query)); } catch (e) { setError(e); }
   }, [query]);
-  useEffect(() => { setData(null); setSelected(new Set()); load(); }, [load]);
+  useEffect(() => { setSelected(new Set()); load(); }, [load]);
   useAutoRefresh(load, 30000);
   useEffect(() => { api.vehicleStats().then(setStats).catch(() => {}); }, []);
 

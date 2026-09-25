@@ -32,8 +32,10 @@ function push(item) {
   if (state.toasts.some((t) => t.id === item.id)) return;
   state.toasts = [...state.toasts, item].slice(-5);
   emit();
-  // Critical alerts stay longer; they are the ones that matter.
-  setTimeout(() => dismiss(item.id), item.severity === 'critical' ? 20000 : 9000);
+  // Critical alerts stay longer; they are the ones that matter. A plain
+  // confirmation goes in four seconds; an error, or one with an action, in eight.
+  const ms = item.severity === 'critical' ? 20000 : item.kind === 'snack' ? (item.tone === 'wrong' || item.action ? 8000 : 4000) : 9000;
+  setTimeout(() => dismiss(item.id), ms);
 }
 
 function start() {
@@ -65,8 +67,8 @@ function start() {
  * A short confirmation — "Tag added", "Link copied" — in the same corner as
  * the pop-ups (Vehicles module). It goes by itself and a tap only dismisses it.
  */
-export function snack(text, tone = 'good') {
-  push({ id: `snack-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, kind: 'snack', title: text, tone });
+export function snack(text, tone = 'good', { action } = {}) {
+  push({ id: `snack-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, kind: 'snack', title: text, tone, action });
 }
 
 /** The badges and pop-ups, kept current. */
@@ -94,7 +96,7 @@ export function Toasts() {
   return (
     <div className="no-print fixed bottom-4 right-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2" role="status" aria-live="polite">
       {toasts.map((t) => (
-        <div key={t.id} className={`rise cursor-pointer rounded-lg border p-3 shadow-lg ${TONE[t.tone] || TONE.info}`}
+        <div key={t.id} role={t.tone === 'wrong' ? 'alert' : undefined} className={`m-toast cursor-pointer rounded-lg border p-3 shadow-lg ${TONE[t.tone] || TONE.info}`}
           onClick={() => { dismiss(t.id); if (t.kind === 'snack') return; navigate(t.kind === 'payment' ? (t.mobile ? `/journey?mobile=${t.mobile}` : '/payments') : '/alerts'); }}>
           <div className="flex items-start gap-2">
             <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${DOT[t.tone] || DOT.info}`} />
@@ -111,6 +113,9 @@ export function Toasts() {
                   {t.source ? <div className="text-muted">Source: {String(t.source).replace(/_/g, ' ')}{t.method ? ` · ${t.method}` : ''}</div> : null}
                 </div>
               ) : t.text ? <div className="mt-0.5 line-clamp-3 text-2xs text-body">{t.text}</div> : null}
+              {t.action && (
+                <button className="btn-quiet mt-1.5 !px-2.5 !py-1 text-2xs" onClick={(e) => { e.stopPropagation(); dismiss(t.id); t.action.fn(); }}>{t.action.label}</button>
+              )}
             </div>
           </div>
         </div>

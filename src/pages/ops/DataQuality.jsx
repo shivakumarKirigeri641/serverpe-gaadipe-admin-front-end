@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { chartAnim, legendToggle } from '../../lib/motion.jsx';
 import { api } from '../../lib/api';
 import Shell from '../../components/Shell.jsx';
 import { usePeriod } from '../../components/Period.jsx';
@@ -21,7 +22,7 @@ export default function DataQuality() {
   const [error, setError] = useState(null);
   const [open, setOpen] = useState(null);
   const load = useCallback(async () => { try { setError(null); setD(await api.dataQuality(params)); } catch (e) { setError(e); } }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   return (
     <Shell title="Data quality" subtitle={d ? `${num(d.records)} vehicle records · API problems for ${d.range.label}` : ' '} actions={controls}>
       {error && !d ? <div className="card"><Failed error={error} onRetry={load} /></div> : !d ? <SkeletonCards n={8} /> : (
@@ -58,8 +59,8 @@ export default function DataQuality() {
             {!d.trend.length ? <Empty>No data available — no report was issued in this period.</Empty> : (
               <div className="h-64"><ResponsiveContainer>
                 <LineChart data={d.trend}><CartesianGrid strokeDasharray="3 3" stroke="#e3ecea" /><XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                  <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} /><Tooltip formatter={(v) => `${v}%`} /><Legend wrapperStyle={{ fontSize: 12 }} />
-                  {Object.entries(COLORS).map(([k, c]) => <Line key={k} type="monotone" dataKey={k} stroke={c} dot={false} />)}
+                  <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} /><Tooltip formatter={(v) => `${v}%`} /><Legend {...legendToggle()} wrapperStyle={{ fontSize: 12 }} />
+                  {Object.entries(COLORS).map(([k, c]) => <Line {...chartAnim()} key={k} type="monotone" dataKey={k} stroke={c} dot={false} />)}
                 </LineChart>
               </ResponsiveContainer></div>
             )}

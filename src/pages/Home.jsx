@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { chartAnim } from '../lib/motion.jsx';
 import { api } from '../lib/api';
 import { count, rupees } from '../lib/format';
 import Shell from '../components/Shell.jsx';
@@ -139,8 +140,8 @@ export default function Home() {
                 <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={false} interval={2} />
                 <YAxis tick={AXIS} tickLine={false} axisLine={false} allowDecimals={false} />
                 <Tooltip {...TOOLTIP} />
-                <Area type="monotone" dataKey="checks" name="Checks" stroke="#0d9488" fill="#0d9488" fillOpacity={0.15} />
-                <Area type="monotone" dataKey="signed_up" name="New customers" stroke="#0b4f4a" fill="#0b4f4a" fillOpacity={0.12} />
+                <Area {...chartAnim()} type="monotone" dataKey="checks" name="Checks" stroke="#0d9488" fill="#0d9488" fillOpacity={0.15} />
+                <Area {...chartAnim()} type="monotone" dataKey="signed_up" name="New customers" stroke="#0b4f4a" fill="#0b4f4a" fillOpacity={0.12} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -157,7 +158,7 @@ export default function Home() {
               <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={false} interval={2} />
               <YAxis tick={AXIS} tickLine={false} axisLine={false} allowDecimals={false} />
               <Tooltip {...TOOLTIP} />
-              <Bar dataKey="paid" name="Paid" fill="#0d9488" radius={[3, 3, 0, 0]} />
+              <Bar {...chartAnim()} dataKey="paid" name="Paid" fill="#0d9488" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

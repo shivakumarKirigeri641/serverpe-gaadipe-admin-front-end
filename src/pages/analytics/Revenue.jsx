@@ -1,6 +1,7 @@
 import {
   ComposedChart, AreaChart, Area, BarChart, Bar, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine,
 } from 'recharts';
+import { chartAnim, legendToggle } from '../../lib/motion.jsx';
 import { count, date } from '../../lib/format';
 import { Chart, Delta, inr, TOOLTIP, AXIS, rupeeAxis } from './kit.jsx';
 
@@ -65,11 +66,11 @@ export default function Revenue({ rows, grain }) {
           <YAxis yAxisId="r" tick={AXIS} tickFormatter={rupeeAxis} />
           <YAxis yAxisId="g" orientation="right" tick={AXIS} tickFormatter={(v) => `${v}%`} />
           <Tooltip contentStyle={TOOLTIP} formatter={(v, n) => (n === 'Growth %' ? (v == null ? '—' : `${v}%`) : money(v))} />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
           <ReferenceLine yAxisId="g" y={0} stroke="#c9d6d4" />
-          <Bar yAxisId="r" dataKey="gross" name="Gross" fill="#0d9488" radius={[3, 3, 0, 0]} />
-          <Bar yAxisId="r" dataKey="take_home" name="Take-home" fill="#0b4f4a" radius={[3, 3, 0, 0]} />
-          <Line yAxisId="g" type="monotone" dataKey="growth" name="Growth %" stroke="#e08700" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+          <Bar {...chartAnim()} yAxisId="r" dataKey="gross" name="Gross" fill="#0d9488" radius={[3, 3, 0, 0]} />
+          <Bar {...chartAnim()} yAxisId="r" dataKey="take_home" name="Take-home" fill="#0b4f4a" radius={[3, 3, 0, 0]} />
+          <Line {...chartAnim()} yAxisId="g" type="monotone" dataKey="growth" name="Growth %" stroke="#e08700" strokeWidth={2} dot={{ r: 2 }} connectNulls />
         </ComposedChart>
       </Chart>
 
@@ -80,11 +81,11 @@ export default function Revenue({ rows, grain }) {
             <XAxis dataKey="label" tick={AXIS} />
             <YAxis tick={AXIS} tickFormatter={rupeeAxis} />
             <Tooltip contentStyle={TOOLTIP} formatter={(v) => money(v)} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="take_home" name="Take-home" stackId="a" fill="#0b4f4a" />
-            <Bar dataKey="gst" name="GST" stackId="a" fill="#94a3b8" />
-            <Bar dataKey="gateway" name="Razorpay" stackId="a" fill="#e08700" />
-            <Bar dataKey="messaging" name="WhatsApp + SMS" stackId="a" fill="#d92d20" radius={[3, 3, 0, 0]} />
+            <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
+            <Bar {...chartAnim()} dataKey="take_home" name="Take-home" stackId="a" fill="#0b4f4a" />
+            <Bar {...chartAnim()} dataKey="gst" name="GST" stackId="a" fill="#94a3b8" />
+            <Bar {...chartAnim()} dataKey="gateway" name="Razorpay" stackId="a" fill="#e08700" />
+            <Bar {...chartAnim()} dataKey="messaging" name="WhatsApp + SMS" stackId="a" fill="#d92d20" radius={[3, 3, 0, 0]} />
           </BarChart>
         </Chart>
 
@@ -100,7 +101,7 @@ export default function Revenue({ rows, grain }) {
             <XAxis dataKey="label" tick={AXIS} />
             <YAxis tick={AXIS} tickFormatter={rupeeAxis} />
             <Tooltip contentStyle={TOOLTIP} formatter={(v) => money(v)} />
-            <Area type="monotone" dataKey="cumulative" name="Take-home so far" stroke="#0b4f4a" fill="url(#cum)" strokeWidth={2} />
+            <Area {...chartAnim()} type="monotone" dataKey="cumulative" name="Take-home so far" stroke="#0b4f4a" fill="url(#cum)" strokeWidth={2} />
           </AreaChart>
         </Chart>
 
@@ -111,9 +112,9 @@ export default function Revenue({ rows, grain }) {
             <YAxis yAxisId="n" tick={AXIS} allowDecimals={false} />
             <YAxis yAxisId="p" orientation="right" tick={AXIS} tickFormatter={(v) => `${v}%`} />
             <Tooltip contentStyle={TOOLTIP} formatter={(v, n) => (n === 'Conversion' ? `${v}%` : v)} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar yAxisId="n" dataKey="payments" name="Payments" fill="#0d9488" radius={[3, 3, 0, 0]} />
-            <Line yAxisId="p" type="monotone" dataKey="conversion" name="Conversion" stroke="#7c3aed" strokeWidth={2} dot={{ r: 2 }} />
+            <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
+            <Bar {...chartAnim()} yAxisId="n" dataKey="payments" name="Payments" fill="#0d9488" radius={[3, 3, 0, 0]} />
+            <Line {...chartAnim()} yAxisId="p" type="monotone" dataKey="conversion" name="Conversion" stroke="#7c3aed" strokeWidth={2} dot={{ r: 2 }} />
           </ComposedChart>
         </Chart>
 
@@ -123,7 +124,7 @@ export default function Revenue({ rows, grain }) {
             <XAxis dataKey="label" tick={AXIS} />
             <YAxis tick={AXIS} tickFormatter={(v) => `₹${v}`} />
             <Tooltip contentStyle={TOOLTIP} formatter={(v) => money(v)} />
-            <Line type="monotone" dataKey="aov" name="Average order" stroke="#0d9488" strokeWidth={2} dot={{ r: 2 }} />
+            <Line {...chartAnim()} type="monotone" dataKey="aov" name="Average order" stroke="#0d9488" strokeWidth={2} dot={{ r: 2 }} />
           </LineChart>
         </Chart>
       </div>

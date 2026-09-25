@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Hint } from '../../components/ui.jsx';
+import { AnimatedNumber } from '../../lib/motion.jsx';
 
 /*
  * Pieces the operations screens share (user, 2026-09-25): rupees, the change
@@ -30,20 +31,34 @@ export function Change({ m, money = m?.money, compact = false }) {
   );
 }
 
-export function MetricCard({ m, delay = 0 }) {
+/* A KPI's tooltip: what it is, how it is worked out, which period, against what. */
+function kpiNote(m, period) {
+  return (
+    <span className="block max-w-xs space-y-1">
+      <span className="block">{m.about}</span>
+      {m.formula && <span className="block whitespace-pre-line font-mono text-[10px]">{m.formula}</span>}
+      {period && <span className="block text-[10px] opacity-80">Period: {period.label}{period.compare ? ` · compared ${period.compare}` : ''}</span>}
+      {m.previous != null && <span className="block text-[10px] opacity-80">Previous: {m.money ? rs(m.previous) : num(m.previous)}</span>}
+    </span>
+  );
+}
+
+export function MetricCard({ m, delay = 0, period }) {
   const body = (
     <>
       <div className="flex items-start justify-between gap-2">
         <span className="text-2xs font-semibold uppercase tracking-wider text-muted">{m.label}</span>
       </div>
-      <div className="tabular mt-1 text-2xl font-semibold text-ink">{fmtValue(m)}</div>
+      <div className="tabular mt-1 text-2xl font-semibold text-ink">
+        {m.value == null ? '—' : <AnimatedNumber value={m.value} worseUp={m.worse_up} format={(v) => (m.money ? rs(Math.round(v)) : num(Math.round(v)))} />}
+      </div>
       <div className="mt-0.5"><Change m={m} /></div>
     </>
   );
   return (
-    <Hint note={m.about}>
+    <Hint note={kpiNote(m, period)}>
       {m.to ? (
-        <Link to={m.to} className={`card rise lift block px-4 py-3 hover:shadow-pop ${delay ? `rise-${delay}` : ''}`}>{body}</Link>
+        <Link to={m.to} className={`card rise lift m-press block px-4 py-3 hover:shadow-pop ${delay ? `rise-${delay}` : ''}`}>{body}</Link>
       ) : <div className="card rise px-4 py-3">{body}</div>}
     </Hint>
   );

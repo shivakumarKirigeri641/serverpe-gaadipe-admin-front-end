@@ -1,5 +1,8 @@
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { ConnectionStatus, RefreshButton } from './HeaderStatus.jsx';
+import { Hint } from './ui.jsx';
+import { onBusyChange } from '../lib/api';
 import { useSession, allowed } from '../lib/session';
 import { BusyBar } from './ui.jsx';
 import { useLive, Toasts } from './Live.jsx';
@@ -150,6 +153,7 @@ const NAV = [
       { to: '/permissions', label: 'Permissions', icon: ShieldIcon, cap: 'audit.view' },
       { to: '/audit', label: 'Audit logs', icon: ListIcon, cap: 'audit.view' },
       { to: '/backups', label: 'Backup / recovery', icon: ShieldIcon, cap: 'system.view' },
+      { to: '/preferences', label: 'Display & motion', icon: CogIcon },
       // Owner only, and only while Settings → admin_report_access_enabled is on.
       { to: '/report-access', label: 'Report access ⚠️', icon: KeyIcon, cap: 'report_access' },
     ],
@@ -169,7 +173,30 @@ function Badge({ kind, b }) {
   return n ? <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tone}`}>{text}</span> : null;
 }
 
+/* "Updating…" beside the title — only while a request is running, after 300 ms. */
+function Updating() {
+  const [on, setOn] = useState(false);
+  useLayoutEffect(() => {
+    let t;
+    return onBusyChange((b) => { clearTimeout(t); if (b > 0) t = setTimeout(() => setOn(true), 300); else setOn(false); });
+  }, []);
+  return on ? <span className="m-fade text-2xs font-normal text-muted" role="status">Updating…</span> : null;
+}
+
+/*
+ * Remembered between screens (each screen draws its own Shell): where the
+ * sidebar was scrolled, where the active marker sat — so it glides from the
+ * last item to the new one — and whether the sidebar is collapsed.
+ */
+const navMemory = { scroll: 0, marker: null };
+const readCollapsed = () => { try { return localStorage.getItem('gp.nav.collapsed') === '1'; } catch { return false; } };
+
 export default function Shell({ title, subtitle, actions, tabs, children }) {
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const toggleCollapsed = () => setCollapsed((c) => { try { localStorage.setItem('gp.nav.collapsed', c ? '0' : '1'); } catch { /* private */ } return !c; });
+  const asideRef = useRef(null);
+  const navRef = useRef(null);
+  const [marker, setMarker] = useState(navMemory.marker);
   const { me, can, signOut } = useSession();
   const { badges } = useLive();
   const [open, setOpen] = useState(false);
@@ -183,20 +210,41 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
   });
   const isOn = (item) => (item.match ? item.match(pathname, search) : (item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`)));
 
+  // Restore the sidebar's scroll, then slide the marker to the active item.
+  useLayoutEffect(() => {
+    if (asideRef.current) asideRef.current.scrollTop = navMemory.scroll;
+  }, []);
+  useLayoutEffect(() => {
+    const el = navRef.current?.querySelector('[data-active="1"]');
+    const next = el ? { top: el.offsetTop, height: el.offsetHeight } : null;
+    const raf = requestAnimationFrame(() => { setMarker(next); navMemory.marker = next; });
+    return () => cancelAnimationFrame(raf);
+  }, [pathname, search, collapsed, folded]);
+
   return (
     <div className="min-h-screen lg:flex">
       <BusyBar />
 
-      <aside className={`fixed inset-y-0 left-0 z-40 w-60 shrink-0 overflow-y-auto border-r border-line bg-white transition-transform lg:static lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside ref={asideRef} onScroll={(e) => { navMemory.scroll = e.currentTarget.scrollTop; }}
+        className={`fixed inset-y-0 left-0 z-40 w-60 shrink-0 overflow-y-auto overflow-x-hidden border-r border-line bg-white transition-[width,transform] duration-200 ease-out lg:static lg:translate-x-0 ${collapsed ? 'lg:w-16' : 'lg:w-60'} ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex h-14 items-center gap-2.5 border-b border-line px-5">
-          <span className="grid h-7 w-7 place-items-center rounded-md bg-brand text-xs font-bold text-white">GP</span>
-          <div className="leading-tight">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-brand text-xs font-bold text-white">GP</span>
+          <div className={`leading-tight transition-opacity duration-150 ${collapsed ? 'lg:pointer-events-none lg:opacity-0' : ''}`}>
             <div className="text-sm font-semibold text-ink">GaadiPe</div>
             <div className="text-2xs text-muted">Admin</div>
           </div>
+          <Hint note={collapsed ? 'Expand the sidebar' : 'Collapse the sidebar to icons'}>
+            <button type="button" onClick={toggleCollapsed} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="m-press ml-auto hidden h-7 w-7 place-items-center rounded-md text-muted hover:bg-shell hover:text-ink lg:grid">
+              <span className={`transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`}>‹</span>
+            </button>
+          </Hint>
         </div>
 
-        <nav className="px-3 py-4">
+        <nav ref={navRef} className="relative px-3 py-4">
+          {/* The active marker: one bar that glides to whichever item is open. */}
+          {marker && <span aria-hidden="true" className="absolute left-1 w-1 rounded-full bg-brand transition-all duration-300 ease-out"
+            style={{ top: marker.top + 6, height: Math.max(0, marker.height - 12) }} />}
           {NAV.map((section) => {
             const items = section.items.filter((i) => allowed(can, i.cap));
             if (!items.length) return null;
@@ -204,22 +252,25 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
             const shut = folded.includes(section.group) && !items.some(isOn);
             return (
               <div key={section.group} className="mb-3">
+                {collapsed ? <div className="mx-2 mb-1.5 hidden border-t border-line lg:block" /> : null}
                 <button type="button" onClick={() => fold(section.group)} aria-expanded={!shut}
-                  className="flex w-full items-center justify-between px-2 pb-1.5 text-2xs font-semibold uppercase tracking-wider text-muted hover:text-ink">
-                  {section.group}<span className={`transition ${shut ? '' : 'rotate-90'}`}>›</span>
+                  className={`flex w-full items-center justify-between px-2 pb-1.5 text-2xs font-semibold uppercase tracking-wider text-muted hover:text-ink ${collapsed ? 'lg:hidden' : ''}`}>
+                  {section.group}<span className={`transition-transform duration-150 ${shut ? '' : 'rotate-90'}`}>›</span>
                 </button>
-                {!shut && items.map((item) => (
-                  <NavLink key={item.to} to={item.to} end={item.end}
-                    onClick={() => setOpen(false)}
-                    className={({ isActive }) => `mb-0.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition ${
-                      (item.match ? item.match(pathname, search) : isActive)
-                        ? 'bg-brand/8 font-semibold text-brand-deep'
-                        : 'text-body hover:bg-shell'}`}>
-                    <item.icon />
-                    {item.label}
-                    {item.badge && <Badge kind={item.badge} b={badges} />}
-                  </NavLink>
-                ))}
+                {!(shut && !collapsed) && items.map((item) => {
+                  const on = isOn(item);
+                  const link = (
+                    <NavLink key={item.to} to={item.to} end={item.end} data-active={on ? '1' : '0'} aria-label={item.label}
+                      onClick={() => setOpen(false)}
+                      className={`mb-0.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors duration-150 ${
+                        on ? 'bg-brand/8 font-semibold text-brand-deep' : 'text-body hover:bg-shell'} ${collapsed ? 'lg:justify-center lg:px-0' : ''}`}>
+                      <item.icon />
+                      <span className={`truncate transition-opacity duration-150 ${collapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+                      {item.badge && !collapsed && <Badge kind={item.badge} b={badges} />}
+                    </NavLink>
+                  );
+                  return collapsed ? <Hint key={item.to} note={item.label} className="block">{link}</Hint> : link;
+                })}
               </div>
             );
           })}
@@ -232,15 +283,16 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-line bg-white/90 px-4 backdrop-blur lg:px-6">
           <button className="btn-quiet !px-2.5 !py-1.5 lg:hidden" onClick={() => setOpen(true)} aria-label="Menu">☰</button>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-sm font-semibold text-ink">{title}</h1>
+            <h1 className="flex items-center gap-2 truncate text-sm font-semibold text-ink">{title}<Updating /></h1>
             {subtitle && <p className="truncate text-2xs text-muted">{subtitle}</p>}
           </div>
           {allowed(can, 'dashboard.view') && <div className="no-print"><GlobalSearch /></div>}
           <div className="no-print flex items-center gap-2">{actions}</div>
+          <div className="no-print flex items-center gap-1"><ConnectionStatus /><RefreshButton /></div>
           <Notifications Icon={BellIcon} />
           <div className="no-print hidden items-center gap-2 border-l border-line pl-3 sm:flex">
             <div className="text-right leading-tight">
-              <div className="text-2xs font-semibold text-ink">{me?.name}</div>
+              <Link to="/preferences" className="text-2xs font-semibold text-ink hover:underline" title="Display & motion">{me?.name}</Link>
               <div className="text-2xs capitalize text-muted">{me?.role}</div>
             </div>
             <button className="btn-quiet !px-2.5 !py-1.5 text-2xs" onClick={signOut}>Sign out</button>
@@ -250,7 +302,8 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
         {/* A screen made of tabs passes them here, so they sit under the
             header rather than floating over the sidebar. */}
         {tabs && <div className="border-b border-line bg-white px-4 lg:px-6">{tabs}</div>}
-        <main className="px-4 py-5 lg:px-6">{children}</main>
+        {/* Each screen arrives with a short fade-rise (motion system). */}
+        <main className="m-enter px-4 py-5 lg:px-6">{children}</main>
       </div>
       <Toasts />
     </div>

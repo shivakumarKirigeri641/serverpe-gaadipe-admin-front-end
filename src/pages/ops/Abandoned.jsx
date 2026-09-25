@@ -23,7 +23,7 @@ export default function Abandoned() {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
   const load = useCallback(async () => { try { setError(null); setD(await api.abandoned({ window: win, limit: SIZE, offset: (page - 1) * SIZE })); } catch (e) { setError(e); } }, [win, page]);
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   useEffect(() => { setPage(1); }, [win]);
   useAutoRefresh(load, 30000);
   return (

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { chartAnim, legendToggle } from '../lib/motion.jsx';
 import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
 import { usePeriod } from '../components/Period.jsx';
@@ -84,9 +85,9 @@ export default function Lookups() {
                       <XAxis dataKey="day" tick={AXIS} tickFormatter={(d) => d.slice(5)} />
                       <YAxis tick={AXIS} allowDecimals={false} />
                       <Tooltip contentStyle={TOOLTIP} />
-                      <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Bar dataKey="found" name="Found" stackId="a" fill="#0d9488" />
-                      <Bar dataKey="failed" name="Not found" stackId="a" fill="#d92d20" radius={[3, 3, 0, 0]} />
+                      <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
+                      <Bar {...chartAnim()} dataKey="found" name="Found" stackId="a" fill="#0d9488" />
+                      <Bar {...chartAnim()} dataKey="failed" name="Not found" stackId="a" fill="#d92d20" radius={[3, 3, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}

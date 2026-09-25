@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ResponsiveContainer } from 'recharts';
+import { chartAnim } from '../../lib/motion.jsx';
 import { rupees, count, date, dateTime, plate } from '../../lib/format';
 import { Hint, Pager, PAGE_SIZE, Empty } from '../../components/ui.jsx';
 

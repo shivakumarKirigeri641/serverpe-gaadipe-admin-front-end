@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { chartAnim, legendToggle } from '../lib/motion.jsx';
 import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
 import { usePeriod } from '../components/Period.jsx';
@@ -29,7 +30,7 @@ export default function WhatsAppCenter() {
   const load = useCallback(async () => {
     try { setData(await api.whatsappStats(params)); setError(null); } catch (e) { setError(e); }
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setData(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   useEffect(() => {
     const t = setInterval(() => { if (!document.hidden) load(); }, 60000);
     return () => clearInterval(t);
@@ -91,7 +92,7 @@ export default function WhatsAppCenter() {
                     <XAxis dataKey="hour" tick={AXIS} tickFormatter={(h) => `${h}`} interval={2} />
                     <YAxis tick={AXIS} allowDecimals={false} />
                     <Tooltip contentStyle={TOOLTIP} labelFormatter={(h) => `${h}:00–${h}:59`} />
-                    <Bar dataKey="n" name="Messages in" fill="#0d9488" radius={[3, 3, 0, 0]} />
+                    <Bar {...chartAnim()} dataKey="n" name="Messages in" fill="#0d9488" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -108,10 +109,10 @@ export default function WhatsAppCenter() {
                     <XAxis dataKey="day" tick={AXIS} tickFormatter={(d) => d.slice(5)} />
                     <YAxis tick={AXIS} allowDecimals={false} />
                     <Tooltip contentStyle={TOOLTIP} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="incoming" name="In" stackId="a" fill="#0b4f4a" />
-                    <Bar dataKey="replies" name="Replies" stackId="a" fill="#0d9488" />
-                    <Bar dataKey="templates" name="Templates" stackId="a" fill="#e08700" radius={[3, 3, 0, 0]} />
+                    <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
+                    <Bar {...chartAnim()} dataKey="incoming" name="In" stackId="a" fill="#0b4f4a" />
+                    <Bar {...chartAnim()} dataKey="replies" name="Replies" stackId="a" fill="#0d9488" />
+                    <Bar {...chartAnim()} dataKey="templates" name="Templates" stackId="a" fill="#e08700" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}

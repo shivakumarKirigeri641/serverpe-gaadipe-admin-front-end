@@ -19,7 +19,7 @@ export default function FinanceExport() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const load = useCallback(async () => { try { setError(null); setD(await api.profitability(params)); } catch (e) { setError(e); } }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   const go = async () => {
     setBusy(true);
     try { const { blob, filename } = await api.exportCsv('ledger.csv', params); saveBlob(blob, filename); snack('Export downloaded — logged'); } catch (e) { snack(e.message, 'wrong'); } finally { setBusy(false); }

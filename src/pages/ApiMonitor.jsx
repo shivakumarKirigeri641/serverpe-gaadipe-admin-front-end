@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { chartAnim, legendToggle } from '../lib/motion.jsx';
 import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
 import { usePeriod } from '../components/Period.jsx';
@@ -112,10 +113,10 @@ export default function ApiMonitor() {
                       <XAxis dataKey="day" tick={AXIS} tickFormatter={(d) => d.slice(5)} />
                       <YAxis tick={AXIS} allowDecimals={false} />
                       <Tooltip contentStyle={TOOLTIP} />
-                      <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Bar dataKey="found" name="Found" stackId="a" fill="#0d9488" />
-                      <Bar dataKey="cached" name="Cached" stackId="a" fill="#99d5cf" />
-                      <Bar dataKey="failed" name="Failed" stackId="a" fill="#d92d20" radius={[3, 3, 0, 0]} />
+                      <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
+                      <Bar {...chartAnim()} dataKey="found" name="Found" stackId="a" fill="#0d9488" />
+                      <Bar {...chartAnim()} dataKey="cached" name="Cached" stackId="a" fill="#99d5cf" />
+                      <Bar {...chartAnim()} dataKey="failed" name="Failed" stackId="a" fill="#d92d20" radius={[3, 3, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -128,14 +129,14 @@ export default function ApiMonitor() {
                   <BarChart data={data.by_hour}>
                     <XAxis dataKey="hour" tick={AXIS} interval={2} />
                     <Tooltip contentStyle={TOOLTIP} labelFormatter={(h) => `${h}:00`} />
-                    <Bar dataKey="calls" name="Calls" fill="#0b4f4a" radius={[2, 2, 0, 0]} />
+                    <Bar {...chartAnim()} dataKey="calls" name="Calls" fill="#0b4f4a" radius={[2, 2, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={data.by_day}>
                     <XAxis dataKey="day" tick={AXIS} tickFormatter={(d) => d.slice(5)} />
                     <Tooltip contentStyle={TOOLTIP} formatter={(v) => `${v} ms`} />
-                    <Line type="monotone" dataKey="avg_ms" name="Average" stroke="#e08700" dot={false} />
+                    <Line {...chartAnim()} type="monotone" dataKey="avg_ms" name="Average" stroke="#e08700" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

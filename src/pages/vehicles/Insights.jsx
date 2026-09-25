@@ -67,7 +67,7 @@ function Patterns() {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
   const load = useCallback(async () => { try { setError(null); setD(await api.vehicleIntel(params)); } catch (e) { setError(e); } }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   return (
     <>
       <div className="mb-3 flex items-center justify-between"><span className="text-2xs text-muted">{d?.range.label}</span>{controls}</div>
@@ -105,7 +105,7 @@ function Signals() {
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
   const load = useCallback(async () => { try { setError(null); setD(await api.vehicleSignals(params)); } catch (e) { setError(e); } }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   return (
     <>
       <Banner className="mb-3">Signals are patterns worth a look, not findings. Nothing is blocked, banned or deleted because of them — any action stays a person’s decision.</Banner>

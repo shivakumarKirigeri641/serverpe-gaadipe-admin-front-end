@@ -1,4 +1,5 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { chartAnim, legendToggle } from '../../lib/motion.jsx';
 import { count, date, percent } from '../../lib/format';
 import { Hint, Empty } from '../../components/ui.jsx';
 import { Chart, TOOLTIP, AXIS, inr } from './kit.jsx';
@@ -89,10 +90,10 @@ export default function Activity({ rows, grain, funnel, heat }) {
             <XAxis dataKey="label" tick={AXIS} />
             <YAxis tick={AXIS} allowDecimals={false} />
             <Tooltip contentStyle={TOOLTIP} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Area type="monotone" dataKey="checks" name="Checks" stroke="#0d9488" fill="url(#g1)" />
-            <Area type="monotone" dataKey="active_users" name="People checking" stroke="#0f766e" fill="none" />
-            <Area type="monotone" dataKey="new_users" name="New customers" stroke="#e08700" fill="none" />
+            <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
+            <Area {...chartAnim()} type="monotone" dataKey="checks" name="Checks" stroke="#0d9488" fill="url(#g1)" />
+            <Area {...chartAnim()} type="monotone" dataKey="active_users" name="People checking" stroke="#0f766e" fill="none" />
+            <Area {...chartAnim()} type="monotone" dataKey="new_users" name="New customers" stroke="#e08700" fill="none" />
           </AreaChart>
         </Chart>
 
@@ -102,10 +103,10 @@ export default function Activity({ rows, grain, funnel, heat }) {
             <XAxis dataKey="label" tick={AXIS} />
             <YAxis tick={AXIS} allowDecimals={false} />
             <Tooltip contentStyle={TOOLTIP} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Area type="monotone" dataKey="ulip_calls" name="ULIP calls" stroke="#d92d20" fill="none" />
-            <Area type="monotone" dataKey="messages" name="WhatsApp messages" stroke="#6b8380" fill="none" />
-            <Area type="monotone" dataKey="reports" name="Reports sold" stroke="#0d9488" fill="none" />
+            <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
+            <Area {...chartAnim()} type="monotone" dataKey="ulip_calls" name="ULIP calls" stroke="#d92d20" fill="none" />
+            <Area {...chartAnim()} type="monotone" dataKey="messages" name="WhatsApp messages" stroke="#6b8380" fill="none" />
+            <Area {...chartAnim()} type="monotone" dataKey="reports" name="Reports sold" stroke="#0d9488" fill="none" />
           </AreaChart>
         </Chart>
       </div>

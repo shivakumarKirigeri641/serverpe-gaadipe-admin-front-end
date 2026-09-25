@@ -53,6 +53,7 @@ import SearchResults from './pages/ops/SearchResults.jsx';
 import LiveActivity from './pages/ops/LiveActivity.jsx';
 import ExportCenter from './pages/ops/ExportCenter.jsx';
 import Delivery from './pages/ops/Delivery.jsx';
+import Preferences from './pages/ops/Preferences.jsx';
 import VehicleProfile from './pages/vehicles/Profile.jsx';
 import VehicleLists from './pages/vehicles/Lists.jsx';
 import VehicleInsights from './pages/vehicles/Insights.jsx';
@@ -122,6 +123,7 @@ export default function App() {
       <Route path="/activity" element={<LiveActivity />} />
       <Route path="/exports" element={<ExportCenter />} />
       <Route path="/reports/delivery" element={<Delivery />} />
+      <Route path="/preferences" element={<Preferences />} />
       <Route path="/overview" element={<Home />} />
       <Route path="/journey" element={<Journey />} />
       <Route path="/whatsapp" element={<WhatsAppCenter />} />

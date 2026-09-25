@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motionLevel, DURATION } from '../lib/motion.jsx';
 import { createPortal } from 'react-dom';
 import { onBusyChange } from '../lib/api';
 
@@ -94,20 +95,33 @@ export function Field({ label, hint, children, className = '' }) {
 }
 
 /** A dialog over the page. Escape and the backdrop close it unless it is busy. */
+/* Closing waits for the exit animation (motion system); with no motion, at once. */
+function useClosing(onClose, busy) {
+  const [closing, setClosing] = useState(false);
+  const close = () => {
+    if (busy || closing) return;
+    if (motionLevel() === 'minimal') { onClose(); return; }
+    setClosing(true);
+    setTimeout(onClose, DURATION.fast);
+  };
+  return [closing, close];
+}
+
 export function Modal({ title, subtitle, onClose, children, footer, wide = false, busy = false }) {
+  const [closing, close] = useClosing(onClose, busy);
   useEffect(() => {
-    const key = (e) => { if (e.key === 'Escape' && !busy) onClose(); };
+    const key = (e) => { if (e.key === 'Escape' && !busy) close(); };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [onClose, busy]);
+  }, [onClose, busy, closing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Drawn onto <body>, not where it is written: a dialog opened from inside a
      card would otherwise be positioned and clipped by that card. */
   return createPortal((
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/30 px-4 py-8"
-      onClick={() => !busy && onClose()}>
-      <div role="dialog" aria-modal="true"
-        className={`card w-full ${wide ? 'max-w-5xl' : 'max-w-lg'} shadow-pop`}
+    <div className={`fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/30 px-4 py-8 ${closing ? 'm-overlay-out' : 'm-overlay'}`}
+      onClick={() => !busy && close()}>
+      <div role="dialog" aria-modal="true" aria-label={typeof title === 'string' ? title : undefined}
+        className={`card w-full ${wide ? 'max-w-5xl' : 'max-w-lg'} shadow-pop ${closing ? 'm-modal-out' : 'm-modal'}`}
         onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div className="min-w-0">
@@ -115,7 +129,7 @@ export function Modal({ title, subtitle, onClose, children, footer, wide = false
             {subtitle && <p className="mt-0.5 text-2xs text-muted">{subtitle}</p>}
           </div>
           <button type="button" className="btn-quiet no-print !px-3 !py-1.5 text-2xs"
-            onClick={onClose} disabled={busy}>Close</button>
+            onClick={close} disabled={busy}>Close</button>
         </div>
         <div className="space-y-4 px-5 py-4">{children}</div>
         {footer && (
@@ -152,8 +166,14 @@ export function Stat({ label, value, sub, tone = 'info', note, onClick, delay = 
 }
 
 /** Nothing here — said in a sentence, never as an empty box. */
-export const Empty = ({ children = 'Nothing here yet.' }) => (
-  <div className="px-4 py-10 text-center text-sm text-muted">{children}</div>
+export const Empty = ({ children = 'Nothing here yet.', action }) => (
+  <div className="m-fade px-4 py-10 text-center text-sm text-muted">
+    <svg viewBox="0 0 24 24" className="mx-auto mb-2 h-7 w-7 text-line" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 14h8" />
+    </svg>
+    {children}
+    {action && <div className="mt-3">{action}</div>}
+  </div>
 );
 
 export const Spinner = ({ label = 'Loading…' }) => (
@@ -193,12 +213,21 @@ export const SkeletonCards = ({ n = 4 }) => (
 );
 
 /** A page-level error that still lets the reader try again. */
-export const Failed = ({ error, onRetry }) => (
-  <div className="px-4 py-10 text-center">
-    <p className="text-sm text-wrong-700">{error?.message || 'Something went wrong.'}</p>
-    {onRetry && <button className="btn-quiet mt-3" onClick={onRetry}>Try again</button>}
-  </div>
-);
+/* Unable to load: said plainly, with Retry and the technical detail one tap away. */
+export function Failed({ error, onRetry }) {
+  const [details, setDetails] = useState(false);
+  return (
+    <div className="m-fade px-4 py-10 text-center" role="alert">
+      <p className="text-sm font-semibold text-wrong-700">⚠ Unable to load data</p>
+      <p className="mt-1 text-sm text-body">{error?.message || 'Something went wrong.'}</p>
+      <div className="mt-3 flex justify-center gap-2">
+        {onRetry && <button className="btn-quiet m-press !py-1.5" onClick={onRetry}>Retry</button>}
+        {error && (error.code || error.status) && <button className="btn-quiet !py-1.5 text-2xs" onClick={() => setDetails((d) => !d)}>{details ? 'Hide details' : 'View details'}</button>}
+      </div>
+      {details && <p className="m-drop mt-2 font-mono text-2xs text-muted">code: {error.code || '—'} · status: {error.status || '—'}{error.offline ? ' · the server did not answer' : ''}</p>}
+    </div>
+  );
+}
 
 /** A table that scrolls sideways on a phone rather than squashing its columns. */
 export const Table = ({ head, children, className = '' }) => (
@@ -236,6 +265,63 @@ export function openBlob(blob) {
  * says where the reader is and offers the pages around it, the first and the
  * last. A list that fits on one page gets no pager at all.
  */
+/**
+ * A panel from the right (filters, details). Slides in; slides out before it
+ * goes. Escape and the backdrop close it.
+ */
+export function Drawer({ title, onClose, children, footer, width = 'max-w-md' }) {
+  const [closing, close] = useClosing(onClose, false);
+  useEffect(() => {
+    const key = (e) => { if (e.key === 'Escape') close(); };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [closing]); // eslint-disable-line react-hooks/exhaustive-deps
+  return createPortal((
+    <div className={`fixed inset-0 z-50 flex justify-end bg-ink/20 ${closing ? 'm-overlay-out' : 'm-overlay'}`} onClick={close}>
+      <aside role="dialog" aria-modal="true" aria-label={title}
+        className={`flex h-full w-full ${width} flex-col border-l border-line bg-white shadow-pop ${closing ? 'm-drawer-out' : 'm-drawer'}`} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-line px-5 py-3">
+          <h2 className="text-base font-semibold text-ink">{title}</h2>
+          <button className="btn-quiet !px-3 !py-1.5 text-2xs" onClick={close}>Close</button>
+        </div>
+        <div className="flex-1 overflow-y-auto">{children}</div>
+        {footer && <div className="flex justify-end gap-2 border-t border-line bg-shell/80 px-5 py-3">{footer}</div>}
+      </aside>
+    </div>
+  ), document.body);
+}
+
+/** Copy a value; the button says "Copied" with a check for a moment. */
+export function CopyButton({ value, label = 'Copy', className = '' }) {
+  const [done, setDone] = useState(false);
+  const copy = async (e) => {
+    e.stopPropagation();
+    try { await navigator.clipboard.writeText(String(value)); setDone(true); setTimeout(() => setDone(false), 1500); } catch { /* not allowed here */ }
+  };
+  return (
+    <Hint note={done ? 'Copied' : `${label} ${value}`}>
+      <button type="button" onClick={copy} aria-label={`${label} ${value}`}
+        className={`m-press inline-flex h-5 w-5 items-center justify-center rounded text-muted hover:bg-shell hover:text-ink ${className}`}>
+        {done ? <span className="m-chip-in text-good-700">✓</span> : (
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h8" /></svg>
+        )}
+      </button>
+    </Hint>
+  );
+}
+
+/** A filter chip that scales in when added and out when removed. */
+export function FilterChip({ children, onRemove, tone = 'border-line bg-shell text-body' }) {
+  const [out, setOut] = useState(false);
+  const remove = () => { setOut(true); setTimeout(onRemove, motionLevel() === 'minimal' ? 0 : DURATION.fast); };
+  return (
+    <span className={`chip border ${tone} ${out ? 'm-chip-out' : 'm-chip-in'}`}>
+      {children}
+      <button type="button" className="opacity-60 hover:opacity-100" onClick={remove} aria-label="Remove filter">✕</button>
+    </span>
+  );
+}
+
 export const PAGE_SIZE = 25;
 
 export function Pager({ page, total, size = PAGE_SIZE, onPage, className = '' }) {

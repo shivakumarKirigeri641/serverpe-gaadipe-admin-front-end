@@ -26,7 +26,7 @@ export default function BusinessHealth() {
   const loadSummary = useCallback(async () => { try { setSum(await api.businessSummary()); } catch { /* the rest still shows */ } }, []);
   const load = useCallback(async () => { try { setError(null); setData(await api.businessHealth(params)); } catch (e) { setError(e); } }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { loadSummary(); }, [loadSummary]);
-  useEffect(() => { setData(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   useAutoRefresh(loadSummary, 30000);
   useAutoRefresh(load, 60000);
 
@@ -38,7 +38,9 @@ export default function BusinessHealth() {
       {error && !data ? <div className="card"><Failed error={error} onRetry={load} /></div> : !data ? <SkeletonCards n={12} /> : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-            {data.metrics.map((m, i) => <MetricCard key={m.key} m={m} delay={Math.min(4, Math.floor(i / 5) + 1)} />)}
+            {data.metrics.map((m, i) => <MetricCard key={m.key} period={{ label: data.range.label, compare: data.compare?.label }}
+              m={m.key === 'net' ? { ...m, formula: 'Revenue (GST incl.)\n− GST\n− refunds (net of GST)\n− gateway fee + its GST\n− vehicle API cost\n− WhatsApp & SMS cost\n= Net contribution\n(no referral rewards: no programme)' } : m}
+              delay={Math.min(4, Math.floor(i / 5) + 1)} />)}
             <div className="card px-4 py-3">
               <div className="text-2xs font-semibold uppercase tracking-wider text-muted">Contribution margin</div>
               <div className="tabular mt-1 text-2xl font-semibold text-ink">{data.margin_pct == null ? '—' : `${data.margin_pct}%`}</div>

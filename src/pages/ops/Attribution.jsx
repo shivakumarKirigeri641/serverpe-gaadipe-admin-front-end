@@ -23,7 +23,7 @@ export default function Attribution() {
   const [error, setError] = useState(null);
   const [people, setPeople] = useState(null);
   const load = useCallback(async () => { try { setError(null); setD(await api.attribution({ ...params, model, source: source || undefined })); } catch (e) { setError(e); } }, [key, model, source]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   const set = (p) => setSp(Object.fromEntries(Object.entries({ source, model, ...p }).filter(([, v]) => v && v !== 'first')));
   const openPeople = async (campaign) => {
     setPeople({ title: campaign ? `${d.source_label} · ${campaign}` : d.rows.find((r) => r.key === campaign)?.label, rows: null });

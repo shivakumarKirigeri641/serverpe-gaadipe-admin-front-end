@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { chartAnim, legendToggle } from '../../lib/motion.jsx';
 import { count } from '../../lib/format';
 import { Hint } from '../../components/ui.jsx';
 import { Chart, VehicleDrill, TOOLTIP, AXIS, GROUP_COLOURS, STATE_COLOURS, STATE_WORDS, PALETTE, inr } from './kit.jsx';
@@ -29,12 +30,12 @@ export default function Fleet({ fleet }) {
   const pie = (title, note, data, onPick, colours) => (
     <Chart title={title} note={note} height={250}>
       <PieChart>
-        <Pie data={data} dataKey="value" nameKey="name" innerRadius="52%" outerRadius="82%" paddingAngle={2}
+        <Pie {...chartAnim()} data={data} dataKey="value" nameKey="name" innerRadius="52%" outerRadius="82%" paddingAngle={2}
           onClick={(d) => onPick(d.payload || d)} cursor="pointer" isAnimationActive>
           {data.map((d, i) => <Cell key={d.name} fill={colours ? colours(d, i) : PALETTE[i % PALETTE.length]} />)}
         </Pie>
         <Tooltip contentStyle={TOOLTIP} formatter={(v, n) => [`${count(v)} · ${total ? Math.round((v / total) * 100) : 0}%`, n]} />
-        <Legend wrapperStyle={{ fontSize: 11 }} />
+        <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
       </PieChart>
     </Chart>
   );
@@ -97,9 +98,9 @@ export default function Fleet({ fleet }) {
             <XAxis dataKey="name" tick={AXIS} />
             <YAxis tick={AXIS} allowDecimals={false} />
             <Tooltip contentStyle={TOOLTIP} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
             {['expired', 'due', 'valid', 'none'].map((s, i, all) => (
-              <Bar key={s} dataKey={s} name={STATE_WORDS[s]} stackId="a" fill={STATE_COLOURS[s]} cursor="pointer"
+              <Bar {...chartAnim()} key={s} dataKey={s} name={STATE_WORDS[s]} stackId="a" fill={STATE_COLOURS[s]} cursor="pointer"
                 radius={i === all.length - 1 ? [3, 3, 0, 0] : 0}
                 onClick={(d) => show(`${d.name}: ${STATE_WORDS[s]}`, (v) => v.group === d.key && v.worst === s)} />
             ))}
@@ -113,10 +114,10 @@ export default function Fleet({ fleet }) {
             <YAxis yAxisId="n" tick={AXIS} allowDecimals={false} />
             <YAxis yAxisId="a" orientation="right" tick={AXIS} tickFormatter={(v) => `₹${v >= 1000 ? `${Math.round(v / 1000)}k` : v}`} />
             <Tooltip contentStyle={TOOLTIP} formatter={(v, n) => (n === 'Penalty' ? `₹${Number(v).toLocaleString('en-IN')}` : v)} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar yAxisId="n" dataKey="vehicles" name="Vehicles" fill="#0d9488" radius={[3, 3, 0, 0]} cursor="pointer"
+            <Legend {...legendToggle()} wrapperStyle={{ fontSize: 11 }} />
+            <Bar {...chartAnim()} yAxisId="n" dataKey="vehicles" name="Vehicles" fill="#0d9488" radius={[3, 3, 0, 0]} cursor="pointer"
               onClick={(d) => show(`${d.name} with pending challans`, (v) => v.group === d.key && v.challans_pending > 0)} />
-            <Bar yAxisId="a" dataKey="amount" name="Penalty" fill="#d92d20" radius={[3, 3, 0, 0]} />
+            <Bar {...chartAnim()} yAxisId="a" dataKey="amount" name="Penalty" fill="#d92d20" radius={[3, 3, 0, 0]} />
           </BarChart>
         </Chart>
 
@@ -126,7 +127,7 @@ export default function Fleet({ fleet }) {
             <XAxis type="number" tick={AXIS} allowDecimals={false} />
             <YAxis type="category" dataKey="name" tick={AXIS} width={130} />
             <Tooltip contentStyle={TOOLTIP} />
-            <Bar dataKey="count" name="Vehicles" fill="#0b4f4a" radius={[0, 3, 3, 0]} cursor="pointer"
+            <Bar {...chartAnim()} dataKey="count" name="Vehicles" fill="#0b4f4a" radius={[0, 3, 3, 0]} cursor="pointer"
               onClick={(d) => show(`Maker: ${d.name}`, (v) => (v.maker || '').toUpperCase().startsWith(String(d.name).toUpperCase()))} />
           </BarChart>
         </Chart>
@@ -137,7 +138,7 @@ export default function Fleet({ fleet }) {
             <XAxis dataKey="name" tick={AXIS} />
             <YAxis tick={AXIS} allowDecimals={false} />
             <Tooltip contentStyle={TOOLTIP} />
-            <Bar dataKey="count" name="Vehicles" fill="#7c3aed" radius={[3, 3, 0, 0]} cursor="pointer"
+            <Bar {...chartAnim()} dataKey="count" name="Vehicles" fill="#7c3aed" radius={[3, 3, 0, 0]} cursor="pointer"
               onClick={(d) => show(`Age ${d.name}`, (v) => ageBand(v.age_years) === d.name)} />
           </BarChart>
         </Chart>
@@ -148,7 +149,7 @@ export default function Fleet({ fleet }) {
             <XAxis dataKey="name" tick={AXIS} />
             <YAxis tick={AXIS} allowDecimals={false} />
             <Tooltip contentStyle={TOOLTIP} />
-            <Bar dataKey="count" name="Vehicles" fill="#2563eb" radius={[3, 3, 0, 0]} cursor="pointer"
+            <Bar {...chartAnim()} dataKey="count" name="Vehicles" fill="#2563eb" radius={[3, 3, 0, 0]} cursor="pointer"
               onClick={(d) => show(`Registered in ${d.name}`, (v) => v.state_code === d.name)} />
           </BarChart>
         </Chart>
@@ -159,7 +160,7 @@ export default function Fleet({ fleet }) {
             <XAxis dataKey="name" tick={AXIS} />
             <YAxis tick={AXIS} allowDecimals={false} />
             <Tooltip contentStyle={TOOLTIP} />
-            <Bar dataKey="count" name="Vehicles" fill="#12a150" radius={[3, 3, 0, 0]} cursor="pointer"
+            <Bar {...chartAnim()} dataKey="count" name="Vehicles" fill="#12a150" radius={[3, 3, 0, 0]} cursor="pointer"
               onClick={(d) => show(`Norms: ${d.name}`, (v) => (v.norms || 'Not recorded') === d.name)} />
           </BarChart>
         </Chart>

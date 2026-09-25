@@ -18,7 +18,7 @@ export default function DropOff() {
   const [error, setError] = useState(null);
   const [drill, setDrill] = useState(null);
   const load = useCallback(async () => { try { setError(null); setD(await api.commandOverview(params)); } catch (e) { setError(e); } }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setD(null); load(); }, [load]);
+  useEffect(() => { load(); }, [load]);
   const open = (s) => s.drill && setDrill({ what: s.drill, title: s.label });
   const stages = d?.funnel || [];
   const change = (s) => {

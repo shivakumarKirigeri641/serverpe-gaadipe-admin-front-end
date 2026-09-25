@@ -55,6 +55,30 @@ export class ApiError extends Error {
   }
 }
 
+/*
+ * THE CONNECTION, AS IT REALLY IS (motion system, 2026-09-25). Every request
+ * says whether the server answered: one failure is "reconnecting", three in a
+ * row "connection lost", and the next answer "restored". The header's LIVE
+ * sign reads this — it never says live when the server is not answering.
+ */
+let conn = { state: 'live', failures: 0, at: Date.now(), restored: false };
+const connWatchers = new Set();
+export const onConnChange = (fn) => { connWatchers.add(fn); fn(conn); return () => connWatchers.delete(fn); };
+function connResult(ok) {
+  const was = conn.state;
+  if (ok) {
+    if (was === 'live' && !conn.failures) return;
+    conn = { state: 'live', failures: 0, at: Date.now(), restored: was !== 'live' };
+  } else {
+    const failures = conn.failures + 1;
+    conn = { state: failures >= 3 ? 'lost' : 'reconnecting', failures, at: Date.now(), restored: false };
+  }
+  connWatchers.forEach((fn) => fn(conn));
+}
+/* Errors a person saw (not background refreshes) — the refresh button reads it. */
+let errorCount = 0;
+export const errorsSeen = () => errorCount;
+
 async function call(path, { method = 'GET', body, auth = true, timeoutMs = 25000, quiet = false } = {}) {
   const headers = { Accept: 'application/json' };
   if (body) headers['Content-Type'] = 'application/json';
@@ -83,12 +107,15 @@ async function call(path, { method = 'GET', body, auth = true, timeoutMs = 25000
       });
     }
   } catch (e) {
+    connResult(false);
+    if (!silent) errorCount += 1;
     throw new ApiError(
       e.name === 'TimeoutError' ? 'The server is taking too long to answer.' : 'Cannot reach the server.',
       { code: 'offline' });
   } finally {
     if (!silent) setBusy(-1);
   }
+  connResult(true);
 
   if (data === undefined) data = await res.json().catch(() => ({}));
 
@@ -98,6 +125,7 @@ async function call(path, { method = 'GET', body, auth = true, timeoutMs = 25000
       { code: 'signed_out', status: 401 });
   }
   if (!res.ok) {
+    if (!silent) errorCount += 1;
     throw new ApiError(data.message || 'Something went wrong.',
       { code: data.error || 'error', status: res.status, body: data });
   }

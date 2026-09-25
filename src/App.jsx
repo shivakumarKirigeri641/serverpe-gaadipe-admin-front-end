@@ -8,6 +8,8 @@ import CommandCenter from './pages/CommandCenter.jsx';
 import Journey from './pages/Journey.jsx';
 import WhatsAppCenter from './pages/WhatsAppCenter.jsx';
 import Lookups from './pages/Lookups.jsx';
+import Payments from './pages/Payments.jsx';
+import ApiMonitor from './pages/ApiMonitor.jsx';
 import Conversations from './pages/Conversations.jsx';
 import Campaigns from './pages/Campaigns.jsx';
 import Customers from './pages/Customers.jsx';
@@ -62,6 +64,8 @@ export default function App() {
       <Route path="/journey" element={<Journey />} />
       <Route path="/whatsapp" element={<WhatsAppCenter />} />
       <Route path="/lookups" element={<Lookups />} />
+      <Route path="/payments" element={<Payments />} />
+      <Route path="/api-monitor" element={<ApiMonitor />} />
       {/* The old numbers screen keeps its place for anyone who wants it. */}
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/conversations" element={<Conversations />} />

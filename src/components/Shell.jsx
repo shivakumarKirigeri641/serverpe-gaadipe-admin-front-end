@@ -38,6 +38,7 @@ const NAV = [
   {
     group: 'Money',
     items: [
+      { to: '/payments', label: 'Payments', icon: RupeeIcon, cap: 'money' },
       { to: '/finance', label: 'Revenue & GST', icon: RupeeIcon, cap: 'money' },
       { to: '/documents', label: 'Reports & invoices', icon: DocIcon },
       { to: '/referrals', label: 'Referrals', icon: UsersIcon },
@@ -65,6 +66,7 @@ const NAV = [
       { to: '/people', label: 'Panel users', icon: KeyIcon, cap: 'admins' },
       { to: '/audit', label: 'Audit trail', icon: ListIcon },
       { to: '/security', label: 'Security', icon: ShieldIcon },
+      { to: '/api-monitor', label: 'API monitor', icon: PulseIcon },
       { to: '/health', label: 'System health', icon: HeartIcon },
     ],
   },

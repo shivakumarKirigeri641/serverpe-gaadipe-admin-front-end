@@ -167,6 +167,12 @@ export const api = {
   whatsappStats: (params) => call(`/whatsapp/stats${qs(params)}`, { quiet: true }),
   lookupsSummary: (params) => call(`/lookups/summary${qs(params)}`),
   lookups: (params) => call(`/lookups${qs(params)}`),
+  // Payments and the records API (phase 5).
+  paymentsSummary: (params) => call(`/payments/summary${qs(params)}`),
+  payments: (params) => call(`/payments${qs(params)}`),
+  payment: (id) => call(`/payments/${id}`),
+  apiMonitor: (params) => call(`/api-monitor${qs(params)}`, { quiet: true }),
+  apiLog: (params) => call(`/api-monitor/log${qs(params)}`),
   exportCsv: (kind, params) => pdf(`/export/${kind}${qs(params)}`),
   dashboard: () => call('/dashboard'),
   health: () => call('/health'),

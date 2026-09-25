@@ -173,6 +173,13 @@ export const api = {
   payment: (id) => call(`/payments/${id}`),
   apiMonitor: (params) => call(`/api-monitor${qs(params)}`, { quiet: true }),
   apiLog: (params) => call(`/api-monitor/log${qs(params)}`),
+  // Health, alerts, pop-ups and badges (phase 6).
+  healthServices: () => call('/health/services', { quiet: true }),
+  alerts: (params) => call(`/alerts${qs(params)}`),
+  ackAlert: (id) => call(`/alerts/${id}/ack`, { method: 'POST' }),
+  resolveAlert: (id, note) => call(`/alerts/${id}/resolve`, { method: 'POST', body: { note } }),
+  feed: (since) => call(`/feed${qs({ since })}`, { quiet: true }),
+  badges: () => call('/badges', { quiet: true }),
   exportCsv: (kind, params) => pdf(`/export/${kind}${qs(params)}`),
   dashboard: () => call('/dashboard'),
   health: () => call('/health'),

@@ -63,6 +63,60 @@ const CHECKS = [
   },
 ];
 
+/* Every service GaadiPe depends on, one state each (phase 6). */
+const LEVEL = {
+  operational: ['Operational', 'bg-good-500', 'text-good-700'], warning: ['Warning', 'bg-watch-500', 'text-watch-700'],
+  degraded: ['Degraded', 'bg-watch-500', 'text-watch-700'], down: ['Down', 'bg-wrong-500', 'text-wrong-700'],
+};
+function Services() {
+  const [s, setS] = useState(null);
+  const [open, setOpen] = useState(null);
+  const load = useCallback(() => api.healthServices().then(setS).catch(() => {}), []);
+  useEffect(() => { load(); const t = setInterval(load, REFRESH_MS); return () => clearInterval(t); }, [load]);
+  if (!s) return <Spinner />;
+  const [overall, , overallTone] = LEVEL[s.overall] || LEVEL.operational;
+  return (
+    <div className="mb-6">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-ink">Services</h2>
+        <span className={`text-2xs font-semibold ${overallTone}`}>Overall: {overall}</span>
+      </div>
+      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+        {s.services.map((x) => {
+          const [word, dot, tone] = LEVEL[x.level] || LEVEL.operational;
+          return (
+            <div key={x.key} className="card cursor-pointer px-4 py-3 hover:bg-shell/50" onClick={() => setOpen(open === x.key ? null : x.key)}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 text-sm font-semibold text-ink">
+                  <span className={`h-2.5 w-2.5 rounded-full ${dot} ${x.level !== 'operational' ? 'breathe' : ''}`} />{x.name}
+                </span>
+                <span className={`text-2xs font-semibold ${tone}`}>{word}</span>
+              </div>
+              <p className="mt-1 text-2xs text-muted">{x.message}</p>
+              {open === x.key && (
+                <div className="mt-2 space-y-0.5 border-t border-line pt-2 text-2xs text-body">
+                  {Object.entries(x.metrics || {}).map(([k, v]) => <div key={k}>{k.replace(/_/g, ' ')}: <b>{v == null ? '—' : String(v)}</b></div>)}
+                  {x.last_ok && <div>Last success: <b>{ago(x.last_ok)}</b></div>}
+                  {x.last_failure && <div>Last failure: <b className="text-wrong-700">{ago(x.last_failure)}</b></div>}
+                  {x.last_webhook && <div>Last webhook: <b>{ago(x.last_webhook)}</b></div>}
+                  {x.last_error && <div className="text-wrong-700">Error: {x.last_error}</div>}
+                  {x.jobs && x.jobs.map((j) => (
+                    <div key={j.name} className={j.late ? 'text-wrong-700' : j.state === 'error' ? 'text-watch-700' : ''}>
+                      {j.name}: every {j.every_s}s · {j.runs ? `last ran ${ago(j.last_end)} (${j.last_ms} ms)` : 'waiting for its first run'}
+                      {j.late ? ' · LATE' : ''}{j.last_error ? ` · error: ${j.last_error}` : ''}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <h2 className="mb-2 mt-6 text-sm font-semibold text-ink">Checks</h2>
+    </div>
+  );
+}
+
 export default function Health() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -84,6 +138,7 @@ export default function Health() {
     <Shell title="System health" subtitle={data ? `Checked ${ago(data.at)}` : ' '}
       actions={<button className="btn-quiet !py-1.5 text-2xs" onClick={load}>Check again</button>}>
 
+      <Services />
       {error ? <Failed error={error} onRetry={load} /> : !data ? <Spinner /> : (
         <>
           {!troubles.length && (

@@ -10,6 +10,7 @@ import WhatsAppCenter from './pages/WhatsAppCenter.jsx';
 import Lookups from './pages/Lookups.jsx';
 import Payments from './pages/Payments.jsx';
 import ApiMonitor from './pages/ApiMonitor.jsx';
+import Alerts from './pages/Alerts.jsx';
 import Conversations from './pages/Conversations.jsx';
 import Campaigns from './pages/Campaigns.jsx';
 import Customers from './pages/Customers.jsx';
@@ -66,6 +67,7 @@ export default function App() {
       <Route path="/lookups" element={<Lookups />} />
       <Route path="/payments" element={<Payments />} />
       <Route path="/api-monitor" element={<ApiMonitor />} />
+      <Route path="/alerts" element={<Alerts />} />
       {/* The old numbers screen keeps its place for anyone who wants it. */}
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/conversations" element={<Conversations />} />

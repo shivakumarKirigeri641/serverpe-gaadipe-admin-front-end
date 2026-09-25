@@ -74,6 +74,20 @@ const GROUPS = [
     },
   },
   {
+    title: 'Alerts',
+    note: 'What the alert checker watches, every minute. An alert opens when a rule trips and closes itself when it clears; critical and warning alerts are emailed (notify_alerts).',
+    keys: {
+      alerts_enabled: 'Run the alert checks (true) or not (false).',
+      alert_api_error_pct: 'Records API: warn when this % of live calls fail in 15 minutes. 50% or more is always critical.',
+      alert_api_p95_ms: 'Records API: warn when the slowest 5% of calls take longer than this, in milliseconds.',
+      alert_wa_failure_pct: 'WhatsApp: warn when this % of messages sent in the last hour fail (at least 5 sent).',
+      alert_payment_failures_hour: 'Payments: warn when this many payments have a failed attempt in one hour.',
+      alert_traffic_spike_pct: 'Traffic: note when website visitors this hour are this % above the 7-day hourly average (at least 20).',
+      alert_daily_revenue_target_paise: 'Good news when the day passes this revenue, in paise (1900 = ₹19). 0 = off.',
+      notify_alerts: 'Email you when a critical or warning alert opens.',
+    },
+  },
+  {
     title: 'Emails to you',
     note: 'Sent from the noreply mailbox. Switch any of them off here; it takes effect within a minute.',
     keys: {

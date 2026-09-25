@@ -1,7 +1,8 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { useSession, allowed } from '../lib/session';
 import { BusyBar } from './ui.jsx';
+import { useLive, Toasts } from './Live.jsx';
 
 /*
  * The frame every screen sits in: a fixed sidebar on a desk, a drawer on a
@@ -22,6 +23,7 @@ const NAV = [
       { to: '/', label: 'Command center', end: true, icon: GridIcon },
       { to: '/overview', label: 'Overview', icon: ListIcon },
       { to: '/live', label: 'Live', icon: PulseIcon },
+      { to: '/alerts', label: 'Alerts', icon: BellIcon, badge: 'alerts' },
       { to: '/analytics', label: 'Analytics', icon: ChartIcon },
     ],
   },
@@ -38,7 +40,7 @@ const NAV = [
   {
     group: 'Money',
     items: [
-      { to: '/payments', label: 'Payments', icon: RupeeIcon, cap: 'money' },
+      { to: '/payments', label: 'Payments', icon: RupeeIcon, cap: 'money', badge: 'payments' },
       { to: '/finance', label: 'Revenue & GST', icon: RupeeIcon, cap: 'money' },
       { to: '/documents', label: 'Reports & invoices', icon: DocIcon },
       { to: '/referrals', label: 'Referrals', icon: UsersIcon },
@@ -48,7 +50,7 @@ const NAV = [
   {
     group: 'Talking to customers',
     items: [
-      { to: '/whatsapp', label: 'WhatsApp', icon: SendIcon },
+      { to: '/whatsapp', label: 'WhatsApp', icon: SendIcon, badge: 'whatsapp' },
       { to: '/conversations', label: 'Conversations', icon: LifebuoyIcon },
       { to: '/campaigns', label: 'Campaigns', icon: SendIcon },
     ],
@@ -72,8 +74,21 @@ const NAV = [
   },
 ];
 
+/* The count beside a menu item (phase 6): people on WhatsApp now, open alerts
+   (red when one is critical), payments in progress. Nothing when zero. */
+function Badge({ kind, b }) {
+  if (!b) return null;
+  const [n, text, tone] = {
+    whatsapp: [b.whatsapp_live, `${b.whatsapp_live} live`, 'bg-good-50 text-good-700'],
+    alerts: [b.alerts_open, String(b.alerts_open), b.alerts_critical ? 'bg-wrong-500 text-white' : 'bg-watch-50 text-watch-700'],
+    payments: [b.payments_pending, `${b.payments_pending} pending`, 'bg-shell text-body'],
+  }[kind] || [0];
+  return n ? <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tone}`}>{text}</span> : null;
+}
+
 export default function Shell({ title, subtitle, actions, tabs, children }) {
   const { me, can, signOut } = useSession();
+  const { badges } = useLive();
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
 
@@ -108,6 +123,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
                         : 'text-body hover:bg-shell'}`}>
                     <item.icon />
                     {item.label}
+                    {item.badge && <Badge kind={item.badge} b={badges} />}
                   </NavLink>
                 ))}
               </div>
@@ -126,6 +142,14 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
             {subtitle && <p className="truncate text-2xs text-muted">{subtitle}</p>}
           </div>
           <div className="no-print flex items-center gap-2">{actions}</div>
+          <Link to="/alerts" className="no-print relative rounded-lg p-1.5 text-body hover:bg-shell" title="Alerts" aria-label="Alerts">
+            <BellIcon />
+            {badges?.alerts_open > 0 && (
+              <span className={`absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-bold text-white ${badges.alerts_critical ? 'bg-wrong-500' : 'bg-watch-500'}`}>
+                {badges.alerts_open}
+              </span>
+            )}
+          </Link>
           <div className="no-print hidden items-center gap-2 border-l border-line pl-3 sm:flex">
             <div className="text-right leading-tight">
               <div className="text-2xs font-semibold text-ink">{me?.name}</div>
@@ -140,6 +164,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
         {tabs && <div className="border-b border-line bg-white px-4 lg:px-6">{tabs}</div>}
         <main className="px-4 py-5 lg:px-6">{children}</main>
       </div>
+      <Toasts />
     </div>
   );
 }
@@ -169,4 +194,5 @@ function LifebuoyIcon() { return <I><circle cx="12" cy="12" r="9" /><circle cx="
 function SendIcon() { return <I><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></I>; }
 function MailIcon() { return <I><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></I>; }
 function GiftIcon() { return <I><rect x="3" y="8" width="18" height="4" /><path d="M5 12v9h14v-9M12 8v13M12 8S10.5 3 8 3.5 7 8 12 8Zm0 0s1.5-5 4-4.5S17 8 12 8Z" /></I>; }
+function BellIcon() { return <I><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></I>; }
 function HeartIcon() { return <I><path d="M20.8 6.6a5 5 0 0 0-8.8-1.6A5 5 0 0 0 3.2 6.6C1.9 9.7 4.3 13 12 19c7.7-6 10.1-9.3 8.8-12.4Z" /></I>; }

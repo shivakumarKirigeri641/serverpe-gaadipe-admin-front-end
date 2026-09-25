@@ -89,7 +89,7 @@ const GROUPS = [
   },
   {
     title: 'Emails to customers',
-    note: 'Vehicle updates by email while there is no WhatsApp Business number. Paying customers get the full record daily; others get the basic view every few days. Only confirmed addresses are mailed, and every email has an unsubscribe link.',
+    note: 'Vehicle updates by email, alongside WhatsApp — the copy that keeps working when a WhatsApp message cannot be sent. Paying customers get the full record daily; others get the basic view every few days. Only confirmed addresses are mailed, and every email has an unsubscribe link.',
     keys: {
       customer_email_enabled: 'Customer emails on (true) or off (false).',
       customer_email_only_to: 'TEST MODE — while this has addresses, customer emails go ONLY to them. Clear it to send to every customer.',

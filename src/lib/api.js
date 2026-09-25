@@ -230,6 +230,12 @@ export const api = {
   vehicleSignals: (params) => call(`/vehicles/signals${qs(params)}`),
   vehicleLive: (since) => call(`/vehicles/live${qs({ since })}`, { quiet: true }),
   vehicleApiLogs: (params) => call(`/vehicles/api-logs${qs(params)}`),
+  // The operations module (user, 2026-09-25): business health, the ledger.
+  businessHealth: (params) => call(`/business/health${qs(params)}`, { quiet: true }),
+  businessSummary: () => call('/business/summary', { quiet: true }),
+  profitability: (params) => call(`/profitability${qs(params)}`),
+  transactions: (params) => call(`/profitability/transactions${qs(params)}`),
+  transaction: (id) => call(`/profitability/transactions/${id}`),
   pref: (key) => call(`/prefs/${key}`, { quiet: true }),
   setPref: (key, value) => call(`/prefs/${key}`, { method: 'PUT', body: { value }, quiet: true }),
   check: (regNo, params) => call(`/check/${encodeURIComponent(regNo)}${qs(params)}`, { timeoutMs: 60000 }),

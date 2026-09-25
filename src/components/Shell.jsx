@@ -21,7 +21,10 @@ const NAV = [
   {
     group: 'Every day',
     items: [
-      { to: '/', label: 'Command center', end: true, icon: GridIcon },
+      { to: '/', label: 'Business Health', end: true, icon: HeartIcon, cap: 'dashboard.view' },
+      { to: '/command', label: 'Live Command Center', icon: GridIcon },
+      { to: '/profitability', label: 'Profitability', icon: RupeeIcon, cap: 'finance.view' },
+      { to: '/finance/export', label: 'GST / Accounting export', icon: DocIcon, cap: 'finance.export' },
       { to: '/overview', label: 'Overview', icon: ListIcon },
       { to: '/live', label: 'Live', icon: PulseIcon },
       { to: '/alerts', label: 'Alerts', icon: BellIcon, badge: 'alerts' },

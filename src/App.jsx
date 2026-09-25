@@ -26,6 +26,9 @@ import Broadcast from './pages/Broadcast.jsx';
 import FreeReports from './pages/FreeReports.jsx';
 import Live from './pages/Live.jsx';
 import VehicleExplorer from './pages/vehicles/Explorer.jsx';
+import BusinessHealth from './pages/ops/BusinessHealth.jsx';
+import Profitability from './pages/ops/Profitability.jsx';
+import FinanceExport from './pages/ops/FinanceExport.jsx';
 import VehicleProfile from './pages/vehicles/Profile.jsx';
 import VehicleLists from './pages/vehicles/Lists.jsx';
 import VehicleInsights from './pages/vehicles/Insights.jsx';
@@ -65,7 +68,12 @@ export default function App() {
     <Routes>
       {/* The Command Center is the start page; the previous Home, with its
           "Needs you" list, stays as Overview. */}
-      <Route path="/" element={<CommandCenter />} />
+      {/* Business Health is the owner's first screen (operations module, 2026-09-25);
+          the Command Center keeps everything it had at /command. */}
+      <Route path="/" element={<BusinessHealth />} />
+      <Route path="/command" element={<CommandCenter />} />
+      <Route path="/profitability" element={<Profitability />} />
+      <Route path="/finance/export" element={<FinanceExport />} />
       <Route path="/overview" element={<Home />} />
       <Route path="/journey" element={<Journey />} />
       <Route path="/whatsapp" element={<WhatsAppCenter />} />

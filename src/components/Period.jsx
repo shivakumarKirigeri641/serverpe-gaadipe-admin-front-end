@@ -8,7 +8,8 @@ import { useState } from 'react';
  */
 export const RANGES = [
   ['today', 'Today'], ['yesterday', 'Yesterday'], ['7d', 'Last 7 days'], ['30d', 'Last 30 days'],
-  ['this_month', 'This month'], ['last_month', 'Last month'], ['custom', 'Custom'],
+  ['this_month', 'This month'], ['last_month', 'Last month'], ['this_quarter', 'This quarter'], ['last_quarter', 'Last quarter'],
+  ['this_fy', 'This financial year'], ['last_fy', 'Last financial year'], ['custom', 'Custom'],
 ];
 export const COMPARES = [
   ['previous', 'vs previous period'], ['yesterday', 'vs day before'], ['last_week', 'vs same days last week'],

@@ -158,13 +158,13 @@ function LiveStream() {
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center gap-2 border-b border-line px-4 py-2.5 text-sm">
-        <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-good-500 opacity-60" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-good-500" /></span>
+        <span className="relative flex h-2.5 w-2.5"><span className="m-dot m-dot-live h-2.5 w-2.5 bg-good-500" /></span>
         <b className="text-ink">Live</b><span className="text-2xs text-muted">· the last 24 hours, newest first · every 4 seconds</span>
       </div>
       {!rows ? <Skeleton rows={6} /> : !rows.length ? <Empty>No vehicle event in the last 24 hours.</Empty> : (
         <ul className="divide-y divide-line">
           {rows.map((r) => (
-            <li key={r.id} className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-2 text-sm transition-colors duration-1000 ${fresh.has(r.id) ? 'rise bg-good-50' : ''}`}>
+            <li key={r.id} className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-2 text-sm transition-colors duration-1000 ${fresh.has(r.id) ? 'm-row-new' : ''}`}>
               <span className="tabular w-20 shrink-0 text-2xs text-muted" title={dateTime(r.at)}>{new Date(r.at).toLocaleTimeString('en-IN', { hour12: false })}</span>
               <Chip tone={LIVE_TONE[r.name] || 'info'}>{r.label}</Chip>
               {r.reg_no ? <V reg={r.reg_no} display={r.display} /> : <span className="text-muted">—</span>}

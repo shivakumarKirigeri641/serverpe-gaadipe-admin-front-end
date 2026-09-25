@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import { REFRESH_MS } from '../lib/useAutoRefresh';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { count, ago } from '../lib/format';
 import Shell from '../components/Shell.jsx';
+import { AnimatedGauge, AnimatedStatus } from '../lib/motion.jsx';
 import { Spinner, Failed, Banner } from '../components/ui.jsx';
 
 /**
@@ -68,11 +69,35 @@ const LEVEL = {
   operational: ['Operational', 'bg-good-500', 'text-good-700'], warning: ['Warning', 'bg-watch-500', 'text-watch-700'],
   degraded: ['Degraded', 'bg-watch-500', 'text-watch-700'], down: ['Down', 'bg-wrong-500', 'text-wrong-700'],
 };
+/* The dials: bounded figures only, coloured by the same thresholds as the alerts. */
+function Dials({ s }) {
+  const by = Object.fromEntries(s.services.map((x) => [x.key, x]));
+  const t = s.thresholds || {};
+  const api = by.records_api?.metrics || {}; const wa = by.whatsapp_api?.metrics || {};
+  const rateTone = (err, lim) => (err == null ? 'muted' : err >= lim ? 'wrong' : err > 0 ? 'watch' : 'good');
+  const pctTone = (v, lim) => (v == null ? 'muted' : v >= lim ? 'wrong' : v >= lim * 0.85 ? 'watch' : 'good');
+  const lat = api.p95_ms; const latLim = t.api_p95_ms || 8000;
+  const mem = by.backend?.metrics?.server_memory_pct; const disk = by.storage?.metrics?.used_pct;
+  return (
+    <div className="card mb-4 grid grid-cols-2 gap-4 p-4 md:grid-cols-5">
+      <AnimatedGauge label="Vehicle API success" value={api.calls ? 100 - api.error_pct : null} text={api.calls ? `${Math.round(100 - api.error_pct)}%` : null}
+        tone={rateTone(api.calls ? api.error_pct : null, t.api_error_pct || 20)} caption={api.calls ? `${api.calls} calls, last hour` : 'No calls in the last hour'} />
+      <AnimatedGauge label="API latency (p95)" value={lat} max={latLim * 1.5} text={lat == null ? null : `${lat} ms`}
+        tone={lat == null ? 'muted' : lat > latLim ? 'wrong' : lat > latLim * 0.7 ? 'watch' : 'good'} caption={`Threshold ${latLim} ms · avg ${api.avg_ms ?? '—'} ms`} />
+      <AnimatedGauge label="WhatsApp success" value={wa.sent ? 100 - wa.error_pct : null} text={wa.sent ? `${Math.round(100 - wa.error_pct)}%` : null}
+        tone={rateTone(wa.sent ? wa.error_pct : null, t.wa_failure_pct || 10)} caption={wa.sent ? `${wa.sent} sent, last hour` : 'Nothing sent in the last hour'} />
+      <AnimatedGauge label="Server memory" value={mem} text={mem == null ? null : `${mem}%`} tone={pctTone(mem, t.memory_pct || 90)} caption={`Alert at ${t.memory_pct || 90}%`} />
+      <AnimatedGauge label="Disk used" value={disk} text={disk == null ? null : `${disk}%`} tone={pctTone(disk, t.disk_pct || 80)} caption={`Alert at ${t.disk_pct || 80}%`} />
+    </div>
+  );
+}
+
 function Services() {
   const [s, setS] = useState(null);
   const [open, setOpen] = useState(null);
   const load = useCallback(() => api.healthServices().then(setS).catch(() => {}), []);
-  useEffect(() => { load(); const t = setInterval(load, REFRESH_MS); return () => clearInterval(t); }, [load]);
+  useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
   if (!s) return <Spinner />;
   const [overall, , overallTone] = LEVEL[s.overall] || LEVEL.operational;
   return (
@@ -81,20 +106,22 @@ function Services() {
         <h2 className="text-sm font-semibold text-ink">Services</h2>
         <span className={`text-2xs font-semibold ${overallTone}`}>Overall: {overall}</span>
       </div>
+      <Dials s={s} />
       <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
         {s.services.map((x) => {
-          const [word, dot, tone] = LEVEL[x.level] || LEVEL.operational;
+          const [word, , tone] = LEVEL[x.level] || LEVEL.operational;
           return (
-            <div key={x.key} className="card cursor-pointer px-4 py-3 hover:bg-shell/50" onClick={() => setOpen(open === x.key ? null : x.key)}>
+            <div key={x.key} role="button" tabIndex={0} aria-expanded={open === x.key}
+              className="card m-press cursor-pointer px-4 py-3 transition-colors duration-150 hover:bg-shell/50"
+              onClick={() => setOpen(open === x.key ? null : x.key)} onKeyDown={(e) => e.key === 'Enter' && setOpen(open === x.key ? null : x.key)}>
               <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-2 text-sm font-semibold text-ink">
-                  <span className={`h-2.5 w-2.5 rounded-full ${dot} ${x.level !== 'operational' ? 'breathe' : ''}`} />{x.name}
-                </span>
-                <span className={`text-2xs font-semibold ${tone}`}>{word}</span>
+                <span className="text-sm font-semibold text-ink">{x.name}</span>
+                <span className={tone}><AnimatedStatus level={x.level} label={word} /></span>
               </div>
               <p className="mt-1 text-2xs text-muted">{x.message}</p>
+              <p className="text-[10px] text-muted">Checked {ago(s.at)}{x.last_ok ? ` · last success ${ago(x.last_ok)}` : ''}{x.metrics?.response_ms != null ? ` · ${x.metrics.response_ms} ms` : ''}</p>
               {open === x.key && (
-                <div className="mt-2 space-y-0.5 border-t border-line pt-2 text-2xs text-body">
+                <div className="m-drop mt-2 space-y-0.5 border-t border-line pt-2 text-2xs text-body">
                   {Object.entries(x.metrics || {}).map(([k, v]) => <div key={k}>{k.replace(/_/g, ' ')}: <b>{v == null ? '—' : String(v)}</b></div>)}
                   {x.last_ok && <div>Last success: <b>{ago(x.last_ok)}</b></div>}
                   {x.last_failure && <div>Last failure: <b className="text-wrong-700">{ago(x.last_failure)}</b></div>}
@@ -126,11 +153,8 @@ export default function Health() {
     try { setError(null); setData(await api.health()); } catch (e) { setError(e); }
   }, []);
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, REFRESH_MS);
-    return () => clearInterval(t);
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   const troubles = data ? CHECKS.filter(c => Number(data[c.key]) > 0) : [];
 

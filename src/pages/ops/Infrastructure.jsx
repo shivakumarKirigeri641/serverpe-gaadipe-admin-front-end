@@ -5,6 +5,9 @@ import Shell from '../../components/Shell.jsx';
 import { Failed, SkeletonCards, Table, Hint, Chip } from '../../components/ui.jsx';
 import { dateTime } from '../../lib/format';
 import { num } from './common.jsx';
+import { AnimatedProgressRing } from '../../lib/motion.jsx';
+
+const ringTone = (v, warn, bad) => (v == null ? 'muted' : v >= bad ? 'wrong' : v >= warn ? 'watch' : 'good');
 
 /**
  * INFRASTRUCTURE (user, 2026-09-25) — the server under GaadiPe: CPU, memory,
@@ -33,6 +36,13 @@ export default function Infrastructure() {
     <Shell title="Infrastructure" subtitle={d ? `${d.host} · ${d.platform} · as of ${dateTime(d.at)}` : ' '}>
       {error && !d ? <div className="card"><Failed error={error} onRetry={load} /></div> : !d ? <SkeletonCards n={6} /> : (
         <div className="space-y-4">
+          <div className="card grid grid-cols-2 gap-4 p-4 md:grid-cols-4">
+            <AnimatedProgressRing label={d.cpu.load_pct == null ? 'CPU load — not measured on this OS' : `CPU load · ${d.cpu.cores} cores`} value={d.cpu.load_pct} tone={ringTone(d.cpu.load_pct, 70, 90)} />
+            <AnimatedProgressRing label={`Memory · ${num(d.memory.used_mb)} of ${num(d.memory.total_mb)} MB`} value={d.memory.used_pct} tone={ringTone(d.memory.used_pct, 80, 90)} />
+            <AnimatedProgressRing label={d.disk ? `Disk · ${d.disk.free_gb} GB free` : 'Disk — not available'} value={d.disk?.used_pct ?? null} tone={ringTone(d.disk?.used_pct, 70, 80)} />
+            <AnimatedProgressRing label={d.postgres ? `DB connections · ${d.postgres.connections} of ${d.postgres.max_connections}` : 'Database — not available'}
+              value={d.postgres ? Math.round((d.postgres.connections / d.postgres.max_connections) * 100) : null} tone={ringTone(d.postgres ? (d.postgres.connections / d.postgres.max_connections) * 100 : null, 60, 85)} />
+          </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {card('Server', [['Uptime', `${num(d.server_uptime_h)} h`], ['CPU', `${d.cpu.cores} cores`],
               ['Load (1 min)', d.cpu.load_pct == null ? NA : bar(d.cpu.load_pct, 70)], ['Load 1 / 5 / 15', d.cpu.load_1m == null ? NA : `${d.cpu.load_1m.toFixed(2)} / ${d.cpu.load_5m.toFixed(2)} / ${d.cpu.load_15m.toFixed(2)}`],

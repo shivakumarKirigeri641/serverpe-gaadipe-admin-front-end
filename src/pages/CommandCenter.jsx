@@ -294,7 +294,7 @@ function LiveNow() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
-              <span className={`absolute inline-flex h-2.5 w-2.5 animate-ping rounded-full ${ok ? 'bg-good-500/60' : 'bg-watch-500/60'}`} />
+              <span className={`absolute inline-flex h-2.5 w-2.5 m-dot m-dot-live rounded-full ${ok ? 'bg-good-500/60' : 'bg-watch-500/60'}`} />
               <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${ok ? 'bg-good-500' : 'bg-watch-500'}`} />
             </span>
             <span className="text-2xs font-semibold uppercase tracking-wider text-ink">Live now</span>

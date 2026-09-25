@@ -6,6 +6,7 @@ import { usePeriod } from '../../components/Period.jsx';
 import { Failed, Skeleton, Empty, Table } from '../../components/ui.jsx';
 import { rs, num, pct } from './common.jsx';
 import { ms } from '../vehicles/common.jsx';
+import { AnimatedGauge } from '../../lib/motion.jsx';
 
 /**
  * API PROVIDERS (user, 2026-09-25) — VAHAN, eChallan and FASTag (through
@@ -48,6 +49,15 @@ export default function ApiProviders() {
       </div>
       {error && !d ? <div className="card"><Failed error={error} onRetry={load} /></div> : !d ? <div className="card"><Skeleton rows={6} /></div> : (
         <div className="space-y-4">
+          {d.providers.some((p) => p.calls) && (
+            <div className="card flex flex-wrap justify-around gap-4 p-4">
+              {d.providers.filter((p) => p.calls).map((p) => (
+                <AnimatedGauge key={p.provider} label={`${p.provider} latency (p95)`} value={p.p95_ms} max={d.threshold_ms * 1.5} text={p.p95_ms == null ? null : `${p.p95_ms} ms`}
+                  tone={p.p95_ms == null ? 'muted' : p.p95_ms > d.threshold_ms ? 'wrong' : p.p95_ms > d.threshold_ms * 0.7 ? 'watch' : 'good'}
+                  caption={`avg ${p.avg_ms ?? '—'} ms · alert at ${d.threshold_ms} ms`} />
+              ))}
+            </div>
+          )}
           <div className="card overflow-hidden"><div className="border-b border-line px-4 py-2.5 text-sm font-semibold text-ink">Providers</div>
             {!d.providers.length ? <Empty>No calls in this period.</Empty> : table(d.providers, 'Provider')}</div>
           <div className="card overflow-hidden"><div className="border-b border-line px-4 py-2.5 text-sm font-semibold text-ink">Operations</div>

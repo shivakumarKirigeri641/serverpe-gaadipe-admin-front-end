@@ -217,3 +217,5 @@ html[data-motion="reduced"] .m-dot-healthy, html[data-motion="reduced"] .m-dot-w
 .btn:active:not(:disabled) { transform: scale(.98); }
 :focus-visible { outline: 2px solid #0d9488; outline-offset: 2px; }
 tbody tr { transition: background-color var(--m-fast) ease; }
+/* A new row that is also a problem: it slides in and flashes amber. */
+.m-row-new.m-row-warn { animation: m-row-new var(--m-emph) var(--ease-out) both, m-highlight-warn 1.2s var(--ease-out) both; }

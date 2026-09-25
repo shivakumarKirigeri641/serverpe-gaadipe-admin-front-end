@@ -6,6 +6,7 @@ import Shell from '../../components/Shell.jsx';
 import { usePeriod } from '../../components/Period.jsx';
 import { Failed, SkeletonCards, Empty, Table, Hint } from '../../components/ui.jsx';
 import { num, pct } from './common.jsx';
+import { AnimatedGauge } from '../../lib/motion.jsx';
 
 /**
  * PAYMENT FUNNEL & FAILURES (user, 2026-09-25) — from the payment page to
@@ -25,6 +26,12 @@ export default function PaymentFailures() {
     <Shell title="Payment funnel & failures" subtitle={d?.range.label || ' '} actions={controls}>
       {error && !d ? <div className="card"><Failed error={error} onRetry={load} /></div> : !d ? <SkeletonCards n={8} /> : (
         <div className="space-y-4">
+          <div className="card flex flex-wrap items-center justify-around gap-4 p-4">
+            <AnimatedGauge label="Payment success" value={d.success_rate} text={d.success_rate == null ? null : `${d.success_rate}%`}
+              tone={d.success_rate == null ? 'muted' : d.success_rate >= 80 ? 'good' : d.success_rate >= 50 ? 'watch' : 'wrong'} caption="Completed ÷ started" />
+            <AnimatedGauge label="Failure rate" value={d.failure_rate} text={d.failure_rate == null ? null : `${d.failure_rate}%`}
+              tone={d.failure_rate == null ? 'muted' : d.failure_rate >= 20 ? 'wrong' : d.failure_rate > 0 ? 'watch' : 'good'} caption="Failed at Razorpay, never paid" />
+          </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {[['Success rate', pct(d.success_rate), 'Payments completed ÷ payments started.'], ['Failure rate', pct(d.failure_rate), 'Started, failed at Razorpay and never paid ÷ started.'],
               ['Paid after a failure', num(d.recovered_after_failure), `Of ${d.had_failure} with a failed attempt, these paid on a later try.`], ['In progress now', num(d.in_progress), 'Started in the last 30 minutes.']].map(([l, v, n]) => (

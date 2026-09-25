@@ -43,14 +43,14 @@ export default function LiveActivity() {
       </div>
       <div className="card overflow-hidden">
         <div className="flex items-center gap-2 border-b border-line px-4 py-2 text-sm">
-          <span className="relative flex h-2.5 w-2.5">{!paused && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-good-500 opacity-60" />}
-            <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${paused ? 'bg-muted' : 'bg-good-500'}`} /></span>
+          <span className="relative flex h-2.5 w-2.5">
+            <span className={`m-dot h-2.5 w-2.5 ${paused ? 'bg-muted' : 'bg-good-500 m-dot-live'}`} /></span>
           <b className="text-ink">{paused ? 'Paused' : 'Live'}</b>
         </div>
         {!rows ? <Skeleton rows={8} /> : !list.length ? <Empty>Nothing in the last 24 hours{only ? ' of this kind' : ''}.</Empty> : (
           <ul className="divide-y divide-line">
             {list.map((r) => (
-              <li key={r.id} className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-2 text-sm transition-colors duration-1000 ${fresh.has(r.id) ? 'rise bg-good-50' : ''}`}>
+              <li key={r.id} className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-2 text-sm transition-colors duration-1000 ${fresh.has(r.id) ? (r.kind === 'api_error' ? 'm-row-new m-row-warn' : 'm-row-new') : ''}`}>
                 <span className="tabular w-16 shrink-0 text-2xs text-muted">{new Date(r.at).toLocaleTimeString('en-IN', { hour12: false })}</span>
                 <Chip tone={KIND[r.kind]?.[1]}>{KIND[r.kind]?.[0]}</Chip>
                 <span className="text-ink">{r.label}</span>

@@ -213,7 +213,7 @@ function LiveNow({ live }) {
     <Link to="/live" className="lift flex items-center gap-3 rounded-lg border border-line bg-white px-3 py-1.5">
       <span className="relative flex h-2 w-2">
         <span className={`absolute inline-flex h-2 w-2 rounded-full ${
-          live.on_site || live.in_chat ? 'animate-ping bg-good-500/60' : 'bg-line'}`} />
+          live.on_site || live.in_chat ? 'm-dot m-dot-live bg-good-500/60' : 'bg-line'}`} />
         <span className={`relative inline-flex h-2 w-2 rounded-full ${
           live.on_site || live.in_chat ? 'bg-good-500' : 'bg-line'}`} />
       </span>

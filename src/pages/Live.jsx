@@ -99,15 +99,14 @@ export default function Live() {
               note="Payment links opened in the last 30 minutes that have not completed yet. This is the number worth watching." />
           </div>
 
-          <OnSite rows={visitors} onOpen={setOpenVisit} />
-
-          <CustomerActivity tick={pulse?.at} />
-
+          {/* WHATSAPP FIRST (user, 2026-09-25): the chat is where customers are
+              now, so who is messaging sits directly under the counters. The
+              website's own activity follows, under its own heading. */}
           <div className="mt-4 grid gap-4 lg:grid-cols-5">
             <div className="card lg:col-span-3">
               <div className="flex items-center justify-between border-b border-line px-4 py-3">
-                <h2 className="text-sm font-semibold text-ink">Conversations</h2>
-                <span className="text-2xs text-muted">Tap to read the whole thread</span>
+                <h2 className="text-sm font-semibold text-ink">WhatsApp conversations</h2>
+                <span className="text-2xs text-muted">Tap to read the whole chat</span>
               </div>
               {!rows ? <Spinner /> : !rows.length ? (
                 <Empty>{pulse?.whatsapp_on
@@ -126,11 +125,19 @@ export default function Live() {
                             {r.profile_name || r.wa_profile_name || 'Unknown'}
                           </span>
                           <span className="tabular text-2xs text-muted">{fmtMobile(r.mobile)}</span>
+                          {r.is_new && <Chip tone="brand">New</Chip>}
                           {r.blocked && <Chip tone="wrong">Blocked</Chip>}
+                          {r.opted_out && <Chip tone="wrong">STOP</Chip>}
                           {r.has_paid && <Chip tone="good">Paid</Chip>}
                         </span>
                         <span className="mt-0.5 block truncate text-2xs text-muted">
                           {r.last_direction === 'out' ? '↩ ' : ''}{r.last_body || '—'}
+                        </span>
+                        <span className="mt-0.5 block text-2xs text-muted">
+                          {r.last_vehicle
+                            ? <>🚗 {r.last_vehicle}{r.vehicles > 1 ? ` +${r.vehicles - 1} more` : ''}</>
+                            : 'No vehicle checked yet'}
+                          {` · ${count(r.messages)} messages`}
                         </span>
                       </span>
                       <span className="shrink-0 text-right">
@@ -164,6 +171,7 @@ export default function Live() {
                           <span className={m.direction === 'out' ? 'text-brand-deep' : 'text-ink'}>
                             {m.direction === 'out' ? 'out' : 'in'}
                           </span>
+                          {m.profile_name && <span className="font-semibold text-ink">{m.profile_name}</span>}
                           <span className="tabular text-muted">{fmtMobile(m.mobile)}</span>
                           <span className="text-muted">{ago(m.created_at)}</span>
                           {m.error_message && <Chip tone="wrong">failed</Chip>}
@@ -176,6 +184,10 @@ export default function Live() {
               </div>
             </div>
           </div>
+
+          <h2 className="mt-8 text-2xs font-semibold uppercase tracking-wider text-muted">Website</h2>
+          <OnSite rows={visitors} onOpen={setOpenVisit} />
+          <CustomerActivity tick={pulse?.at} />
         </>
       )}
 

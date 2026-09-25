@@ -103,6 +103,9 @@ const NAV = [
       { to: '/api-providers', label: 'API providers', icon: ChartIcon, cap: 'api.view' },
       { to: '/data-quality', label: 'Data quality', icon: ShieldIcon, cap: 'api.view' },
       { to: '/health', label: 'System health', icon: HeartIcon },
+      { to: '/jobs', label: 'Jobs', icon: ListIcon, cap: 'system.view' },
+      { to: '/infrastructure', label: 'Infrastructure', icon: CogIcon, cap: 'system.view' },
+      { to: '/backups', label: 'Backup & recovery', icon: ShieldIcon, cap: 'system.view' },
     ],
   },
 ];

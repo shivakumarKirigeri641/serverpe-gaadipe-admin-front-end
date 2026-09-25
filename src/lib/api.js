@@ -163,6 +163,10 @@ export const api = {
   // One person's whole journey, and CSV exports (phase 3). An export is a file,
   // fetched like a PDF so the session token never sits in a URL.
   journey: (params) => call(`/journey${qs(params)}`),
+  // WhatsApp and vehicle lookups (phase 4).
+  whatsappStats: (params) => call(`/whatsapp/stats${qs(params)}`, { quiet: true }),
+  lookupsSummary: (params) => call(`/lookups/summary${qs(params)}`),
+  lookups: (params) => call(`/lookups${qs(params)}`),
   exportCsv: (kind, params) => pdf(`/export/${kind}${qs(params)}`),
   dashboard: () => call('/dashboard'),
   health: () => call('/health'),

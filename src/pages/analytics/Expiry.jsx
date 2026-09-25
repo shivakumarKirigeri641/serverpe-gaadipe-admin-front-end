@@ -180,6 +180,82 @@ export default function Expiry({ fleet }) {
           </BarChart>
         </Chart>
       </div>
+
+      <ExpiredTable list={list} onOpen={(v) => setDrill({ title: v.reg_no, list: [v] })} />
+    </div>
+  );
+}
+
+/*
+ * EVERY VEHICLE WITH SOMETHING EXPIRED (user, 2026-09-25, phase 4), worst
+ * first: one row per vehicle, one column per document, and how many have
+ * lapsed. The state is read from the registration number. Tap a row for the
+ * vehicle.
+ */
+const TABLE_DOCS = [['insurance', 'Insurance'], ['pucc', 'PUC'], ['tax', 'Road tax'], ['permit', 'Permit'], ['fitness', 'Fitness']];
+const CELL = { expired: ['Expired', 'text-wrong-700'], due: ['Due soon', 'text-watch-700'], valid: ['Valid', 'text-good-700'], none: ['—', 'text-muted'] };
+
+function ExpiredTable({ list, onOpen }) {
+  const [all, setAll] = useState(false);
+  const rows = useMemo(() => list
+    .map((v) => ({ v, expired: TABLE_DOCS.filter(([k]) => v.docs[k]?.state === 'expired').length }))
+    .filter((r) => all || r.expired > 0)
+    .sort((a, b) => b.expired - a.expired || String(a.v.reg_no).localeCompare(String(b.v.reg_no))), [list, all]);
+  const withAny = list.filter((v) => TABLE_DOCS.some(([k]) => v.docs[k]?.state === 'expired')).length;
+  const total = list.reduce((t, v) => t + TABLE_DOCS.filter(([k]) => v.docs[k]?.state === 'expired').length, 0);
+  const common = TABLE_DOCS.map(([k, l]) => [l, list.filter((v) => v.docs[k]?.state === 'expired').length])
+    .sort((a, b) => b[1] - a[1])[0];
+  return (
+    <div className="card overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-3">
+        <div>
+          <h2 className="text-sm font-semibold text-ink">Vehicles with expired documents</h2>
+          <p className="text-2xs text-muted">
+            {count(withAny)} of {count(list.length)} vehicles · {withAny ? (total / withAny).toFixed(1) : '0'} expired per such vehicle
+            {common && common[1] ? ` · most often ${common[0]}` : ''}
+            {' · '}{count(list.filter((v) => TABLE_DOCS.filter(([k]) => v.docs[k]?.state === 'expired').length > 1).length)} with more than one
+          </p>
+        </div>
+        <label className="flex items-center gap-1.5 text-2xs text-body">
+          <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> Show every vehicle
+        </label>
+      </div>
+      {!rows.length ? <p className="px-5 py-4 text-sm text-muted">No vehicle has an expired document.</p> : (
+        <div className="max-h-[480px] overflow-auto">
+          <table className="w-full min-w-[720px] border-collapse">
+            <thead className="sticky top-0 border-b border-line bg-shell">
+              <tr>
+                <th className="th">Vehicle</th><th className="th">State</th>
+                {TABLE_DOCS.map(([k, l]) => <th key={k} className="th">{l}</th>)}
+                <th className="th text-right">Total expired</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {rows.slice(0, 300).map(({ v, expired }) => (
+                <tr key={v.reg_no} className="cursor-pointer hover:bg-shell/70" onClick={() => onOpen(v)}>
+                  <td className="td">
+                    <div className="tabular text-sm font-semibold text-ink">{v.reg_no}</div>
+                    <div className="text-2xs text-muted">{[v.maker && v.maker.split(' ')[0], v.model].filter(Boolean).join(' ')}</div>
+                  </td>
+                  <td className="td text-2xs">{/^[A-Z]{2}/.test(v.reg_no || '') ? v.reg_no.slice(0, 2) : '—'}</td>
+                  {TABLE_DOCS.map(([k]) => {
+                    const d = v.docs[k] || { state: 'none' };
+                    const [word, tone] = CELL[d.state] || CELL.none;
+                    return (
+                      <td key={k} className={`td text-2xs ${tone}`}>
+                        <Hint note={d.days == null ? null : d.days < 0 ? `Lapsed ${-d.days} days ago` : `${d.days} days left`}>
+                          <span>{word}</span>
+                        </Hint>
+                      </td>
+                    );
+                  })}
+                  <td className={`td tabular text-right text-sm font-semibold ${expired ? 'text-wrong-700' : 'text-muted'}`}>{expired}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

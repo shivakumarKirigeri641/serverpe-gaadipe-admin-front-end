@@ -31,6 +31,7 @@ const NAV = [
       { to: '/customers', label: 'Customers', icon: UsersIcon },
       { to: '/journey', label: 'Customer journey', icon: PulseIcon },
       { to: '/vehicles', label: 'Vehicles', icon: CarIcon },
+      { to: '/lookups', label: 'Vehicle lookups', icon: SearchIcon },
       { to: '/check', label: 'Check a vehicle', icon: SearchIcon, cap: 'lookup' },
     ],
   },
@@ -46,6 +47,7 @@ const NAV = [
   {
     group: 'Talking to customers',
     items: [
+      { to: '/whatsapp', label: 'WhatsApp', icon: SendIcon },
       { to: '/conversations', label: 'Conversations', icon: LifebuoyIcon },
       { to: '/campaigns', label: 'Campaigns', icon: SendIcon },
     ],

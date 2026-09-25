@@ -18,9 +18,9 @@ import { useSession } from '../lib/session';
 const ROLES = [
   ['owner', 'Owner (super admin)', 'Everything, including adding and removing panel users.'],
   ['admin', 'Admin', 'Everything except managing panel users.'],
-  ['operations', 'Operations', 'Runs the service: settings, blocking, vehicle checks. No money.'],
-  ['finance', 'Finance', "Money, invoices and reports. Customers' mobiles are masked."],
-  ['support', 'Support', 'Helps customers: reads everything and can check a vehicle. Changes nothing.'],
+  ['operations', 'Operations', 'Runs the service: settings, blocking, vehicle checks, the whole Vehicles module. No money.'],
+  ['finance', 'Finance', "Money, invoices and reports; can view and export vehicles. Customers' mobiles are masked."],
+  ['support', 'Support', 'Helps customers: reads everything, checks a vehicle, reveals a number, adds vehicle notes and tags.'],
   ['viewer', 'Read only', "Read-only, customers' mobiles masked. Cannot change anything or look a vehicle up."],
 ];
 

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useSession, allowed } from '../lib/session';
 import { BusyBar } from './ui.jsx';
 import { useLive, Toasts } from './Live.jsx';
+import VehicleSearch from './VehicleSearch.jsx';
 
 /*
  * The frame every screen sits in: a fixed sidebar on a desk, a drawer on a
@@ -29,11 +30,29 @@ const NAV = [
     ],
   },
   {
+    // The Vehicles module (user, 2026-09-25). Each view is the explorer with a
+    // preset, told apart by its ?view= — so each is highlighted on its own.
+    group: '🚗 My Vehicles',
+    items: [
+      { to: '/vehicles', label: 'Vehicle Explorer', icon: CarIcon, cap: 'vehicles.view', badge: 'vehicles',
+        match: (p, s) => (p === '/vehicles' && !/[?&](view|list)=/.test(s))
+          || (/^\/vehicles\/[^/]+$/.test(p) && !/^\/vehicles\/(lists|insights|api-logs)$/.test(p)) },
+      ...[['recent', 'Recent vehicles', PulseIcon], ['paid', 'Paid reports', RupeeIcon], ['unpaid', 'Unpaid lookups', SearchIcon],
+        ['whatsapp', 'WhatsApp vehicles', SendIcon], ['web', 'Web vehicles', DoorIcon], ['expired', 'Expired documents', DocIcon],
+        ['challans', 'Challan vehicles', BookIcon], ['blacklisted', 'Blacklisted vehicles', ShieldIcon], ['loan', 'Loan / hypothecation', KeyIcon]]
+        .map(([v, label, icon]) => ({ to: `/vehicles?view=${v}`, label, icon, cap: 'vehicles.view',
+          match: (p, s) => p === '/vehicles' && new URLSearchParams(s).get('view') === v })),
+      { to: '/vehicles/lists', label: 'Saved vehicle lists', icon: StarIcon, cap: 'vehicles.view',
+        match: (p, s) => p === '/vehicles/lists' || (p === '/vehicles' && /[?&]list=/.test(s)) },
+      { to: '/vehicles/insights', label: 'Patterns & signals', icon: ChartIcon, cap: 'vehicles.view' },
+      { to: '/vehicles/api-logs', label: 'Vehicle API logs', icon: ListIcon, cap: 'vehicles.api_logs' },
+    ],
+  },
+  {
     group: 'Customers',
     items: [
       { to: '/customers', label: 'Customers', icon: UsersIcon },
       { to: '/journey', label: 'Customer journey', icon: PulseIcon },
-      { to: '/vehicles', label: 'Vehicles', icon: CarIcon },
       { to: '/lookups', label: 'Vehicle lookups', icon: SearchIcon },
       { to: '/check', label: 'Check a vehicle', icon: SearchIcon, cap: 'lookup' },
     ],
@@ -82,6 +101,7 @@ function Badge({ kind, b }) {
     whatsapp: [b.whatsapp_live, `${b.whatsapp_live} live`, 'bg-good-50 text-good-700'],
     alerts: [b.alerts_open, String(b.alerts_open), b.alerts_critical ? 'bg-wrong-500 text-white' : 'bg-watch-50 text-watch-700'],
     payments: [b.payments_pending, `${b.payments_pending} pending`, 'bg-shell text-body'],
+    vehicles: [b.vehicles_today, `${b.vehicles_today} today`, 'bg-brand/10 text-brand-deep'],
   }[kind] || [0];
   return n ? <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tone}`}>{text}</span> : null;
 }
@@ -90,7 +110,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
   const { me, can, signOut } = useSession();
   const { badges } = useLive();
   const [open, setOpen] = useState(false);
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
 
   return (
     <div className="min-h-screen lg:flex">
@@ -118,7 +138,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
                   <NavLink key={item.to} to={item.to} end={item.end}
                     onClick={() => setOpen(false)}
                     className={({ isActive }) => `mb-0.5 flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition ${
-                      isActive || (item.match && item.match(pathname))
+                      (item.match ? item.match(pathname, search) : isActive)
                         ? 'bg-brand/8 font-semibold text-brand-deep'
                         : 'text-body hover:bg-shell'}`}>
                     <item.icon />
@@ -141,6 +161,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
             <h1 className="truncate text-sm font-semibold text-ink">{title}</h1>
             {subtitle && <p className="truncate text-2xs text-muted">{subtitle}</p>}
           </div>
+          {allowed(can, 'vehicles.view') && <div className="no-print"><VehicleSearch /></div>}
           <div className="no-print flex items-center gap-2">{actions}</div>
           <Link to="/alerts" className="no-print relative rounded-lg p-1.5 text-body hover:bg-shell" title="Alerts" aria-label="Alerts">
             <BellIcon />

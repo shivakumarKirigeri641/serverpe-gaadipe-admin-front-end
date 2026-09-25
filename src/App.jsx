@@ -25,7 +25,11 @@ import CustomerEmails from './pages/CustomerEmails.jsx';
 import Broadcast from './pages/Broadcast.jsx';
 import FreeReports from './pages/FreeReports.jsx';
 import Live from './pages/Live.jsx';
-import Vehicles from './pages/Vehicles.jsx';
+import VehicleExplorer from './pages/vehicles/Explorer.jsx';
+import VehicleProfile from './pages/vehicles/Profile.jsx';
+import VehicleLists from './pages/vehicles/Lists.jsx';
+import VehicleInsights from './pages/vehicles/Insights.jsx';
+import VehicleApiLogs from './pages/vehicles/ApiLogs.jsx';
 /* Imported like every other screen, NOT lazily (user, 2026-09-25). It used to
    be lazy(() => import('./pages/Analytics.jsx')) to keep the charts out of the
    first download — but the production obfuscator encodes that path string
@@ -86,7 +90,12 @@ export default function App() {
       <Route path="/broadcast" element={<Broadcast />} />
       <Route path="/tickets" element={<Tickets />} />
       <Route path="/free-reports" element={<FreeReports />} />
-      <Route path="/vehicles" element={<Vehicles />} />
+      {/* The Vehicles module (user, 2026-09-25). */}
+      <Route path="/vehicles" element={<VehicleExplorer />} />
+      <Route path="/vehicles/lists" element={<VehicleLists />} />
+      <Route path="/vehicles/insights" element={<VehicleInsights />} />
+      <Route path="/vehicles/api-logs" element={<VehicleApiLogs />} />
+      <Route path="/vehicles/:reg" element={<VehicleProfile />} />
       <Route path="/analytics" element={
         <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-muted">Loading charts…</div>}>
           <Analytics />

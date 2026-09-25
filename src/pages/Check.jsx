@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Shell from '../components/Shell.jsx';
 import { api } from '../lib/api';
 import { plate, dateTime } from '../lib/format';
@@ -35,7 +36,9 @@ const TABS = [
  * Every check is written to the audit trail.
  */
 export default function Check() {
-  const [reg, setReg] = useState('');
+  // Arriving from a vehicle profile ("Check it now"): the number is filled in, not looked up.
+  const [sp] = useSearchParams();
+  const [reg, setReg] = useState(() => (sp.get('reg') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12));
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);

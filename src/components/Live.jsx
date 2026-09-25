@@ -61,6 +61,14 @@ function start() {
   setInterval(feed, FEED_MS);
 }
 
+/**
+ * A short confirmation — "Tag added", "Link copied" — in the same corner as
+ * the pop-ups (Vehicles module). It goes by itself and a tap only dismisses it.
+ */
+export function snack(text, tone = 'good') {
+  push({ id: `snack-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, kind: 'snack', title: text, tone });
+}
+
 /** The badges and pop-ups, kept current. */
 export function useLive() {
   const [s, setS] = useState({ ...state });
@@ -87,7 +95,7 @@ export function Toasts() {
     <div className="no-print fixed bottom-4 right-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2" role="status" aria-live="polite">
       {toasts.map((t) => (
         <div key={t.id} className={`rise cursor-pointer rounded-lg border p-3 shadow-lg ${TONE[t.tone] || TONE.info}`}
-          onClick={() => { dismiss(t.id); navigate(t.kind === 'payment' ? (t.mobile ? `/journey?mobile=${t.mobile}` : '/payments') : '/alerts'); }}>
+          onClick={() => { dismiss(t.id); if (t.kind === 'snack') return; navigate(t.kind === 'payment' ? (t.mobile ? `/journey?mobile=${t.mobile}` : '/payments') : '/alerts'); }}>
           <div className="flex items-start gap-2">
             <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${DOT[t.tone] || DOT.info}`} />
             <div className="min-w-0 flex-1">

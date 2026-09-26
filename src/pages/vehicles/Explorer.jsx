@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useSession, allowed } from '../../lib/session';
@@ -405,17 +406,34 @@ function Cell({ c, r }) {
 /* ───────────────────────── row actions ── */
 
 function RowActions({ r, navigate, mayTag, mayNote, open }) {
-  const [menu, setMenu] = useState(false);
+  // The menu is drawn over the page, not inside the table, so the table's
+  // scroll box can't clip it; it opens upward when there's no room below.
+  const [menu, setMenu] = useState(null);
+  const toggle = (e) => {
+    if (menu) { setMenu(null); return; }
+    const b = e.currentTarget.getBoundingClientRect();
+    const up = window.innerHeight - b.bottom < 330 && b.top > window.innerHeight - b.bottom;
+    setMenu({ right: Math.max(8, window.innerWidth - b.right), ...(up ? { bottom: window.innerHeight - b.top + 4 } : { top: b.bottom + 4 }) });
+  };
+  useEffect(() => {
+    if (!menu) return undefined;
+    const close = () => setMenu(null);
+    const esc = (e) => { if (e.key === 'Escape') close(); };
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    window.addEventListener('keydown', esc);
+    return () => { window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close); window.removeEventListener('keydown', esc); };
+  }, [menu]);
   const go = (hash) => navigate(`/vehicles/${r.reg_no}${hash ? `#${hash}` : ''}`);
   const item = 'block w-full px-3 py-1.5 text-left text-sm hover:bg-shell';
   return (
-    <div className="relative flex items-center gap-1">
+    <div className="flex items-center gap-1">
       <button className="btn-quiet !px-2 !py-1 text-2xs" onClick={() => go()}>View</button>
-      <button className="btn-quiet !px-2 !py-1 text-2xs" onClick={() => setMenu((v) => !v)} aria-label="More actions" aria-expanded={menu}>⋯</button>
-      {menu && (
+      <button className="btn-quiet !px-2 !py-1 text-2xs" onClick={toggle} aria-label="More actions" aria-expanded={Boolean(menu)}>⋯</button>
+      {menu && createPortal(
         <>
-          <div className="fixed inset-0 z-20" onClick={() => setMenu(false)} />
-          <div className="absolute right-0 top-8 z-30 w-48 overflow-hidden rounded-lg border border-line bg-white py-1 shadow-pop" onClick={() => setMenu(false)}>
+          <div className="fixed inset-0 z-40" onClick={() => setMenu(null)} />
+          <div role="menu" style={menu} className="fixed z-50 max-h-[80vh] w-48 overflow-y-auto rounded-lg border border-line bg-white py-1 shadow-pop" onClick={() => setMenu(null)}>
             <button className={item} onClick={() => go('timeline')}>Timeline</button>
             <button className={item} onClick={() => go('reports')}>Reports</button>
             <button className={item} onClick={() => go('payments')}>Payments</button>
@@ -427,7 +445,8 @@ function RowActions({ r, navigate, mayTag, mayNote, open }) {
             <button className={item} onClick={async () => { if (await copy(linkTo(r.reg_no))) snack('Link copied'); }}>Copy link</button>
             {mayTag && <button className={`${item} text-wrong-700`} onClick={() => open(r.archived ? 'unarchive' : 'archive')}>{r.archived ? 'Restore' : 'Archive'}</button>}
           </div>
-        </>
+        </>,
+        document.body,
       )}
     </div>
   );

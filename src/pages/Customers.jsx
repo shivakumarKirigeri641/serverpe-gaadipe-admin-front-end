@@ -26,6 +26,9 @@ const SEGMENTS = [
   ['wa_active', 'WhatsApp active (24 h)'], ['wa_inactive', 'WhatsApp quiet'],
   ['pay_failed', 'Payment not completed'], ['suspicious', 'Worth a look'],
 ];
+/* Joined today (this browser's date): a light tint on the row (user, 2026-09-26). */
+const isToday = (t) => Boolean(t) && new Date(t).toDateString() === new Date().toDateString();
+
 const WA_STATUS = {
   active: ['In window', 'good'], inactive: ['Quiet', 'info'], stopped: ['STOP', 'wrong'],
 };
@@ -113,10 +116,13 @@ export default function Customers() {
               </tr>
             }>
               {data.rows.map((r) => (
-                <tr key={r.id} className="cursor-pointer transition hover:bg-shell/70"
+                <tr key={r.id} className={`cursor-pointer transition hover:bg-shell/70 ${isToday(r.created_at) ? 'bg-good-50/70' : ''}`}
                   onClick={() => setOpenId(r.id)}>
                   <td className="td">
-                    <div className="font-semibold text-ink">{r.name || 'Unknown'}</div>
+                    <div className="font-semibold text-ink">
+                      {r.name || 'Unknown'}
+                      {isToday(r.created_at) && <span className="ml-1.5 rounded bg-good-50 px-1 align-middle text-[10px] font-semibold text-good-700 ring-1 ring-good-500/30" title={`Joined ${dateTime(r.created_at)}`}>New today</span>}
+                    </div>
                     <div className="tabular text-2xs text-muted">
                       {fmtMobile(r.mobile)}
                       <button className="ml-2 text-brand-deep hover:underline" title="Everything this person did, in order"

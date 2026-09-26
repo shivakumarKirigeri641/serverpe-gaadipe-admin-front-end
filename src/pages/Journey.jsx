@@ -98,6 +98,17 @@ export default function Journey() {
                 <span>Where <b className="text-ink">{[p.place?.city, p.place?.region].filter(Boolean).join(', ') || '—'}</b></span>
                 <span>Device <b className="text-ink">{[p.device?.device_type, p.device?.os, p.device?.browser].filter(Boolean).join(' · ') || '—'}</b></span>
                 <span>Bot state <b className="text-ink">{p.state || '—'}</b></span>
+                <span>Email <b className="text-ink">{p.email || '—'}</b>{' '}
+                  {p.email_state && p.email_state !== 'none' && (
+                    <Chip tone={{ confirmed: 'good', unconfirmed: 'watch', unsubscribed: 'wrong' }[p.email_state]}
+                      note={{ confirmed: `Confirmed ${p.email_confirmed_at ? new Date(p.email_confirmed_at).toLocaleDateString('en-IN') : ''} — gets vehicle update emails.`,
+                        unconfirmed: 'Has not tapped the confirmation link yet — gets only purchase receipts, not the daily / every-few-days emails.',
+                        unsubscribed: 'Unsubscribed — gets no emails except purchase receipts.' }[p.email_state]}>
+                      {{ confirmed: 'Confirmed', unconfirmed: 'Not confirmed', unsubscribed: 'Unsubscribed' }[p.email_state]}
+                    </Chip>
+                  )}
+                  {p.email_state === 'none' && <span className="text-muted">(no email given)</span>}
+                </span>
                 <span>Browsers <b className="text-ink">{p.visitors.length || 'none linked'}</b></span>
               </div>
               {/* Lifetime (operations module, 2026-09-25). */}

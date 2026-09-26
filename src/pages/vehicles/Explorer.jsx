@@ -132,7 +132,10 @@ export default function Explorer() {
   }, [query]);
   useEffect(() => { setSelected(new Set()); load(); }, [load]);
   useAutoRefresh(load, 30000);
-  useEffect(() => { api.vehicleStats().then(setStats).catch(() => {}); }, []);
+  // The numbers keep up with the day too (user, 2026-09-26): once a minute.
+  const loadStats = useCallback(() => api.vehicleStats().then(setStats).catch(() => {}), []);
+  useEffect(() => { loadStats(); }, [loadStats]);
+  useAutoRefresh(loadStats, 60000);
 
   // This admin's columns and saved filters, from the server.
   useEffect(() => {
@@ -200,7 +203,7 @@ export default function Explorer() {
   const done = () => { load(); refreshMeta(); };
 
   return (
-    <Shell title={title} subtitle={data ? `${count(data.total)} vehicle${data.total === 1 ? '' : 's'}${activeFilters.length ? ` · ${activeFilters.length} filter${activeFilters.length === 1 ? '' : 's'}` : ''}` : ' '}
+    <Shell title={title} subtitle={data ? `${count(data.total)} vehicle${data.total === 1 ? '' : 's'}${activeFilters.length ? ` · ${activeFilters.length} filter${activeFilters.length === 1 ? '' : 's'}` : ''}${stats ? ` · ${count(stats.today)} checked today` : ''}` : ' '}
       actions={<>
         <button className="btn-quiet !py-1.5 text-2xs" onClick={() => setColumnsOpen(true)}>Columns</button>
         {mayExport && <button className="btn-quiet !py-1.5 text-2xs" onClick={() => setDialog({ kind: 'export' })} disabled={!data?.total}>Export</button>}

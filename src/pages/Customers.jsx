@@ -68,7 +68,7 @@ export default function Customers() {
 
   return (
     <Shell title="Customers"
-      subtitle={data ? `${count(data.total)} in total` : ' '}
+      subtitle={data ? `${count(data.total)} in total${data.today ? ` · ${count(data.today.joined)} new today` : ''}` : ' '}
       actions={
         <div className="flex items-center gap-2">
           <input className="input !w-56 !py-1.5 text-sm" placeholder="Number, name or plate"
@@ -96,6 +96,25 @@ export default function Customers() {
             }}>{exporting ? 'Exporting…' : 'Export CSV'}</button>
         </div>
       }>
+
+      {/* Today at a glance (user, 2026-09-26): IST day, whatever the filter. */}
+      {data?.today && (
+        <div className="mb-3 grid grid-cols-3 gap-2 md:max-w-xl">
+          {[
+            ['Customers', data.total, q || filter !== 'all' ? 'in this view' : 'all time', null],
+            ['New today', data.today.joined, 'joined since midnight', 'joined'],
+            ['Active today', data.today.active, 'seen since midnight', 'last_seen'],
+          ].map(([label, value, sub, sortBy]) => (
+            <button key={label} type="button" disabled={!sortBy} onClick={() => sortBy && setSort(sortBy)}
+              title={sortBy ? `Sort by ${sortBy === 'joined' ? 'newest' : 'last seen'}` : undefined}
+              className={`card px-3 py-2 text-left ${sortBy ? 'lift hover:shadow-pop' : 'cursor-default'} ${label === 'New today' && value ? 'bg-good-50/70' : ''}`}>
+              <div className="text-2xs font-semibold uppercase tracking-wider text-muted">{label}</div>
+              <div className="tabular text-xl font-semibold text-ink">{count(value)}</div>
+              <div className="text-2xs text-muted">{sub}</div>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="card">
         {error ? <Failed error={error} onRetry={load} />

@@ -4,6 +4,7 @@ import { ConnectionStatus, RefreshButton } from './HeaderStatus.jsx';
 import { Hint } from './ui.jsx';
 import { onBusyChange } from '../lib/api';
 import IconTips from './IconTips.jsx';
+import CommandPalette, { rememberVisit } from './CommandPalette.jsx';
 import { useSession, allowed } from '../lib/session';
 import { BusyBar } from './ui.jsx';
 import { useLive, Toasts } from './Live.jsx';
@@ -251,6 +252,15 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
   const [q, setQ] = useState('');
   const [hit, setHit] = useState(0);
   const visibleNav = NAV.map((g) => ({ ...g, items: g.items.filter((i) => allowed(can, i.cap)) })).filter((g) => g.items.length);
+  // Quick find: Ctrl+K / ⌘K anywhere, or the header button.
+  const [palette, setPalette] = useState(false);
+  useLayoutEffect(() => {
+    const key = (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette((p) => !p); } };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, []);
+  // Every screen opened goes to Quick find's "Recent".
+  useLayoutEffect(() => { rememberVisit(pathname + search, typeof title === 'string' ? title : undefined); }, [pathname, search, title]);
   const isOn = (item) => (item.match ? item.match(pathname, search) : (item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`)));
 
   // Restore the sidebar's scroll, then slide the marker to the active item.
@@ -394,6 +404,12 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
             <h1 className="flex items-center gap-2 truncate text-sm font-semibold text-ink">{title}<Updating /></h1>
             {subtitle && <p className="truncate text-2xs text-muted">{subtitle}</p>}
           </div>
+          <button type="button" onClick={() => setPalette(true)} aria-label="Quick find (Ctrl K)"
+            className="no-print m-press hidden items-center gap-2 rounded-lg border border-line bg-white px-2.5 py-1.5 text-2xs text-muted hover:border-brand hover:text-ink md:inline-flex">
+            <span className="font-semibold text-ink">Quick find</span><kbd className="rounded border border-line px-1 text-[10px]">Ctrl K</kbd>
+          </button>
+          <button type="button" onClick={() => setPalette(true)} aria-label="Quick find"
+            className="no-print grid h-8 w-8 place-items-center rounded-lg text-body hover:bg-shell md:hidden"><SearchIcon /></button>
           {allowed(can, 'dashboard.view') && <div className="no-print"><GlobalSearch /></div>}
           <div className="no-print flex items-center gap-2">{actions}</div>
           <div className="no-print flex items-center gap-1"><ConnectionStatus /><RefreshButton /></div>
@@ -415,6 +431,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
       </div>
       <Toasts />
       <IconTips />
+      <CommandPalette nav={visibleNav} can={can} open={palette} onClose={() => setPalette(false)} />
     </div>
   );
 }

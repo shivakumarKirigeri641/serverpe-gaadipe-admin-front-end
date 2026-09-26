@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api';
 import { rupees, dateTime } from '../lib/format';
 import Shell from '../components/Shell.jsx';
@@ -180,6 +181,9 @@ export default function Settings() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
+  const [sp] = useSearchParams();
+  const [find, setFind] = useState(() => sp.get('q') || '');
+  useEffect(() => { setFind(sp.get('q') || ''); }, [sp]);
   const value = (key) => (key in draft ? draft[key] : (data?.settings.find(s => s.key === key)?.value ?? ''));
   const set = (key, v) => setDraft((d) => ({ ...d, [key]: v }));
   const dirty = Object.keys(draft).length > 0;
@@ -194,7 +198,14 @@ export default function Settings() {
   };
 
   const known = new Set(GROUPS.flatMap(g => Object.keys(g.keys)));
-  const others = (data?.settings || []).filter(s => !known.has(s.key));
+  // FIND (user, 2026-09-26): every word typed must appear in the setting's
+  // name, its explanation or its group. The command palette opens this page
+  // with ?q= filled in.
+  const words = find.toLowerCase().split(/\s+/).filter(Boolean);
+  const fits = (...texts) => !words.length || words.every((w) => texts.join(' ').toLowerCase().replace(/_/g, ' ').includes(w.replace(/_/g, ' ')));
+  const others = (data?.settings || []).filter(s => !known.has(s.key) && fits(s.key));
+  const shown = GROUPS.map((g) => ({ ...g, rows: Object.entries(g.keys).filter(([key, note]) => data?.settings.some(x => x.key === key) && fits(key, note, g.title)) }))
+    .filter((g) => g.rows.length);
 
   return (
     <Shell title="Prices & settings" subtitle="Changes take effect within a minute — no deploy"
@@ -213,6 +224,13 @@ export default function Settings() {
 
       {data && (
         <div className="space-y-4">
+          <div className="card flex flex-wrap items-center gap-2 p-3">
+            <input className="input !py-2" autoFocus={Boolean(find)} value={find} onChange={(e) => setFind(e.target.value)}
+              placeholder="Find a setting — e.g. email test, backup, price, whatsapp cost" aria-label="Find a setting" />
+            {find && <button className="btn-quiet !py-2 text-2xs" onClick={() => setFind('')}>Show all</button>}
+            {find && <span className="text-2xs text-muted">{shown.reduce((n, g) => n + g.rows.length, 0) + others.length} match(es)</span>}
+          </div>
+          {!words.length && (
           <div className="card">
             <div className="border-b border-line px-5 py-3">
               <h2 className="text-sm font-semibold text-ink">Plans</h2>
@@ -225,17 +243,19 @@ export default function Settings() {
               {data.plans.map((p) => <PlanRow key={p.code} plan={p} onSaved={load} />)}
             </Table>
           </div>
+          )}
+          {words.length > 0 && !shown.length && !others.length && (
+            <div className="card px-5 py-6 text-center text-sm text-muted">No setting matches “{find}”. Try fewer or different words.</div>
+          )}
 
-          {GROUPS.map((g) => (
+          {shown.map((g) => (
             <div key={g.title} className="card">
               <div className="border-b border-line px-5 py-3">
                 <h2 className="text-sm font-semibold text-ink">{g.title}</h2>
                 {g.note && <p className="text-2xs text-muted">{g.note}</p>}
               </div>
               <div className="divide-y divide-line">
-                {Object.entries(g.keys)
-                  .filter(([key]) => data.settings.some(s => s.key === key))
-                  .map(([key, note]) => (
+                {g.rows.map(([key, note]) => (
                     <div key={key} className="grid gap-2 px-5 py-3 sm:grid-cols-2 sm:items-center">
                       <div>
                         <div className="font-mono text-2xs text-ink">{key}</div>
@@ -269,7 +289,7 @@ export default function Settings() {
           ))}
 
           {others.length > 0 && (
-            <details className="card">
+            <details className="card" open={words.length > 0}>
               <summary className="cursor-pointer px-5 py-3 text-sm font-semibold text-ink">
                 Everything else ({others.length})
               </summary>

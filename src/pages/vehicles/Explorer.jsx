@@ -50,6 +50,9 @@ const COLUMNS = [
   { key: 'customers', label: 'Customers', sort: 'customers', w: 100, num: true },
   { key: 'tags', label: 'Tags · assigned', w: 190 },
 ];
+/* Active today (this browser's date): a light tint on the row (user, 2026-09-26). */
+const isToday = (t) => Boolean(t) && new Date(t).toDateString() === new Date().toDateString();
+
 const DEFAULT_HIDDEN = ['variant', 'first_seen', 'revenue', 'customers', 'fuel'];
 const DEFAULT_LAYOUT = { order: COLUMNS.map((c) => c.key), hidden: DEFAULT_HIDDEN, widths: {} };
 const PREF_COLUMNS = 'vehicles.columns';
@@ -303,7 +306,7 @@ export default function Explorer() {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {rows.map((r) => (
-                    <tr key={r.id} className={`group hover:bg-shell/60 ${selected.has(r.id) ? 'bg-brand/5' : ''} ${flash(r)}`}>
+                    <tr key={r.id} className={`group hover:bg-shell/60 ${selected.has(r.id) ? 'bg-brand/5' : isToday(r.last_seen) ? 'bg-good-50/70' : ''} ${flash(r)}`}>
                       <td className="px-3 py-2"><input type="checkbox" checked={selected.has(r.id)} onChange={() => toggle(r.id)} aria-label={`Select ${r.display}`} /></td>
                       {cols.map((c) => (
                         <td key={c.key} className={`truncate px-3 py-2 align-middle ${c.num ? 'text-right tabular' : ''}`}>
@@ -362,7 +365,12 @@ function Cell({ c, r }) {
     case 'variant': return NA;
     case 'rto': return <span>{r.state} · {r.rto}</span>;
     case 'first_seen': return r.first_seen ? <span title={dateTime(r.first_seen)}>{dateTime(r.first_seen)}</span> : '—';
-    case 'last_seen': return r.last_seen ? <span title={dateTime(r.last_seen)}>{ago(r.last_seen)}</span> : '—';
+    case 'last_seen': return r.last_seen ? (
+      <span title={dateTime(r.last_seen)}>
+        {ago(r.last_seen)}
+        {isToday(r.last_seen) && <span className="ml-1.5 rounded bg-good-50 px-1 text-[10px] font-semibold text-good-700 ring-1 ring-good-500/30">Today</span>}
+      </span>
+    ) : '—';
     case 'lookups': return count(r.lookups);
     case 'reports': return count(r.reports);
     case 'paid': return count(r.paid);

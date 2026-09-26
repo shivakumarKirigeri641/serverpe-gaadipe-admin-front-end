@@ -29,6 +29,33 @@ const SEGMENTS = [
 /* Joined today (this browser's date): a light tint on the row (user, 2026-09-26). */
 const isToday = (t) => Boolean(t) && new Date(t).toDateString() === new Date().toDateString();
 
+/* ▲ / ▼ against yesterday up to the same time. */
+function Delta({ now, before }) {
+  if (before == null) return null;
+  if (!before) return <span className="text-muted">{now ? 'none yesterday' : 'same as yesterday'}</span>;
+  const d = Math.round(((now - before) / before) * 100);
+  return <span className={d > 0 ? 'text-good-700' : d < 0 ? 'text-wrong-700' : 'text-muted'}>{d > 0 ? '▲' : d < 0 ? '▼' : ''} {Math.abs(d)}%</span>;
+}
+
+/* What each column means, shown on hover (user, 2026-09-26). */
+const HEAD = [
+  ['Customer', 'Their WhatsApp name (or the name given at checkout) and mobile number. “Journey →” shows everything they did, in order. Green rows joined today.'],
+  ['Vehicles', 'Different vehicle numbers this person has checked.'],
+  ['Checks', 'Every lookup they made, including the same vehicle again.'],
+  ['Reports', 'Full reports they bought.'],
+  ['Paid', 'Money they have paid in total. Hover for the number of payments, refunds and when they last paid.'],
+  ['WhatsApp', 'Messages exchanged with the bot, in and out, and how long ago the last one was. A pulsing green dot = messaged in the last 15 minutes. Below: In window = wrote in the last 24 hours, so the bot can reply free; Quiet = not recently; STOP = asked not to be messaged.'],
+  ['Came from', 'Where they first came from: a WhatsApp ad, a website visit (and its source), or straight to the WhatsApp number. “Unfinished payment” = opened a payment and did not pay.'],
+  ['Last seen', 'The last time they did anything — a message, a check, a website visit.'],
+  ['State', 'Blocked, paused, monitoring alerts running (and until when), or an internal/test account.'],
+  ['Where', 'Their state, roughly. In order of trust: the state they gave at checkout; else from their website visits (internet address — on mobile data often the operator’s city); else the state their vehicle is registered in. No GPS is ever collected.'],
+];
+const SOURCE = {
+  declared: ['given at checkout', 'The state they chose at checkout (it decides GST). The most reliable.'],
+  internet: ['from website visits', 'Looked up from the internet address of their website visits. On mobile data this is often the operator’s location, so treat it as a hint.'],
+  vehicle: ['vehicle’s state', 'Nothing better is known: this is where their most-checked vehicle is registered. Many people check vehicles from other states, so it is only a guess.'],
+};
+
 const WA_STATUS = {
   active: ['In window', 'good'], inactive: ['Quiet', 'info'], stopped: ['STOP', 'wrong'],
 };
@@ -101,17 +128,21 @@ export default function Customers() {
       {data?.today && (
         <div className="mb-3 grid grid-cols-3 gap-2 md:max-w-xl">
           {[
-            ['Customers', data.total, q || filter !== 'all' ? 'in this view' : 'all time', null],
-            ['New today', data.today.joined, 'joined since midnight', 'joined'],
-            ['Active today', data.today.active, 'seen since midnight', 'last_seen'],
-          ].map(([label, value, sub, sortBy]) => (
-            <button key={label} type="button" disabled={!sortBy} onClick={() => sortBy && setSort(sortBy)}
-              title={sortBy ? `Sort by ${sortBy === 'joined' ? 'newest' : 'last seen'}` : undefined}
-              className={`card px-3 py-2 text-left ${sortBy ? 'lift hover:shadow-pop' : 'cursor-default'} ${label === 'New today' && value ? 'bg-good-50/70' : ''}`}>
-              <div className="text-2xs font-semibold uppercase tracking-wider text-muted">{label}</div>
-              <div className="tabular text-xl font-semibold text-ink">{count(value)}</div>
-              <div className="text-2xs text-muted">{sub}</div>
-            </button>
+            ['Customers', data.total, q || filter !== 'all' ? 'in this view' : 'all time', null,
+              q || filter !== 'all' ? 'Customers matching your search or filter.' : 'Everyone who has ever used GaadiPe — on WhatsApp or the website.'],
+            ['New today', data.today.joined, <>vs {count(data.today.joined_yesterday)} yesterday · <Delta now={data.today.joined} before={data.today.joined_yesterday} /></>, 'joined',
+              'People who used GaadiPe for the first time since midnight (IST), against yesterday up to the same time. Their rows are tinted green. Tap to sort newest first.'],
+            ['Active today', data.today.active, <>vs {count(data.today.active_yesterday)} yesterday · <Delta now={data.today.active} before={data.today.active_yesterday} /></>, 'last_seen',
+              'Different people who did anything since midnight (IST) — a message, a check, a payment — against yesterday up to the same time. Tap to sort by last seen.'],
+          ].map(([label, value, sub, sortBy, note]) => (
+            <Hint key={label} note={note}>
+              <button type="button" disabled={!sortBy} onClick={() => sortBy && setSort(sortBy)}
+                className={`card w-full px-3 py-2 text-left ${sortBy ? 'lift hover:shadow-pop' : 'cursor-default'} ${label === 'New today' && value ? 'bg-good-50/70' : ''}`}>
+                <div className="text-2xs font-semibold uppercase tracking-wider text-muted">{label}</div>
+                <div className="tabular text-xl font-semibold text-ink">{count(value)}</div>
+                <div className="text-2xs text-muted">{sub}{sortBy && <span className="text-brand-deep"> · tap to sort</span>}</div>
+              </button>
+            </Hint>
           ))}
         </div>
       )}
@@ -123,15 +154,11 @@ export default function Customers() {
           : (
             <Table head={
               <tr>
-                <th className="th">Customer</th>
-                <th className="th">Vehicles</th>
-                <th className="th">Checks</th>
-                <th className="th">Reports</th>
-                <th className="th">Paid</th>
-                <th className="th">WhatsApp</th>
-                <th className="th">Came from</th>
-                <th className="th">Last seen</th>
-                <th className="th">State</th>
+                {HEAD.map(([label, note]) => (
+                  <th key={label} className="th">
+                    <Hint note={note}><span className="border-b border-dotted border-muted/50">{label}</span></Hint>
+                  </th>
+                ))}
               </tr>
             }>
               {data.rows.map((r) => (
@@ -198,6 +225,14 @@ export default function Customers() {
                       {r.active && <Hint note="Vehicle alerts (daily updates) are running from a report. Not the same as chatting now — see the WhatsApp column for that."><Chip tone="good">🔔 Alerts on{r.alerts_until ? ` · until ${date(r.alerts_until)}` : ''}</Chip></Hint>}
                       {r.is_internal && <Chip tone="brand">Internal</Chip>}
                     </div>
+                  </td>
+                  <td className="td text-2xs">
+                    {r.place ? (
+                      <Hint right note={`${SOURCE[r.place.source]?.[1] || ''}${r.place.vehicle_state && r.place.vehicle_state !== r.place.state ? ` Their vehicle is registered in ${r.place.vehicle_state}.` : ''}`}>
+                        <div className="font-semibold text-ink">{r.place.state}</div>
+                        <div className="text-muted">{r.place.city ? `${r.place.city} · ` : ''}{SOURCE[r.place.source]?.[0]}</div>
+                      </Hint>
+                    ) : <span className="text-muted">—</span>}
                   </td>
                 </tr>
               ))}

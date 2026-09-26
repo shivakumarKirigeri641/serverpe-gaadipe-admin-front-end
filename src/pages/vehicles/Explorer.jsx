@@ -28,27 +28,27 @@ const SIZE = 50;
 
 /* The columns. `sort` is what the server sorts by; `w` the starting width. */
 const COLUMNS = [
-  { key: 'reg_no', label: 'Vehicle number', sort: 'reg_no', w: 150, fixed: true },
-  { key: 'maker', label: 'Manufacturer', sort: 'maker', w: 170 },
-  { key: 'model', label: 'Model', sort: 'model', w: 190 },
+  { key: 'reg_no', label: 'Vehicle number', sort: 'reg_no', w: 150, fixed: true, note: "The registration number. Tap it to open everything about this vehicle." },
+  { key: 'maker', label: 'Manufacturer', sort: 'maker', w: 170, note: "Manufacturer, from the Government RC record." },
+  { key: 'model', label: 'Model', sort: 'model', w: 190, note: "Model, from the Government RC record." },
   { key: 'variant', label: 'Variant', w: 110, note: 'The records API does not return a variant.' },
-  { key: 'fuel', label: 'Fuel', w: 90 },
-  { key: 'vehicle_class', label: 'Vehicle class', w: 160 },
-  { key: 'rto', label: 'State / RTO', w: 110 },
-  { key: 'first_seen', label: 'First seen', sort: 'first_seen', w: 130 },
-  { key: 'last_seen', label: 'Last activity', sort: 'last_seen', w: 130 },
-  { key: 'lookups', label: 'Lookups', sort: 'lookups', w: 90, num: true },
-  { key: 'reports', label: 'Reports', sort: 'reports', w: 90, num: true },
-  { key: 'paid', label: 'Purchased', sort: 'paid', w: 100, num: true },
-  { key: 'revenue', label: 'Revenue', sort: 'revenue', w: 100, num: true },
-  { key: 'last_channel', label: 'Last channel', w: 110 },
-  { key: 'payment_status', label: 'Payment', w: 100 },
-  { key: 'docs', label: 'Documents', sort: 'expired', w: 230 },
-  { key: 'challans', label: 'Challans', sort: 'challans', w: 110 },
-  { key: 'flags', label: 'Blacklist / loan', w: 150 },
-  { key: 'customer', label: 'Customer', w: 130 },
-  { key: 'customers', label: 'Customers', sort: 'customers', w: 100, num: true },
-  { key: 'tags', label: 'Tags · assigned', w: 190 },
+  { key: 'fuel', label: 'Fuel', w: 90, note: "Fuel type on the RC." },
+  { key: 'vehicle_class', label: 'Vehicle class', w: 160, note: "The RC's vehicle class — e.g. Motor Car, M-Cycle/Scooter, Goods Carrier." },
+  { key: 'rto', label: 'State / RTO', w: 110, note: "State and RTO, read from the number itself (KA 01 = Karnataka, Bengaluru Central). Where the vehicle is registered, not where the customer is." },
+  { key: 'first_seen', label: 'First seen', sort: 'first_seen', w: 130, note: "When anyone first checked this vehicle on GaadiPe." },
+  { key: 'last_seen', label: 'Last activity', sort: 'last_seen', w: 130, note: "When anyone last did something with this vehicle — a check, a report, a payment. Rows active today are tinted green." },
+  { key: 'lookups', label: 'Lookups', sort: 'lookups', w: 90, num: true, note: "How many times it was searched, by anyone, found or not. Repeats of the same vehicle count each time." },
+  { key: 'reports', label: 'Reports', sort: 'reports', w: 90, num: true, note: "Full reports issued for it (paid)." },
+  { key: 'paid', label: 'Purchased', sort: 'paid', w: 100, num: true, note: "Paid purchases for this vehicle." },
+  { key: 'revenue', label: 'Revenue', sort: 'revenue', w: 100, num: true, note: "Money received for this vehicle, before refunds." },
+  { key: 'last_channel', label: 'Last channel', w: 110, note: "Where the latest check came from: WhatsApp or the website." },
+  { key: 'payment_status', label: 'Payment', w: 100, note: "Its latest payment: Paid, Link sent (not paid yet), Failed, Refunded — or none." },
+  { key: 'docs', label: 'Documents', sort: 'expired', w: 230, note: "Documents on the RC. Green = valid, amber = expiring soon, red = expired. Ins = insurance, PUC = pollution certificate." },
+  { key: 'challans', label: 'Challans', sort: 'challans', w: 110, note: "Pending traffic challans found at the last check." },
+  { key: 'flags', label: 'Blacklist / loan', w: 150, note: "Blacklisted by the RTO, or a loan (hypothecation) with a financier on the RC." },
+  { key: 'customer', label: 'Customer', w: 130, note: "Who checked it last. Phone number shown masked (last 4 digits)." },
+  { key: 'customers', label: 'Customers', sort: 'customers', w: 100, num: true, note: "How many different people checked this vehicle." },
+  { key: 'tags', label: 'Tags · assigned', w: 190, note: "Your own labels and who in your team it is assigned to." },
 ];
 /* Active today (this browser's date): a light tint on the row (user, 2026-09-26). */
 const isToday = (t) => Boolean(t) && new Date(t).toDateString() === new Date().toDateString();
@@ -211,6 +211,15 @@ export default function Explorer() {
 
       {/* ───────────────────────── the numbers ── */}
       {!view && !params.list && <StatsStrip s={stats} onPick={(p) => set(p)} />}
+      {(view || params.list) && stats && (
+        <Hint note="Across all vehicles, not only this view. Today = since midnight (IST), against yesterday up to the same time.">
+          <div className="mb-3 inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-line bg-white px-3 py-1.5 text-2xs text-muted">
+            <span><b className="tabular text-sm text-ink">{count(stats.today)}</b> vehicles checked today</span>
+            <span>vs {count(stats.yesterday)} yesterday · <Delta now={stats.today} before={stats.yesterday} /></span>
+            <span><b className="tabular text-ink">{count(stats.lookups_today)}</b> lookups today</span>
+          </div>
+        </Hint>
+      )}
 
       {/* ───────────────────────── search ── */}
       <div className="card mb-3 p-3">
@@ -298,7 +307,7 @@ export default function Explorer() {
                       return (
                         <th key={c.key} className={`th relative select-none !px-3 ${c.sort ? 'cursor-pointer hover:text-ink' : ''} ${c.num ? 'text-right' : ''}`}
                           onClick={() => sortBy(c)} aria-sort={on ? (params.dir === 'asc' ? 'ascending' : 'descending') : undefined}>
-                          <Hint note={c.note}><span className="truncate">{c.label}</span></Hint>
+                          <Hint note={c.note}><span className={`truncate ${c.note ? 'border-b border-dotted border-muted/50' : ''}`}>{c.label}</span></Hint>
                           {c.sort && on && <span className="ml-1">{params.dir === 'asc' ? '▲' : '▼'}</span>}
                           <span className="absolute right-0 top-0 h-full w-2 cursor-col-resize hover:bg-brand/20" onMouseDown={(e) => startResize(e, c)} onClick={(e) => e.stopPropagation()} />
                         </th>
@@ -487,18 +496,18 @@ function StatsStrip({ s, onPick }) {
   return (
     <div className="mb-3 space-y-2">
       <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-        {tile('Unique vehicles', s.total, 'all time')}
-        {tile('Today', s.today, <>vs {count(s.yesterday)} yesterday · <Delta now={s.today} before={s.yesterday} /></>, null, s.compare.day.label)}
-        {tile('7 days', s.d7, <>vs {count(s.compare.week.before)} · <Delta now={s.compare.week.now} before={s.compare.week.before} /></>, null, s.compare.week.label)}
-        {tile('30 days', s.d30, <>month: {count(s.compare.month.now)} vs {count(s.compare.month.before)} · <Delta now={s.compare.month.now} before={s.compare.month.before} /></>, null, s.compare.month.label)}
-        {tile('Lookups today', s.lookups_today, 'every search, found or not')}
+        {tile('Unique vehicles', s.total, 'all time', null, 'Every different vehicle number ever checked on GaadiPe, counted once.')}
+        {tile('Today', s.today, <>vs {count(s.yesterday)} yesterday · <Delta now={s.today} before={s.yesterday} /></>, null, 'Different vehicles checked since midnight (IST). Compared with yesterday up to the same time, so a morning is not compared with a whole day. ▲ green = more than yesterday, ▼ red = fewer.')}
+        {tile('7 days', s.d7, <>vs {count(s.compare.week.before)} · <Delta now={s.compare.week.now} before={s.compare.week.before} /></>, null, 'Different vehicles checked in the last 7 days, against the 7 days before.')}
+        {tile('30 days', s.d30, <>month: {count(s.compare.month.now)} vs {count(s.compare.month.before)} · <Delta now={s.compare.month.now} before={s.compare.month.before} /></>, null, 'Different vehicles checked in the last 30 days. Below: this month so far against last month up to the same day.')}
+        {tile('Lookups today', s.lookups_today, 'every search, found or not', null, 'Every search since midnight, including the same vehicle searched again and numbers that were not found. More than “Today” when people repeat searches.')}
       </div>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-        {tile('Repeat searches', s.repeat, 'looked up 2+ times', () => onPick({ repeat: '1' }))}
-        {tile('Paid', s.paid, 'at least one paid report', () => onPick({ paid: 'yes' }))}
-        {tile('Unpaid', s.unpaid, 'looked up, never paid', () => onPick({ paid: 'no' }))}
-        {tile('WhatsApp', s.whatsapp, 'looked up on WhatsApp', () => onPick({ channel: 'whatsapp' }))}
-        {tile('Website', s.web, 'looked up on the website', () => onPick({ channel: 'web' }))}
+        {tile('Repeat searches', s.repeat, 'looked up 2+ times · tap to list', () => onPick({ repeat: '1' }), 'Vehicles searched more than once — someone is interested. Tap to show only these.')}
+        {tile('Paid', s.paid, 'at least one paid report · tap to list', () => onPick({ paid: 'yes' }), 'Vehicles with at least one paid full report. Tap to show only these.')}
+        {tile('Unpaid', s.unpaid, 'looked up, never paid · tap to list', () => onPick({ paid: 'no' }), 'Checked but never bought — your follow-up list. Tap to show only these.')}
+        {tile('WhatsApp', s.whatsapp, 'looked up on WhatsApp · tap to list', () => onPick({ channel: 'whatsapp' }), 'Vehicles checked through the WhatsApp bot at least once. Tap to show only these.')}
+        {tile('Website', s.web, 'looked up on the website · tap to list', () => onPick({ channel: 'web' }), 'Vehicles checked on gaadipe.in at least once. Tap to show only these.')}
       </div>
     </div>
   );

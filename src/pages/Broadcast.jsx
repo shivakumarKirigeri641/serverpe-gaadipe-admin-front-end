@@ -23,6 +23,9 @@ import { Banner, Chip, Empty, Failed, Modal, Spinner, Stat, Table } from '../com
  * as skipped — so a broadcast cannot escape while you are still trying it.
  */
 const TONE = { sent: 'good', pending: 'watch', failed: 'wrong', skipped: 'info' };
+// The longest typed value: a template body is 1,024 characters in all, and its
+// fixed words need room too.
+const VAR_MAX = 900;
 
 export default function Broadcast({ tabs }) {
   const { can } = useSession();
@@ -206,7 +209,7 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
               </p>
               <div className="mt-2 grid gap-3 sm:grid-cols-2">
                 {tpl.variables.map((n, i) => (
-                  <label key={n} className="block">
+                  <label key={n} className={`block ${!Object.keys(fields).includes(vars[i]) ? 'sm:col-span-2' : ''}`}>
                     <span className="label">{`{{${n}}}`}</span>
                     <select className="input" value={Object.keys(fields).includes(vars[i]) ? vars[i] : '__text'}
                       onChange={(e) => setVars((v) => v.map((x, j) => (j === i
@@ -214,10 +217,23 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
                       {Object.entries(fields).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                       <option value="__text">Text I type…</option>
                     </select>
+                    {/* ROOM FOR A PARAGRAPH (user, 2026-09-27): a one-line box cut
+                        text at 120 characters, so a description was silently
+                        shortened. It grows as you type; WhatsApp allows no line
+                        breaks inside a value, so Enter is turned into " · ". */}
                     {!Object.keys(fields).includes(vars[i]) && (
-                      <input className="input mt-1.5" value={vars[i] || ''} maxLength={120}
-                        onChange={(e) => setVars((v) => v.map((x, j) => (j === i ? e.target.value : x)))}
-                        placeholder="The same words for everyone" />
+                      <>
+                        <textarea className="input mt-1.5 resize-y leading-relaxed" value={vars[i] || ''} maxLength={VAR_MAX}
+                          rows={Math.min(8, Math.max(2, Math.ceil((vars[i] || '').length / 90)))}
+                          onChange={(e) => {
+                            const t = e.target.value.replace(/\s*\n\s*/g, ' · ');
+                            setVars((v) => v.map((x, j) => (j === i ? t : x)));
+                          }}
+                          placeholder="The same words for everyone — a heading, or a whole paragraph" />
+                        <span className={`mt-0.5 block text-right text-2xs ${(vars[i] || '').length > VAR_MAX * 0.9 ? 'text-watch-700' : 'text-muted'}`}>
+                          {(vars[i] || '').length} / {VAR_MAX} · one paragraph, no line breaks
+                        </span>
+                      </>
                     )}
                   </label>
                 ))}

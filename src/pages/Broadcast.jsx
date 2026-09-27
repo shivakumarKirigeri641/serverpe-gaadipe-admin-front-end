@@ -22,7 +22,6 @@ import { Banner, Chip, Empty, Failed, Modal, Spinner, Stat, Table } from '../com
  * WHATSAPP_ALLOWED_RECEPIENTS holds numbers, every other recipient is recorded
  * as skipped — so a broadcast cannot escape while you are still trying it.
  */
-const TONE = { sent: 'good', pending: 'watch', failed: 'wrong', skipped: 'info' };
 // The longest typed value: a template body is 1,024 characters in all, and its
 // fixed words need room too.
 const VAR_MAX = 900;
@@ -35,6 +34,8 @@ export default function Broadcast({ tabs }) {
   // Several audiences at once, combined with OR (user, 2026-09-25).
   const [filter, setFilter] = useState(['checked']);
   const [q, setQ] = useState('');
+  // The broadcast just queued: its live progress opens straight away.
+  const [live, setLive] = useState(null);
 
   const load = useCallback(() => {
     api.broadcasts({ filter: filter.join(','), q: q || undefined }).then(setData).catch(setError);
@@ -59,10 +60,12 @@ export default function Broadcast({ tabs }) {
           )}
 
           {canSend
-            ? <Compose data={data} filter={filter} setFilter={setFilter} q={q} setQ={setQ} onQueued={load} />
+            ? <Compose data={data} filter={filter} setFilter={setFilter} q={q} setQ={setQ}
+                onQueued={(b) => { load(); if (b?.id) setLive(b); }} />
             : <Banner tone="info" className="mt-3">Your account cannot send broadcasts.</Banner>}
 
           <Sent rows={data.broadcasts} onChange={load} canSend={canSend} />
+          {live && <Targets broadcast={live} canSend={canSend} onChange={load} onClose={() => { setLive(null); load(); }} />}
         </>
       )}
     </Shell>
@@ -127,7 +130,7 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
       const out = await api.sendBroadcast({ ...body(), confirm: 'SEND' });
       if (!out.ok) { setErr(out.message || 'Could not queue it.'); return; }
       setConfirming(false); setPicked(new Set()); setPreview(null); setNote('');
-      onQueued();
+      onQueued({ id: out.id, template_name: name, language: lang });
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
 
@@ -397,33 +400,112 @@ function Sent({ rows, onChange, canSend }) {
           </tr>
         ))}
       </Table>
-      {open && <Targets broadcast={open} onClose={() => setOpen(null)} />}
+      {open && <Targets broadcast={open} canSend={canSend} onChange={onChange} onClose={() => setOpen(null)} />}
     </div>
   );
 }
 
-function Targets({ broadcast, onClose }) {
-  const [rows, setRows] = useState(null);
-  useEffect(() => { api.broadcastTargets(broadcast.id).then((d) => setRows(d.targets)).catch(() => setRows([])); }, [broadcast.id]);
+/*
+ * LIVE PROGRESS (user, 2026-09-27). Opens the moment a broadcast is queued, and
+ * from any row of the list. Asks every 3 seconds while open: the job sends a
+ * few a minute, and after "sent" Meta reports delivered and read on its own
+ * time — so each number walks Waiting → Sent → Delivered → Read, or stops red
+ * with the reason. Closing it does not stop anything; sending carries on.
+ */
+const STEPS = ['Waiting', 'Sent', 'Delivered', 'Read'];
+function stageOf(t) {
+  if (t.status === 'failed' || t.delivery === 'failed') return { step: -1, tone: 'wrong', word: 'Failed', why: t.delivery_error || t.error };
+  if (t.status === 'skipped') return { step: -1, tone: 'info', word: 'Skipped', why: t.error };
+  if (t.status === 'pending') return { step: 0, tone: 'watch', word: 'Waiting' };
+  if (t.delivery === 'read') return { step: 3, tone: 'good', word: 'Read' };
+  if (t.delivery === 'delivered') return { step: 2, tone: 'good', word: 'Delivered' };
+  return { step: 1, tone: 'good', word: 'Sent' };
+}
+const SKIP_WHY = { opted_out: 'replied STOP', blocked: 'blocked', recipient_not_allowed: 'test mode — not on the allowed list', cancelled: 'stopped by you' };
+
+function Targets({ broadcast, onClose, canSend, onChange }) {
+  const [d, setD] = useState(null);
+  const load = useCallback(() => api.broadcastTargets(broadcast.id).then(setD).catch(() => setD((x) => x || { targets: [] })), [broadcast.id]);
+  useEffect(() => { load(); const t = setInterval(load, 3000); return () => clearInterval(t); }, [load]);
+
+  const rows = d?.targets || [];
+  const stages = rows.map(stageOf);
+  const n = (f) => stages.filter(f).length;
+  const waiting = n((s) => s.step === 0);
+  const failed = n((s) => s.word === 'Failed');
+  const skipped = n((s) => s.word === 'Skipped');
+  const read = n((s) => s.step === 3);
+  const delivered = n((s) => s.step >= 2);
+  const sent = n((s) => s.step >= 1);
+  const done = rows.length - waiting;
+  const pct = rows.length ? Math.round((done / rows.length) * 100) : 0;
+  const perMin = d?.broadcast?.per_minute || 5;
+  const mins = Math.ceil(waiting / perMin);
+
   return (
     <Modal title={`${broadcast.template_name} · ${broadcast.language}`} onClose={onClose} wide>
-      {!rows ? <Spinner /> : (
-        <Table head={<tr>{['Customer', 'Sent as', 'Status', 'When'].map((h) => <th key={h} className="th">{h}</th>)}</tr>}>
-          {rows.map((t) => (
-            <tr key={t.id}>
-              <td className="td">
-                <div className="font-semibold text-ink">{t.display_name || '—'}</div>
-                <div className="text-2xs text-muted">{fmtMobile(t.mobile)}</div>
-              </td>
-              <td className="td text-2xs text-body">{(t.params || []).join(' · ') || '—'}</td>
-              <td className="td">
-                <Chip tone={TONE[t.status] || 'info'}>{t.status}</Chip>
-                {t.error && <div className="mt-0.5 text-2xs text-muted">{t.error}</div>}
-              </td>
-              <td className="td text-2xs text-muted">{t.sent_at ? dateTime(t.sent_at) : '—'}</td>
-            </tr>
-          ))}
-        </Table>
+      {!d ? <Spinner /> : (
+        <>
+          {/* the whole broadcast */}
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <div className="text-sm font-semibold text-ink">
+              {waiting ? `Sending… ${count(done)} of ${count(rows.length)}` : `Finished · ${count(rows.length)} customer(s)`}
+            </div>
+            <div className="text-2xs text-muted">
+              {waiting ? `about ${mins} minute${mins === 1 ? '' : 's'} left · ${perMin} a minute, to protect your number's quality` : 'Delivered and read keep updating as phones report back.'}
+            </div>
+          </div>
+          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-shell" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+            <div className="h-full rounded-full bg-brand transition-all duration-700" style={{ width: `${pct}%` }} />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5 text-2xs">
+            <Chip tone="watch">{count(waiting)} waiting</Chip>
+            <Chip tone="good">{count(sent)} sent</Chip>
+            <Chip tone="good">{count(delivered)} delivered</Chip>
+            <Chip tone="good">{count(read)} read</Chip>
+            {failed > 0 && <Chip tone="wrong">{count(failed)} failed</Chip>}
+            {skipped > 0 && <Chip tone="info">{count(skipped)} skipped</Chip>}
+            {canSend && waiting > 0 && (
+              <button className="btn-quiet ml-auto !py-0.5 text-2xs"
+                onClick={async () => { if (window.confirm('Stop whatever has not been sent yet?')) { await api.cancelBroadcast(broadcast.id); load(); onChange?.(); } }}>
+                Stop the rest
+              </button>
+            )}
+          </div>
+
+          {/* number by number */}
+          <div className="mt-3 max-h-[55vh] divide-y divide-line overflow-auto rounded-lg border border-line">
+            {rows.map((t, i) => {
+              const s = stages[i];
+              return (
+                <div key={t.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
+                  <div className="min-w-[9rem] flex-1">
+                    <div className="truncate text-sm font-semibold text-ink">{t.display_name || '—'}</div>
+                    <div className="tabular text-2xs text-muted">{fmtMobile(t.mobile)}</div>
+                  </div>
+                  <div className="w-44" title={STEPS.join(' → ')}>
+                    <div className="flex gap-1">
+                      {STEPS.map((w, k) => (
+                        <div key={w} className={`h-1.5 flex-1 rounded-full transition-colors duration-500 ${
+                          s.step < 0 ? (s.tone === 'wrong' ? 'bg-wrong-500' : 'bg-line')
+                            : k <= s.step ? (k === 0 && s.step === 0 ? 'animate-pulse bg-watch-500' : 'bg-good-500') : 'bg-line'}`} />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="w-44 text-right">
+                    <Chip tone={s.tone}>{s.word}</Chip>
+                    {s.why && <div className="mt-0.5 text-2xs text-muted">{SKIP_WHY[s.why] || s.why}</div>}
+                    {!s.why && (t.delivery_at || t.sent_at) && <div className="mt-0.5 text-2xs text-muted">{dateTime(t.delivery_at || t.sent_at)}</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-2xs text-muted">
+            Sent = WhatsApp accepted it · Delivered = it reached the phone · Read = opened (only if they have read receipts on).
+            You can close this — sending carries on.
+          </p>
+        </>
       )}
     </Modal>
   );

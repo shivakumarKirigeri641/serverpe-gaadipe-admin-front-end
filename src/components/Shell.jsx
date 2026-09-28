@@ -286,15 +286,27 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
 
       <aside
         className={`fixed inset-y-0 left-0 z-40 flex h-screen w-60 shrink-0 flex-col overflow-hidden border-r border-line bg-white transition-[width,transform] duration-200 ease-out lg:sticky lg:top-0 lg:translate-x-0 ${collapsed ? 'lg:w-16' : 'lg:w-60'} ${open ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-line px-5">
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-brand text-xs font-bold text-white">GP</span>
-          <div className={`leading-tight transition-opacity duration-150 ${collapsed ? 'lg:pointer-events-none lg:opacity-0' : ''}`}>
+        {/* FOLDED, THE WAY BACK MUST SHOW (user, 2026-09-28): the hidden title
+            still took its width, so in the 64px rail the expand button was
+            pushed past the edge and clipped — nothing to click. Folded, the
+            header is just the logo (tap to expand) and a clear › under it. */}
+        <div className={`flex shrink-0 border-b border-line ${collapsed
+          ? 'h-14 items-center gap-2.5 px-5 lg:h-auto lg:flex-col lg:justify-center lg:gap-1.5 lg:px-0 lg:py-2.5'
+          : 'h-14 items-center gap-2.5 px-5'}`}>
+          <button type="button" onClick={() => collapsed && toggleCollapsed()} tabIndex={collapsed ? 0 : -1}
+            aria-label={collapsed ? 'Expand sidebar' : undefined}
+            className={`grid h-7 w-7 shrink-0 place-items-center rounded-md bg-brand text-xs font-bold text-white ${collapsed ? 'lg:cursor-pointer lg:hover:ring-2 lg:hover:ring-brand/30' : 'cursor-default'}`}>
+            GP
+          </button>
+          <div className={`leading-tight ${collapsed ? 'lg:hidden' : ''}`}>
             <div className="text-sm font-semibold text-ink">GaadiPe</div>
             <div className="text-2xs text-muted">Admin</div>
           </div>
           <Hint note={collapsed ? 'Expand the sidebar' : 'Collapse the sidebar to icons'}>
             <button type="button" onClick={toggleCollapsed} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="m-press ml-auto hidden h-7 w-7 place-items-center rounded-md text-muted hover:bg-shell hover:text-ink lg:grid">
+              className={`m-press hidden place-items-center rounded-md lg:grid ${collapsed
+                ? 'h-7 w-9 border border-line bg-white text-base text-ink shadow-sm hover:border-brand hover:text-brand'
+                : 'ml-auto h-7 w-7 text-muted hover:bg-shell hover:text-ink'}`}>
               <span className={`transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`}>‹</span>
             </button>
           </Hint>

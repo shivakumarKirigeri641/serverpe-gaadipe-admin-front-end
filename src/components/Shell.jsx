@@ -48,6 +48,7 @@ const NAV = [
     group: 'Customers',
     items: [
       { to: '/customers', label: 'Customers', icon: UsersIcon },
+      { to: '/fleets', label: 'Fleets', icon: CarIcon, cap: 'dashboard.view' },
       { to: '/journey', label: 'Customer journeys', icon: PulseIcon },
       { to: '/customer-intelligence', label: 'Customer intelligence', icon: UsersIcon, cap: 'customers.view' },
       { to: '/retention', label: 'Retention & repeat', icon: ChartIcon, cap: 'customers.view' },

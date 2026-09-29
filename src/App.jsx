@@ -15,6 +15,8 @@ import Geo from './pages/Geo.jsx';
 import Conversations from './pages/Conversations.jsx';
 import Campaigns from './pages/Campaigns.jsx';
 import Customers from './pages/Customers.jsx';
+import Fleets from './pages/fleets/Fleets.jsx';
+import FleetDetail from './pages/fleets/FleetDetail.jsx';
 import SignIns from './pages/SignIns.jsx';
 import Security from './pages/Security.jsx';
 import Referrals from './pages/Referrals.jsx';
@@ -138,6 +140,8 @@ export default function App() {
       <Route path="/campaigns" element={<Campaigns />} />
       <Route path="/live" element={<Live />} />
       <Route path="/customers" element={<Customers />} />
+      <Route path="/fleets" element={<Fleets />} />
+      <Route path="/fleets/:id" element={<FleetDetail />} />
       <Route path="/sign-ins" element={<SignIns />} />
       <Route path="/security" element={<Security />} />
       <Route path="/referrals" element={<GpReferrals />} />

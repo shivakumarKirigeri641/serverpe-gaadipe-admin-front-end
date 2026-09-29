@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Shell from '../../components/Shell.jsx';
-import { snack } from '../../components/Live.jsx';
+import { snack, setActivityPopups } from '../../components/Live.jsx';
 import { usePrefs, savePrefs, motionLevel } from '../../lib/motion.jsx';
 
 /**
@@ -25,6 +25,7 @@ const OPTIONS = {
 export default function Preferences() {
   const p = usePrefs();
   const [busy, setBusy] = useState(false);
+  const [pops, setPops] = useState(() => { try { return localStorage.getItem('gp.pop.activity.off') !== '1'; } catch { return true; } });
   const set = async (patch) => {
     setBusy(true);
     try { await savePrefs(patch); snack('Saved to your account'); } catch (e) { snack(`Saved in this browser only — ${e.message}`, 'wrong'); } finally { setBusy(false); }
@@ -53,6 +54,16 @@ export default function Preferences() {
         <div className="card flex items-center justify-between gap-3 p-4">
           <div><h2 className="text-sm font-semibold text-ink">Chart animation</h2><p className="text-2xs text-muted">Charts draw in the first time they appear. Updates never replay the whole drawing.</p></div>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={p.charts} disabled={busy} onChange={(e) => set({ charts: e.target.checked })} /> {p.charts ? 'On' : 'Off'}</label>
+        </div>
+        <div className="card flex items-center justify-between gap-3 p-4">
+          <div>
+            <h2 className="text-sm font-semibold text-ink">Pop-ups when someone says hi or checks a vehicle</h2>
+            <p className="text-2xs text-muted">A small note in the corner that goes by itself in five seconds. Payments (with a celebration 🎉) and alerts always pop up. This browser only.</p>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={pops} onChange={(e) => { setActivityPopups(e.target.checked); setPops(e.target.checked); snack(e.target.checked ? 'Hi & check pop-ups on' : 'Hi & check pop-ups off'); }} />
+            {pops ? 'On' : 'Off'}
+          </label>
         </div>
       </div>
     </Shell>

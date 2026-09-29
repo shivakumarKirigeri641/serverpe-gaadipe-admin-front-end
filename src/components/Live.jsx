@@ -43,10 +43,11 @@ function push(item) {
   emit();
   // Critical alerts stay longer; they are the ones that matter. A plain
   // confirmation goes in four seconds; an error, or one with an action, in eight.
-  // Hi and checks come and go in five — news, not something to act on.
-  const ms = item.severity === 'critical' ? 20000
-    : item.kind === 'hi' || item.kind === 'check' ? 5000
-    : item.kind === 'snack' ? (item.tone === 'wrong' || item.action ? 8000 : 4000) : 9000;
+  // Shorter (user, 2026-09-29): hi and checks go in three, payments and
+  // alerts in five; a critical alert still waits ten, to be seen.
+  const ms = item.severity === 'critical' ? 10000
+    : item.kind === 'hi' || item.kind === 'check' ? 3000
+    : item.kind === 'snack' ? (item.tone === 'wrong' || item.action ? 6000 : 3000) : 5000;
   setTimeout(() => dismiss(item.id), ms);
 }
 

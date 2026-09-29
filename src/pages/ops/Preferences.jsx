@@ -58,7 +58,7 @@ export default function Preferences() {
         <div className="card flex items-center justify-between gap-3 p-4">
           <div>
             <h2 className="text-sm font-semibold text-ink">Pop-ups when someone says hi or checks a vehicle</h2>
-            <p className="text-2xs text-muted">A small note in the corner that goes by itself in five seconds. Payments (with a celebration 🎉) and alerts always pop up. This browser only.</p>
+            <p className="text-2xs text-muted">A small note in the corner that goes by itself in three seconds. Payments (with a celebration 🎉) and alerts always pop up. This browser only.</p>
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={pops} onChange={(e) => { setActivityPopups(e.target.checked); setPops(e.target.checked); snack(e.target.checked ? 'Hi & check pop-ups on' : 'Hi & check pop-ups off'); }} />

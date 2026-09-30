@@ -118,6 +118,63 @@ export function useSeriesToggle() {
 
 const ease = (t) => 1 - (1 - t) ** 3;
 
+/*
+ * THE PETROL-PUMP READING (user, 2026-09-30): every animated number in the
+ * panel rolls on mechanical drums, like a 1980s fuel pump meter. Each digit is
+ * a drum of 0–9 that only ever turns forward; the units drum spins two extra
+ * turns and the tens one, so the right-hand digits whirl while the left ones
+ * click over, and all of them stop together. Drums are keyed from the right,
+ * so 99 → 100 adds a drum on the left instead of reshuffling the rest.
+ * Anything that is not a digit (₹ , . % k) stands still. Motion reduced: the
+ * text, as it is.
+ */
+const DRUM_H = 1.15; // em — the window each digit shows through
+const DRUM = Array.from({ length: 60 }, (_, i) => i % 10);
+function Drum({ digit, place, go, ms }) {
+  const [pos, setPos] = useState(10 + (go ? 0 : digit));
+  const [moving, setMoving] = useState(false);
+  const last = useRef(go ? 0 : digit);
+  useEffect(() => {
+    const from = last.current; last.current = digit;
+    if (motionLevel() !== 'full') { setMoving(false); setPos(10 + digit); return undefined; }
+    const extra = place === 1 ? 2 : place === 2 ? 1 : 0;
+    const steps = ((digit - from + 10) % 10) + 10 * extra;
+    if (!steps) return undefined;
+    let raf = requestAnimationFrame(() => { raf = requestAnimationFrame(() => { setMoving(true); setPos(10 + from + steps); }); });
+    const settle = setTimeout(() => { setMoving(false); setPos(10 + digit); }, ms + 60);
+    return () => { cancelAnimationFrame(raf); clearTimeout(settle); };
+  }, [digit]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <span aria-hidden="true" className="relative inline-block overflow-hidden" style={{ height: `${DRUM_H}em`,
+      WebkitMaskImage: 'linear-gradient(transparent, #000 22%, #000 78%, transparent)', maskImage: 'linear-gradient(transparent, #000 22%, #000 78%, transparent)' }}>
+      <span className="block" style={{ transform: `translateY(-${pos * DRUM_H}em)`,
+        transition: moving ? `transform ${ms}ms cubic-bezier(.3,.1,.2,1)` : 'none' }}>
+        {DRUM.map((d, i) => <span key={i} className="block text-center" style={{ height: `${DRUM_H}em`, lineHeight: `${DRUM_H}em` }}>{d}</span>)}
+      </span>
+    </span>
+  );
+}
+
+/** Any text with digits, rolled like a petrol-pump meter whenever it changes. */
+export function Rolling({ text, countUp = true, ms = 1100, className = '' }) {
+  const s = String(text ?? '');
+  const mounted = useRef(false);
+  useEffect(() => { mounted.current = true; }, []);
+  if (motionLevel() !== 'full') return <span className={`tabular ${className}`}>{s}</span>;
+  const chars = [...s];
+  let place = 0;
+  const places = chars.map((c) => (/\d/.test(c) ? 0 : null));
+  for (let i = chars.length - 1; i >= 0; i--) if (places[i] === 0) places[i] = ++place;
+  return (
+    <span className={`tabular inline-flex overflow-hidden align-bottom ${className}`} style={{ height: `${DRUM_H}em`, lineHeight: `${DRUM_H}em` }}
+      aria-label={s} role="text">
+      {chars.map((c, i) => (places[i]
+        ? <Drum key={`d${chars.length - i}`} digit={Number(c)} place={places[i]} go={countUp && !mounted.current} ms={ms} />
+        : <span key={`s${chars.length - i}-${c}`} aria-hidden="true" className="whitespace-pre">{c}</span>))}
+    </span>
+  );
+}
+
 /**
  * A number that moves from where it was to where it is — never back to zero
  * on an update. Counts up from 0 only the first time it appears. `format`
@@ -125,28 +182,20 @@ const ease = (t) => 1 - (1 - t) ** 3;
  * amber, briefly; `worseUp` flips that for costs.
  */
 export function AnimatedNumber({ value, format = (v) => Math.round(v).toLocaleString('en-IN'), duration = DURATION.complex, worseUp = false, countUp = true, className = '' }) {
+  // Rolled like a petrol-pump meter (user, 2026-09-30) — see Rolling.
   const target = Number(value);
-  const [shown, setShown] = useState(() => (countUp && motionLevel() === 'full' ? 0 : target));
-  const prev = useRef(countUp && motionLevel() === 'full' ? 0 : target);
+  const prev = useRef(null);
   const [tint, setTint] = useState('');
   useEffect(() => {
-    if (!Number.isFinite(target)) { setShown(target); return undefined; }
+    if (!Number.isFinite(target)) return undefined;
     const from = prev.current; prev.current = target;
-    if (from === target) { setShown(target); return undefined; }
-    if (from !== 0 || !countUp) setTint((target > from) !== worseUp ? 'm-up' : 'm-down');
-    if (motionLevel() !== 'full') { setShown(target); return undefined; }
-    let raf; const t0 = performance.now();
-    const step = (now) => {
-      const k = Math.min(1, (now - t0) / duration);
-      setShown(from + (target - from) * ease(k));
-      if (k < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    const clear = setTimeout(() => setTint(''), duration + 100);
-    return () => { cancelAnimationFrame(raf); clearTimeout(clear); };
+    if (from == null || from === target) return undefined;
+    setTint((target > from) !== worseUp ? 'm-up' : 'm-down');
+    const clear = setTimeout(() => setTint(''), Math.max(duration, 1100) + 100);
+    return () => clearTimeout(clear);
   }, [target]); // eslint-disable-line react-hooks/exhaustive-deps
   if (value == null || !Number.isFinite(target)) return <span className={className}>—</span>;
-  return <span className={`tabular ${tint} ${className}`}>{format(shown)}</span>;
+  return <Rolling text={format(target)} countUp={countUp} className={`${tint} ${className}`} />;
 }
 
 /* ─────────────────────────────── gauges ─────────────────────────────── */
@@ -168,28 +217,111 @@ function useTween(value, duration = DURATION.complex) {
 
 export const TONE_COLOR = { good: '#12a150', watch: '#e08700', wrong: '#d92d20', info: '#0f766e', muted: '#c9d6d3' };
 
-/**
- * A half-circle dial for a bounded figure (a success rate, CPU, latency
- * against its threshold). The arc moves from its last value to the new one;
- * `tone` (from real thresholds) colours it, and the label always says the
- * status in words too — colour is never the only signal.
+/*
+ * THE NEEDLE (user, 2026-09-30): moves like a real one — past its mark and
+ * back (ease-out-back). The first time a dial appears it does the 1990s
+ * dashboard self-test: sweeps to full scale and drops back to its reading.
+ * With motion reduced, it simply points.
  */
-export function AnimatedGauge({ value, max = 100, label, text, tone = 'info', caption, size = 132 }) {
-  const v = useTween(value == null ? 0 : Math.max(0, Math.min(max, value)));
-  const r = size / 2 - 10; const cx = size / 2; const cy = size / 2;
-  const len = Math.PI * r;
-  const frac = max ? v / max : 0;
+const backOut = (k) => { const c1 = 1.4; const c3 = c1 + 1; return 1 + c3 * (k - 1) ** 3 + c1 * (k - 1) ** 2; };
+function useNeedle(frac) {
+  const full = motionLevel() === 'full';
+  const [f, setF] = useState(full ? 0 : frac);
+  const prev = useRef(full ? 0 : frac);
+  const tested = useRef(!full);
+  useEffect(() => {
+    if (!full) { setF(frac); prev.current = frac; return undefined; }
+    let raf; let stop = false;
+    const run = (from, to, ms, easing) => new Promise((done) => {
+      const t0 = performance.now();
+      const step = (now) => {
+        if (stop) return;
+        const k = Math.min(1, (now - t0) / ms);
+        setF(from + (to - from) * easing(k));
+        if (k < 1) raf = requestAnimationFrame(step); else done();
+      };
+      raf = requestAnimationFrame(step);
+    });
+    (async () => {
+      if (!tested.current) { tested.current = true; await run(0, 1, 700, ease); if (stop) return; await run(1, frac, 1100, backOut); }
+      else await run(prev.current, frac, 900, backOut);
+      prev.current = frac;
+    })();
+    return () => { stop = true; cancelAnimationFrame(raf); };
+  }, [frac]); // eslint-disable-line react-hooks/exhaustive-deps
+  return f;
+}
+
+const short = (n) => (n >= 1000 ? `${Math.round(n / 100) / 10}k`.replace('.0k', 'k') : String(Math.round(n)));
+
+/**
+ * A 1990s dashboard dial (user, 2026-09-30) for a bounded figure — a success
+ * rate, latency against its threshold, memory, disk. A chrome bezel, a black
+ * face with cream ticks and numbers, a red zone at the bad end, an orange
+ * needle, and an amber LCD readout underneath. `tone` (from real thresholds)
+ * lights the LCD and the label says the status in words — colour is never the
+ * only signal. The red zone sits at the low end for anything named "success",
+ * at the high end otherwise; `danger` overrides it.
+ */
+export function AnimatedGauge({ value, max = 100, label, text, tone = 'info', caption, size = 132, danger }) {
+  const has = value != null && Number.isFinite(Number(value)) && max > 0;
+  const frac = has ? Math.max(0, Math.min(1, Number(value) / max)) : 0;
+  const f = useNeedle(frac);
+  const low = danger ? danger === 'low' : /success/i.test(String(label || ''));
+  const W = 140; const cx = 70; const cy = 70; const R = 58;
+  const ang = (x) => (-120 + 240 * x) * (Math.PI / 180);
+  const pt = (x, r) => [cx + r * Math.sin(ang(x)), cy - r * Math.cos(ang(x))];
+  const arc = (a, b, r) => { const [x1, y1] = pt(a, r); const [x2, y2] = pt(b, r); return `M ${x1} ${y1} A ${r} ${r} 0 ${(b - a) * 240 > 180 ? 1 : 0} 1 ${x2} ${y2}`; };
+  const [z0, z1] = low ? [0, 0.2] : [0.8, 1];
+  const uid = useRef(`g${Math.random().toString(36).slice(2, 8)}`).current;
+  const lcd = { good: '#7dff8a', watch: '#ffb000', wrong: '#ff5a4f', info: '#ffb000', muted: '#8a8a8a' }[tone] || '#ffb000';
+  const [nx, ny] = pt(f, R - 12);
+  const [tx, ty] = pt(f + 0.5, 9);
   return (
     <div className="flex flex-col items-center" role="img" aria-label={`${label}: ${text ?? value ?? 'no data'}${caption ? `, ${caption}` : ''}`}>
-      <svg width={size} height={size / 2 + 12} viewBox={`0 0 ${size} ${size / 2 + 12}`}>
-        <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke="#e3ecea" strokeWidth="10" strokeLinecap="round" />
-        {value != null && (
-          <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke={TONE_COLOR[tone]} strokeWidth="10" strokeLinecap="round"
-            strokeDasharray={len} strokeDashoffset={len * (1 - frac)} style={{ transition: 'stroke var(--m-emph) ease' }} />
+      <svg width={size} height={size * 0.92} viewBox={`0 0 ${W} ${W * 0.92}`} aria-hidden="true">
+        <defs>
+          <linearGradient id={`${uid}b`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#f4f6f8" /><stop offset=".45" stopColor="#8d949c" /><stop offset=".55" stopColor="#c9ced4" /><stop offset="1" stopColor="#3a3f45" />
+          </linearGradient>
+          <radialGradient id={`${uid}f`} cx=".5" cy=".42" r=".62">
+            <stop offset="0" stopColor="#2a2f36" /><stop offset="1" stopColor="#0a0c0f" />
+          </radialGradient>
+          <radialGradient id={`${uid}c`} cx=".35" cy=".35" r=".8">
+            <stop offset="0" stopColor="#e9edf1" /><stop offset="1" stopColor="#4a5058" />
+          </radialGradient>
+        </defs>
+        <circle cx={cx} cy={cy} r={67} fill={`url(#${uid}b)`} />
+        <circle cx={cx} cy={cy} r={63} fill={`url(#${uid}f)`} />
+        {/* the red zone */}
+        <path d={arc(z0, z1, R - 2)} fill="none" stroke="#d92d20" strokeWidth="5" opacity=".9" />
+        {/* ticks: 40 minor, 10 major; numbers on every other major */}
+        {Array.from({ length: 41 }, (_, i) => {
+          const x = i / 40; const major = i % 4 === 0;
+          const [x1, y1] = pt(x, R); const [x2, y2] = pt(x, R - (major ? 9 : 4.5));
+          const red = x >= z0 - 1e-9 && x <= z1 + 1e-9;
+          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={red ? '#ff6b5f' : '#f2ead3'} strokeWidth={major ? 1.8 : 0.9} strokeLinecap="round" />;
+        })}
+        {[0, 0.2, 0.4, 0.6, 0.8, 1].map((x) => {
+          const [lx, ly] = pt(x, R - 17);
+          return <text key={x} x={lx} y={ly + 2.6} textAnchor="middle" fontSize="7.5" fontWeight="700" fill="#f2ead3" fontFamily="ui-sans-serif, system-ui">{short(max * x)}</text>;
+        })}
+        <text x={cx} y={cy + 26} textAnchor="middle" fontSize="6" letterSpacing="1.2" fill="#9aa3ab" fontFamily="ui-sans-serif, system-ui">GAADIPE</text>
+        {/* the needle, with a short tail, and its glow */}
+        {has && (
+          <g style={{ filter: 'drop-shadow(0 0 2px rgba(255,90,31,.8))' }}>
+            <line x1={tx} y1={ty} x2={nx} y2={ny} stroke="#ff5a1f" strokeWidth="2.6" strokeLinecap="round" />
+          </g>
         )}
+        <circle cx={cx} cy={cy} r={7} fill={`url(#${uid}c)`} stroke="#1b1f24" strokeWidth="1" />
+        {/* the amber LCD */}
+        <rect x={cx - 27} y={cy + 33} width="54" height="17" rx="3" fill="#120d02" stroke="#3a3f45" strokeWidth="1.2" />
+        <text x={cx} y={cy + 45.5} textAnchor="middle" fontSize="10.5" fontWeight="700" fill={has ? lcd : '#6b6b6b'}
+          fontFamily="ui-monospace, 'Courier New', monospace" style={{ filter: has ? `drop-shadow(0 0 2px ${lcd})` : 'none' }}>
+          {has ? text ?? Math.round(Number(value)) : '— —'}
+        </text>
       </svg>
-      <div className="-mt-7 text-center">
-        <div className="tabular text-lg font-semibold text-ink">{value == null ? '—' : text ?? Math.round(v)}</div>
+      <div className="mt-1 text-center">
         <div className="text-2xs font-semibold uppercase tracking-wider text-muted">{label}</div>
         {caption && <div className="text-[10px] text-muted">{caption}</div>}
       </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Rolling } from '../lib/motion.jsx';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAutoRefresh } from '../lib/useAutoRefresh';
@@ -153,7 +154,7 @@ export default function Customers() {
               <button type="button" disabled={!sortBy} onClick={() => sortBy && setSort(sortBy)}
                 className={`card w-full px-3 py-2 text-left ${sortBy ? 'lift hover:shadow-pop' : 'cursor-default'} ${label === 'New today' && value ? 'bg-good-50/70' : ''}`}>
                 <div className="text-2xs font-semibold uppercase tracking-wider text-muted">{label}</div>
-                <div className="tabular text-xl font-semibold text-ink">{count(value)}</div>
+                <div className="tabular text-xl font-semibold text-ink"><Rolling text={count(value)} /></div>
                 <div className="text-2xs text-muted">{sub}{sortBy && <span className="text-brand-deep"> · tap to sort</span>}</div>
               </button>
             </Hint>

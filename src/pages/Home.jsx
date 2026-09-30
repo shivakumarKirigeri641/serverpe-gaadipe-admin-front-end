@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { chartAnim } from '../lib/motion.jsx';
+import { chartAnim, Rolling } from '../lib/motion.jsx';
 import { api } from '../lib/api';
 import { count, rupees } from '../lib/format';
 import Shell from '../components/Shell.jsx';
@@ -176,7 +176,7 @@ function Number({ label, now, before, money = false, flat = false, sub, note, de
   const card = (
     <div className={`card rise p-4 ${delay ? `rise-${delay}` : ''}`}>
       <div className="text-2xs uppercase tracking-wider text-muted">{label}</div>
-      <div className="mt-1 text-xl font-bold text-ink">{show(now)}</div>
+      <div className="mt-1 text-xl font-bold text-ink"><Rolling text={show(now)} /></div>
       {sub && <div className="mt-0.5 text-2xs text-muted">{sub}</div>}
       {diff !== null && (
         <div className={`mt-0.5 text-2xs ${diff > 0 ? 'text-good-700' : diff < 0 ? 'text-wrong-700' : 'text-muted'}`}>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
-import { motionLevel, AnimatedNumber } from '../lib/motion.jsx';
+import { AnimatedNumber, Rolling } from '../lib/motion.jsx';
 import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
 import { Hint, Modal, Table, Failed, SkeletonCards, Empty, Chip, saveBlob } from '../components/ui.jsx';
@@ -146,7 +146,6 @@ export default function CommandCenter() {
 /* ──────────────────────────────────────────────── KPI card ── */
 
 function Kpi({ k, compareLabel, delay, onOpen, onOpenPrevious }) {
-  const shown = useCountUp(k.value);
   const fmt = (v) => (k.money ? inr(v) : count(v));
   const up = k.change > 0; const down = k.change < 0;
   // Colour only where movement means something: better is green, worse red.
@@ -160,7 +159,7 @@ function Kpi({ k, compareLabel, delay, onOpen, onOpenPrevious }) {
         <div className="text-2xs uppercase tracking-wider text-muted">{k.label}</div>
       </Hint>
       <div className="mt-1 flex items-end justify-between gap-2">
-        <div className="tabular text-xl font-bold text-ink">{fmt(shown)}</div>
+        <div className="tabular text-xl font-bold text-ink"><Rolling text={fmt(k.value)} /></div>
         <div className="h-8 w-20 opacity-80 group-hover:opacity-100">
           {k.spark.some((v) => v) && (
             <ResponsiveContainer width="100%" height="100%">
@@ -331,12 +330,11 @@ function LiveNow() {
 }
 
 function Counter({ label, note, v, bad = false }) {
-  const shown = useCountUp(v || 0);
   return (
     <Hint note={note} className="block">
       <div>
         <div className="text-2xs text-muted">{label}</div>
-        <div className={`tabular text-lg font-bold ${bad && v ? 'text-wrong-700' : 'text-ink'}`}>{v == null ? '—' : count(shown)}</div>
+        <div className={`tabular text-lg font-bold ${bad && v ? 'text-wrong-700' : 'text-ink'}`}>{v == null ? '—' : <Rolling text={count(v)} />}</div>
       </div>
     </Hint>
   );
@@ -522,26 +520,3 @@ function ExportMenu({ range }) {
   );
 }
 
-/* A number that counts up to its new value — briefly, and only when it changes. */
-function useCountUp(target, ms = 500) {
-  // Motion system: counts up from 0 the first time, then from the old value to
-  // the new one — never back to zero; instant for Reduced / Minimal motion.
-  const still = motionLevel() !== 'full';
-  const [v, setV] = useState(still ? target || 0 : 0);
-  const from = useRef(still ? target || 0 : 0);
-  useEffect(() => {
-    const start = performance.now(); const a = from.current; const b = Number(target || 0);
-    if (a === b) return undefined;
-    if (motionLevel() !== 'full') { from.current = b; setV(b); return undefined; }
-    let raf;
-    const tick = (t) => {
-      const p = Math.min(1, (t - start) / ms);
-      const cur = Math.round(a + (b - a) * (1 - (1 - p) ** 3));
-      setV(cur);
-      if (p < 1) raf = requestAnimationFrame(tick); else from.current = b;
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, ms]);
-  return v;
-}

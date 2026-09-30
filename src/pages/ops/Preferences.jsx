@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Shell from '../../components/Shell.jsx';
 import { snack, setActivityPopups } from '../../components/Live.jsx';
 import { usePrefs, savePrefs, motionLevel } from '../../lib/motion.jsx';
+import { chime, soundOn, setSound } from '../../lib/sound';
 
 /**
  * DISPLAY & MOTION (user, 2026-09-25) — this admin's own settings, saved to
@@ -25,6 +26,7 @@ const OPTIONS = {
 export default function Preferences() {
   const p = usePrefs();
   const [busy, setBusy] = useState(false);
+  const [sound, setSoundState] = useState(soundOn);
   const [pops, setPops] = useState(() => { try { return localStorage.getItem('gp.pop.activity.off') !== '1'; } catch { return true; } });
   const set = async (patch) => {
     setBusy(true);
@@ -63,6 +65,21 @@ export default function Preferences() {
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={pops} onChange={(e) => { setActivityPopups(e.target.checked); setPops(e.target.checked); snack(e.target.checked ? 'Hi & check pop-ups on' : 'Hi & check pop-ups off'); }} />
             {pops ? 'On' : 'Off'}
+          </label>
+        </div>
+        <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
+          <div>
+            <h2 className="text-sm font-semibold text-ink">Pop-up sounds</h2>
+            <p className="text-2xs text-muted">A chime with each pop-up: a bright one for payments, a firmer one for alerts, a soft one for hi and checks. Browsers play sound only after you click once on the page. This browser only.</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {[['payment', '🎉 Payment'], ['alert', '⚠️ Alert', 'critical'], ['recovered', '✅ Recovered'], ['hi', '👋 Hi']].map(([kind, label, severity]) => (
+                <button key={kind} type="button" className="btn-quiet !px-2.5 !py-1 text-2xs" onClick={() => chime({ kind, severity }, { force: true })}>▶ {label}</button>
+              ))}
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={sound} onChange={(e) => { setSound(e.target.checked); setSoundState(e.target.checked); snack(e.target.checked ? 'Sounds on' : 'Sounds off'); if (e.target.checked) chime({ kind: 'recovered' }, { force: true }); }} />
+            {sound ? 'On' : 'Off'}
           </label>
         </div>
       </div>

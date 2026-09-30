@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, getToken } from '../lib/api';
+import { chime } from '../lib/sound';
 
 /**
  * WHAT THE PANEL HEARS WHILE IT IS OPEN (user, 2026-09-25, command center
@@ -40,6 +41,7 @@ function push(item) {
   state.toasts = [...state.toasts, item].slice(-5);
   // A payment gets a celebration, once per payment (user, 2026-09-29).
   if (item.kind === 'payment') state.party = Date.now();
+  chime(item);
   emit();
   // Critical alerts stay longer; they are the ones that matter. A plain
   // confirmation goes in four seconds; an error, or one with an action, in eight.

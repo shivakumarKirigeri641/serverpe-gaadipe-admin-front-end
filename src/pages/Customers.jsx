@@ -35,8 +35,16 @@ const isToday = (t) => Boolean(t) && new Date(t).toDateString() === new Date().t
 function Delta({ now, before }) {
   if (before == null) return null;
   if (!before) return <span className="text-muted">{now ? 'none yesterday' : 'same as yesterday'}</span>;
-  const d = Math.round(((now - before) / before) * 100);
-  return <span className={d > 0 ? 'text-good-700' : d < 0 ? 'text-wrong-700' : 'text-muted'}>{d > 0 ? '▲' : d < 0 ? '▼' : ''} {Math.abs(d)}%</span>;
+  // The change in people and in per cent (user, 2026-09-30): "▲ +3 (+25%)".
+  const diff = now - before;
+  const d = Math.round((diff / before) * 100);
+  if (!diff) return <span className="text-muted">same as yesterday</span>;
+  const sign = diff > 0 ? '+' : '−';
+  return (
+    <span className={`font-semibold ${diff > 0 ? 'text-good-700' : 'text-wrong-700'}`}>
+      {diff > 0 ? '▲' : '▼'} {sign}{count(Math.abs(diff))} ({sign}{Math.abs(d)}%)
+    </span>
+  );
 }
 
 /* What each column means, shown on hover (user, 2026-09-26). */
@@ -130,8 +138,12 @@ export default function Customers() {
       {data?.today && (
         <div className="mb-3 grid grid-cols-3 gap-2 md:max-w-xl">
           {[
-            ['Customers', data.total, q || filter !== 'all' ? 'in this view' : 'all time', null,
-              q || filter !== 'all' ? 'Customers matching your search or filter.' : 'Everyone who has ever used GaadiPe — on WhatsApp or the website.'],
+            ['Customers', data.total,
+              q || filter !== 'all' ? 'in this view'
+                : data.today.customers_yesterday != null
+                  ? <>vs {count(data.today.customers_yesterday)} yesterday · <Delta now={data.today.customers} before={data.today.customers_yesterday} /></>
+                  : 'all time', null,
+              q || filter !== 'all' ? 'Customers matching your search or filter.' : 'Everyone who has used GaadiPe — on WhatsApp or the website — except those who replied STOP. Compared with the total at this time yesterday.'],
             ['New today', data.today.joined, <>vs {count(data.today.joined_yesterday)} yesterday · <Delta now={data.today.joined} before={data.today.joined_yesterday} /></>, 'joined',
               'People who used GaadiPe for the first time since midnight (IST), against yesterday up to the same time. Their rows are tinted green. Tap to sort newest first.'],
             ['Active today', data.today.active, <>vs {count(data.today.active_yesterday)} yesterday · <Delta now={data.today.active} before={data.today.active_yesterday} /></>, 'last_seen',

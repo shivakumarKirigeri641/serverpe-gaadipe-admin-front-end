@@ -293,7 +293,9 @@ export const api = {
   muteRule: (key, hours) => call(`/alert-rules/${key}/mute`, { method: 'POST', body: { hours } }),
   // Fleets (user, 2026-09-29).
   fleets: (params) => call(`/fleets${qs(params)}`),
-  fleet: (id) => call(`/fleets/${id}`),
+  // Not "fleet": that name is Analytics → Fleet (/insights/fleet), and a second
+  // key of the same name silently replaced it (user, 2026-09-30).
+  fleetAccount: (id) => call(`/fleets/${id}`),
   createFleet: (body) => call('/fleets', { method: 'POST', body }),
   updateFleet: (id, body) => call(`/fleets/${id}`, { method: 'PATCH', body }),
   fleetVehicles: (id, body) => call(`/fleets/${id}/vehicles`, { method: 'POST', body }),
@@ -372,7 +374,6 @@ export const api = {
   revokeReport: (body) => call('/report-access/revoke', { method: 'POST', body }),
   contactMessages: (params) => call(`/contact-messages${qs(params)}`),
   setContactStatus: (id, status) => call(`/contact-messages/${id}`, { method: 'PUT', body: { status } }),
-  notifications: (params) => call(`/notifications${qs(params)}`),
   cleanPreview: () => call('/maintenance/preview'),
   cleanDb: () => call('/maintenance/clean', { method: 'POST', body: { confirm: 'CLEAN' }, timeoutMs: 60000 }),
   /* A file, fetched like the PDFs: outside the encrypted envelope, with the session token. */

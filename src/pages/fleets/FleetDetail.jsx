@@ -23,7 +23,7 @@ export default function FleetDetail() {
   const [dialog, setDialog] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => { try { setError(null); setD(await api.fleet(id)); } catch (e) { setError(e); } }, [id]);
+  const load = useCallback(async () => { try { setError(null); setD(await api.fleetAccount(id)); } catch (e) { setError(e); } }, [id]);
   useEffect(() => { load(); }, [load]);
   useAutoRefresh(load, 30000);
 

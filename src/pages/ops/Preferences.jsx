@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Shell from '../../components/Shell.jsx';
-import { snack, setActivityPopups } from '../../components/Live.jsx';
+import { snack, setActivityPopups, celebrate } from '../../components/Live.jsx';
 import { usePrefs, savePrefs, motionLevel } from '../../lib/motion.jsx';
 import { chime, soundOn, setSound } from '../../lib/sound';
 
@@ -75,6 +75,8 @@ export default function Preferences() {
               {[['payment', '🎉 Payment'], ['alert', '⚠️ Alert', 'critical'], ['recovered', '✅ Recovered'], ['hi', '👋 Hi']].map(([kind, label, severity]) => (
                 <button key={kind} type="button" className="btn-quiet !px-2.5 !py-1 text-2xs" onClick={() => chime({ kind, severity }, { force: true })}>▶ {label}</button>
               ))}
+              <button type="button" className="btn-quiet !px-2.5 !py-1 text-2xs" onClick={() => celebrate(100)}>▶ 🎉 100 customers</button>
+              <button type="button" className="btn-quiet !px-2.5 !py-1 text-2xs" onClick={() => celebrate(1000)}>▶ 🏆 1,000 customers</button>
             </div>
           </div>
           <label className="flex items-center gap-2 text-sm">

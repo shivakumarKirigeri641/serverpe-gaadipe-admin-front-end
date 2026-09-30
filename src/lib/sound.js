@@ -2,7 +2,8 @@
  * POP-UP SOUNDS (user, 2026-09-30): a chime with each pop-up, drawn by the
  * browser (Web Audio) — no audio files to host or load.
  *
- *   payment    a bright rising bell arpeggio with a sparkle on top
+ *   payment    "ta-daaaa" in soft bells — one short, then three ringing together
+ *   milestone  a bell fanfare — every hundred customers
  *   recovered  two soft rising notes — "all good again"
  *   alert      two falling notes; a critical one three, a little firmer
  *   hi / check one quiet drop, so a busy hour does not become noise
@@ -51,9 +52,18 @@ function bell(ac, out, freq, at, { dur = 1.1, gain = 0.22, type = 'sine' } = {})
 const N = { A4: 440, E5: 659.25, G5: 783.99, A5: 880, C6: 1046.5, D6: 1174.66, E6: 1318.51, G6: 1567.98, B6: 1975.53, C7: 2093 };
 
 const TUNES = {
+  // "Ta-daaaa" in the recovered bells (user, 2026-09-30): one short bell,
+  // then three ringing together, a little fuller than recovered's two.
   payment: (ac, out, t) => {
-    [N.C6, N.E6, N.G6, N.C7].forEach((f, i) => bell(ac, out, f, t + i * 0.09, { dur: 1.4, gain: 0.2 }));
-    [N.E6 * 2, N.G6 * 2].forEach((f, i) => bell(ac, out, f, t + 0.42 + i * 0.07, { dur: 0.6, gain: 0.05 }));
+    bell(ac, out, N.G5, t, { dur: 0.5, gain: 0.16 });
+    [N.C6, N.E6, N.G6].forEach((f, i) => bell(ac, out, f, t + 0.16 + i * 0.012, { dur: 2, gain: 0.13 }));
+  },
+  // A customer milestone (user, 2026-09-30): a rising bell run into a full
+  // chord that rings, then a second, higher chord — a fanfare, not a ping.
+  milestone: (ac, out, t) => {
+    [N.G5, N.C6, N.E6, N.G6].forEach((f, i) => bell(ac, out, f, t + i * 0.11, { dur: 0.7, gain: 0.14 }));
+    [N.C6, N.E6, N.G6, N.C7].forEach((f, i) => bell(ac, out, f, t + 0.5 + i * 0.015, { dur: 2.4, gain: 0.12 }));
+    [N.E6, N.G6, N.C7].forEach((f, i) => bell(ac, out, f * 2, t + 1.2 + i * 0.05, { dur: 1.6, gain: 0.05 }));
   },
   recovered: (ac, out, t) => { bell(ac, out, N.G5, t, { dur: 0.9, gain: 0.16 }); bell(ac, out, N.D6, t + 0.13, { dur: 1.1, gain: 0.16 }); },
   critical: (ac, out, t) => [N.A5, N.E5, N.A4].forEach((f, i) => bell(ac, out, f, t + i * 0.16, { dur: 0.8, gain: 0.2, type: 'triangle' })),
@@ -61,7 +71,7 @@ const TUNES = {
   hi: (ac, out, t) => bell(ac, out, N.E6, t, { dur: 0.5, gain: 0.07 }),
   check: (ac, out, t) => bell(ac, out, N.B6, t, { dur: 0.45, gain: 0.06 }),
 };
-const RANK = ['payment', 'critical', 'alert', 'recovered', 'hi', 'check'];
+const RANK = ['milestone', 'payment', 'critical', 'alert', 'recovered', 'hi', 'check'];
 
 function play(name) {
   const ac = audio();

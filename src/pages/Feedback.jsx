@@ -132,10 +132,20 @@ function FeedbackList() {
       <div className="space-y-3">
         {rows.map((f) => (
           <div key={f.id} className="card p-4">
+            {/* Star rating from the website feedback link (user, 2026-09-30). */}
+            {f.rating ? (
+              <div className="mb-1.5 flex items-center gap-2">
+                <span className="text-lg leading-none" style={{ color: '#f5a623' }} aria-label={`${f.rating} out of 5`}>
+                  {'★'.repeat(f.rating)}<span style={{ color: '#d7dfdd' }}>{'★'.repeat(5 - f.rating)}</span>
+                </span>
+                <span className={`chip ${f.rating >= 4 ? 'bg-good-50 text-good-700' : f.rating <= 2 ? 'bg-wrong-50 text-wrong-700' : 'bg-shell text-muted'}`}>{f.rating}/5</span>
+              </div>
+            ) : null}
             <p className="whitespace-pre-wrap text-sm text-ink">{f.body}</p>
             <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs text-muted">
               <span className="font-semibold text-body">{f.name || 'Unknown'}</span>
-              <span className="tabular">{fmtMobile(f.mobile)}</span>
+              {f.mobile ? <span className="tabular">{fmtMobile(f.mobile)}</span> : <span>No number</span>}
+              <span className="chip bg-shell text-muted">{f.channel && f.channel !== 'whatsapp' ? `🌐 Website${f.channel.includes(':') ? ` · ${f.channel.split(':')[1]}` : ''}` : '💬 WhatsApp'}</span>
               {f.reg_no && <span className="plate">{plate(f.reg_no)}</span>}
               <Hint note={dateTime(f.created_at)}><span>{ago(f.created_at)}</span></Hint>
             </div>

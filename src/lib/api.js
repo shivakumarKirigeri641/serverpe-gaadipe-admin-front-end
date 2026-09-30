@@ -208,6 +208,7 @@ export const api = {
   resolveAlert: (id, note) => call(`/alerts/${id}/resolve`, { method: 'POST', body: { note } }),
   feed: (since) => call(`/feed${qs({ since })}`, { quiet: true }),
   badges: () => call('/badges', { quiet: true }),
+  milestoneSeen: (customers) => call(`/milestones/${customers}/seen`, { method: 'POST', quiet: true }),
   // Where (phase 7).
   geoStates: (params) => call(`/geo/states${qs(params)}`),
   geoRtos: (code, params) => call(`/geo/states/${code}${qs(params)}`),

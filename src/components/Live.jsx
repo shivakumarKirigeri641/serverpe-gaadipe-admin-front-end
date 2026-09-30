@@ -21,11 +21,11 @@ const SINCE_KEY = 'gp.feed.since';
 
 const state = { badges: null, toasts: [], party: 0, milestone: null };
 
-/* Milestones already celebrated in this browser, so each one plays once
-   (user, 2026-09-30). The server keeps returning a recent one for three days. */
-const SEEN_KEY = 'gp.milestones.seen';
-const seenMilestones = () => { try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '[]'); } catch { return []; } };
-const markSeen = (id) => { try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seenMilestones(), id].slice(-50))); } catch { /* private window */ } };
+/* A milestone the server keeps returning until it hears it was shown to this
+   admin (user, 2026-09-30) — so one missed with the browser closed plays at
+   the next login, on any device. This set only stops a replay in the seconds
+   before the server has heard. */
+const shownNow = new Set();
 
 /** The whole-page celebration — from a milestone, or the preview button. */
 export function celebrate(customers) {
@@ -51,9 +51,10 @@ function dismiss(id) {
 
 function push(item) {
   if (item.kind === 'milestone') {
-    if (seenMilestones().includes(item.id)) return;
-    markSeen(item.id);
+    if (shownNow.has(item.id)) return;
+    shownNow.add(item.id);
     celebrate(item.customers);
+    api.milestoneSeen(item.customers).catch(() => shownNow.delete(item.id));
     return;
   }
   if (state.toasts.some((t) => t.id === item.id)) return;
@@ -96,6 +97,10 @@ function start() {
   badges(); feed();
   setInterval(badges, BADGE_MS);
   setInterval(feed, FEED_MS);
+  // Back to the tab, or just signed in: look now rather than at the next tick,
+  // so a waiting celebration greets the admin on landing.
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) feed(); });
+  window.addEventListener('focus', feed);
 }
 
 /**

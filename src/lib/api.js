@@ -344,6 +344,8 @@ export const api = {
   addPolicy: (slug, clause) => call(`/policies/${slug}`, { method: 'POST', body: clause }),
 
   feedback: (params) => call(`/feedback${qs(params)}`),
+  approveFeedback: (id, body) => call(`/feedback/${id}/approve`, { method: 'POST', body }),
+  unapproveFeedback: (id) => call(`/feedback/${id}/unapprove`, { method: 'POST', body: {} }),
   audit: (params) => call(`/audit${qs(params)}`),
   signIns: (params) => call(`/sign-ins${qs(params)}`),
   sessions: (params) => call(`/sessions${qs(params)}`),

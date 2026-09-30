@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { mobile as fmtMobile, plate, dateTime, ago } from '../lib/format';
 import { useAutoRefresh } from '../lib/useAutoRefresh';
 import Shell from '../components/Shell.jsx';
+import { snack } from '../components/Live.jsx';
 import { Empty, Spinner, Failed, Hint, Pager, PAGE_SIZE, Chip } from '../components/ui.jsx';
 
 /**
@@ -111,6 +112,77 @@ function ContactMessages() {
   );
 }
 
+/*
+ * SHOW ON THE WEBSITE (user, 2026-09-30). Rated feedback from the website link
+ * can become a testimonial on gaadipe.in: tidy the text (spelling, anything
+ * personal), choose the name shown — first name and an initial by default —
+ * and approve. It appears within a couple of minutes; "Remove" takes it down.
+ * WhatsApp feedback has no approve button: nobody there was told it might be
+ * shown in public.
+ */
+const firstAndInitial = (n) => {
+  const [a, b] = String(n || '').trim().split(/\s+/);
+  return a ? `${a}${b ? ` ${b[0].toUpperCase()}.` : ''}` : '';
+};
+function Testimonial({ f, onDone }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState('');
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const fromWeb = f.channel && f.channel !== 'whatsapp' && f.rating;
+  if (!fromWeb) return null;
+  const start = () => {
+    setText(f.public_text || (/\(no message\)$/.test(f.body) ? '' : f.body));
+    setName(f.public_name || firstAndInitial(f.name) || 'A GaadiPe customer');
+    setOpen(true);
+  };
+  const approve = async () => {
+    setBusy(true);
+    try { await api.approveFeedback(f.id, { text, name }); snack('Shown on the website — live within 2 minutes'); setOpen(false); onDone(); }
+    catch (e) { snack(e.message, 'wrong'); } finally { setBusy(false); }
+  };
+  const remove = async () => {
+    setBusy(true);
+    try { await api.unapproveFeedback(f.id); snack('Removed from the website'); onDone(); }
+    catch (e) { snack(e.message, 'wrong'); } finally { setBusy(false); }
+  };
+
+  if (f.approved_at && !open) {
+    return (
+      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-good-500/30 bg-good-50 px-3 py-2 text-2xs">
+        <span className="font-semibold text-good-700">✅ On the website</span>
+        <span className="text-body">“{f.public_text}” — {f.public_name}</span>
+        <span className="ml-auto flex gap-1.5">
+          <button className="btn-quiet !px-2.5 !py-1 text-2xs" disabled={busy} onClick={start}>Edit</button>
+          <button className="btn-quiet !px-2.5 !py-1 text-2xs text-wrong-700" disabled={busy} onClick={remove}>Remove</button>
+        </span>
+      </div>
+    );
+  }
+  if (!open) {
+    return (
+      <button className="btn-quiet mt-3 !px-3 !py-1.5 text-2xs" onClick={start}>✅ Show on website</button>
+    );
+  }
+  return (
+    <div className="mt-3 space-y-2 rounded-lg border border-brand/25 bg-brand/5 p-3">
+      <div className="text-2xs font-semibold uppercase tracking-wider text-brand-deep">How it will appear on gaadipe.in</div>
+      <textarea className="input min-h-[80px] w-full text-sm" maxLength={600} value={text} onChange={(e) => setText(e.target.value)}
+        placeholder="The words to show. Fix spelling; remove anything personal." />
+      <div className="flex flex-wrap items-center gap-2">
+        <input className="input !w-48 text-sm" maxLength={40} value={name} onChange={(e) => setName(e.target.value)} placeholder="Name shown" />
+        <span className="text-sm" style={{ color: '#f5a623' }}>{'★'.repeat(f.rating)}<span style={{ color: '#d7dfdd' }}>{'★'.repeat(5 - f.rating)}</span></span>
+        <span className="ml-auto flex gap-1.5">
+          <button className="btn-quiet !px-3 !py-1.5 text-2xs" disabled={busy} onClick={() => setOpen(false)}>Cancel</button>
+          <button className="btn-primary !px-3 !py-1.5 text-2xs" disabled={busy || text.trim().length < 5 || !name.trim()} onClick={approve}>
+            {f.approved_at ? 'Save' : 'Approve & show'}
+          </button>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function FeedbackList() {
   const [rows, setRows] = useState(null);
   const [error, setError] = useState(null);
@@ -149,6 +221,7 @@ function FeedbackList() {
               {f.reg_no && <span className="plate">{plate(f.reg_no)}</span>}
               <Hint note={dateTime(f.created_at)}><span>{ago(f.created_at)}</span></Hint>
             </div>
+            <Testimonial f={f} onDone={load} />
           </div>
         ))}
         <div className="card overflow-hidden"><Pager page={page} total={total} onPage={setPage} className="border-t-0" /></div>

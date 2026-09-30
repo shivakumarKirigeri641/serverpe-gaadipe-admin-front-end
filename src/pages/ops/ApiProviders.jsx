@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useAutoRefresh } from '../../lib/useAutoRefresh';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import Shell from '../../components/Shell.jsx';
@@ -24,6 +25,8 @@ export default function ApiProviders() {
     try { setError(null); setD(await api.apiProviders({ ...params, ...Object.fromEntries(Object.entries(f).filter(([, v]) => v)) })); } catch (e) { setError(e); }
   }, [key, f]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
+  // The dials read live (user, 2026-09-30): fetched again every 30 seconds.
+  useAutoRefresh(load, 30000);
   const table = (rows, first) => (
     <Table head={<tr>{[first, 'Calls', 'Success', 'Failures', 'Timeouts', 'Retries', 'Avg latency', 'P95', 'Cost', 'Cost / success', 'Error rate', 'Cached'].map((h) => <th key={h} className="th">{h}</th>)}</tr>}>
       {rows.map((x) => (

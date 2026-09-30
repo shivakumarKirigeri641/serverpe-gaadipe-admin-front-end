@@ -208,7 +208,7 @@ function useTween(value, duration = DURATION.complex) {
     const target = Number(value ?? 0); const from = prev.current; prev.current = target;
     if (motionLevel() !== 'full' || from === target) { setV(target); return undefined; }
     let raf; const t0 = performance.now();
-    const step = (now) => { const k = Math.min(1, (now - t0) / duration); setV(from + (target - from) * ease(k)); if (k < 1) raf = requestAnimationFrame(step); };
+    const step = (now) => { const k = Math.max(0, Math.min(1, (now - t0) / duration)); setV(from + (target - from) * ease(k)); if (k < 1) raf = requestAnimationFrame(step); };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -236,7 +236,8 @@ function useNeedle(frac) {
       const t0 = performance.now();
       const step = (now) => {
         if (stop) return;
-        const k = Math.min(1, (now - t0) / ms);
+        // A frame's timestamp can fall just before t0; never let that read below zero.
+        const k = Math.max(0, Math.min(1, (now - t0) / ms));
         setF(from + (to - from) * easing(k));
         if (k < 1) raf = requestAnimationFrame(step); else done();
       };
@@ -275,6 +276,18 @@ export function AnimatedGauge({ value, max = 100, label, text, tone = 'info', ca
   const [z0, z1] = low ? [0, 0.2] : [0.8, 1];
   const uid = useRef(`g${Math.random().toString(36).slice(2, 8)}`).current;
   const lcd = { good: '#7dff8a', watch: '#ffb000', wrong: '#ff5a4f', info: '#ffb000', muted: '#8a8a8a' }[tone] || '#ffb000';
+  /*
+   * A LIVE READOUT (user, 2026-09-30): while the needle moves, the LCD reads
+   * where the needle is — counting up through the start-up sweep and across
+   * every change — then settles on the exact figure. `text` gives the shape
+   * ("97%", "3200 ms", "₹1.2k"): its prefix, suffix and decimals are kept.
+   */
+  const shape = String(text ?? '').match(/^([^\d-]*)(-?[\d,]*\.?\d+)(.*)$/);
+  const moving = has && Math.abs(f - frac) > 0.0005;
+  const live = !moving ? text ?? Math.round(Number(value))
+    : shape
+      ? `${shape[1]}${(f * max).toLocaleString('en-IN', { minimumFractionDigits: (shape[2].split('.')[1] || '').length, maximumFractionDigits: (shape[2].split('.')[1] || '').length, useGrouping: shape[2].includes(',') })}${shape[3]}`
+      : Math.round(f * max);
   const [nx, ny] = pt(f, R - 12);
   const [tx, ty] = pt(f + 0.5, 9);
   return (
@@ -318,7 +331,7 @@ export function AnimatedGauge({ value, max = 100, label, text, tone = 'info', ca
         <rect x={cx - 27} y={cy + 33} width="54" height="17" rx="3" fill="#120d02" stroke="#3a3f45" strokeWidth="1.2" />
         <text x={cx} y={cy + 45.5} textAnchor="middle" fontSize="10.5" fontWeight="700" fill={has ? lcd : '#6b6b6b'}
           fontFamily="ui-monospace, 'Courier New', monospace" style={{ filter: has ? `drop-shadow(0 0 2px ${lcd})` : 'none' }}>
-          {has ? text ?? Math.round(Number(value)) : '— —'}
+          {has ? live : '— —'}
         </text>
       </svg>
       <div className="mt-1 text-center">

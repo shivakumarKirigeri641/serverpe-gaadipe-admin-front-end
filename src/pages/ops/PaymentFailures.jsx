@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useAutoRefresh } from '../../lib/useAutoRefresh';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { chartAnim } from '../../lib/motion.jsx';
 import { api } from '../../lib/api';
@@ -19,6 +20,8 @@ export default function PaymentFailures() {
   const [error, setError] = useState(null);
   const load = useCallback(async () => { try { setError(null); setD(await api.paymentFunnel(params)); } catch (e) { setError(e); } }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [load]);
+  // The dials read live (user, 2026-09-30): fetched again every 30 seconds.
+  useAutoRefresh(load, 30000);
   const main = d?.stages.filter((s) => !s.side) || [];
   const side = d?.stages.filter((s) => s.side) || [];
   const top = Math.max(1, ...main.map((s) => s.n || 0));

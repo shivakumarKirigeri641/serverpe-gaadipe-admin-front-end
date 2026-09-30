@@ -99,7 +99,7 @@ export default function Home() {
           note="Money received today, GST included — this is what the customer paid, not what GaadiPe keeps." />
         <Number label="Being monitored" now={t.monitoring} flat
           note="Vehicles with monitoring still running. It ends 28 days after each payment unless they renew."
-          sub={`${count(t.customers)} customers · ${count(t.vehicles)} vehicles`} />
+          sub={`${count(t.customers)} customers${t.customers_stopped ? ` (+${count(t.customers_stopped)} said STOP)` : ''} · ${count(t.vehicles)} vehicles`} />
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">

@@ -25,6 +25,8 @@ const SEGMENTS = [
   ['new', 'New (last 7 days)'], ['returning', 'Returning'], ['paid', 'Paid'], ['unpaid', 'Never paid'],
   ['wa_active', 'WhatsApp active (24 h)'], ['wa_inactive', 'WhatsApp quiet'],
   ['pay_failed', 'Payment not completed'], ['suspicious', 'Worth a look'],
+  // Left out of every other view and the total (user, 2026-09-30).
+  ['stopped', 'Said STOP'],
 ];
 /* Joined today (this browser's date): a light tint on the row (user, 2026-09-26). */
 const isToday = (t) => Boolean(t) && new Date(t).toDateString() === new Date().toDateString();

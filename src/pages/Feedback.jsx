@@ -133,7 +133,8 @@ function Testimonial({ f, onDone }) {
   if (!fromWeb) return null;
   const start = () => {
     setText(f.public_text || (/\(no message\)$/.test(f.body) ? '' : f.body));
-    setName(f.public_name || firstAndInitial(f.name) || 'A GaadiPe customer');
+    // No name given (user, 2026-09-30): a professional stand-in, never "Unknown".
+    setName(f.public_name || firstAndInitial(f.name) || 'Verified GaadiPe customer');
     setOpen(true);
   };
   const approve = async () => {
@@ -215,7 +216,7 @@ function FeedbackList() {
             ) : null}
             <p className="whitespace-pre-wrap text-sm text-ink">{f.body}</p>
             <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs text-muted">
-              <span className="font-semibold text-body">{f.name || 'Unknown'}</span>
+              <span className="font-semibold text-body">{f.name || 'Anonymous customer'}</span>
               {f.mobile ? <span className="tabular">{fmtMobile(f.mobile)}</span> : <span>No number</span>}
               <span className="chip bg-shell text-muted">{f.channel && f.channel !== 'whatsapp' ? `🌐 Website${f.channel.includes(':') ? ` · ${f.channel.split(':')[1]}` : ''}` : '💬 WhatsApp'}</span>
               {f.reg_no && <span className="plate">{plate(f.reg_no)}</span>}

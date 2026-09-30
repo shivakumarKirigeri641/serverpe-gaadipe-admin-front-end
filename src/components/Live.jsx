@@ -19,7 +19,7 @@ const BADGE_MS = 30 * 1000;
 const FEED_MS = 10 * 1000;
 const SINCE_KEY = 'gp.feed.since';
 
-const state = { badges: null, toasts: [], party: 0, milestone: null };
+const state = { badges: null, toasts: [], party: 0, milestone: null, starParty: null };
 
 /* A milestone the server keeps returning until it hears it was shown to this
    admin (user, 2026-09-30) — so one missed with the browser closed plays at
@@ -62,15 +62,21 @@ function push(item) {
   state.toasts = [...state.toasts, item].slice(-5);
   // A payment gets a celebration, once per payment (user, 2026-09-29).
   if (item.kind === 'payment') state.party = Date.now();
-  chime(item);
+  // 4 or 5 stars gets its own: a shower of stars (user, 2026-09-30).
+  const happy = item.kind === 'feedback' && item.rating >= 4;
+  if (happy) state.starParty = { at: Date.now(), rating: item.rating };
+  chime(item.kind === 'feedback' ? { kind: happy ? 'star' : 'hi' } : item);
   emit();
   // Critical alerts stay longer; they are the ones that matter. A plain
   // confirmation goes in four seconds; an error, or one with an action, in eight.
   // Shorter (user, 2026-09-29): hi and checks go in three, payments and
   // alerts in five; a critical alert still waits ten, to be seen.
-  const ms = item.severity === 'critical' ? 10000
-    : item.kind === 'hi' || item.kind === 'check' ? 3000
-    : item.kind === 'snack' ? (item.tone === 'wrong' || item.action ? 6000 : 3000) : 5000;
+  // A few seconds longer all round (user, 2026-09-30): hi and checks six,
+  // payments and alerts eight, feedback ten, a critical alert fourteen.
+  const ms = item.severity === 'critical' ? 14000
+    : item.kind === 'hi' || item.kind === 'check' ? 6000
+    : item.kind === 'snack' ? (item.tone === 'wrong' || item.action ? 9000 : 5000)
+    : item.kind === 'feedback' ? 10000 : 8000;
   setTimeout(() => dismiss(item.id), ms);
 }
 
@@ -240,17 +246,66 @@ function Celebration({ m }) {
   );
 }
 
+/*
+ * A HAPPY CUSTOMER (user, 2026-09-30): 4 or 5 stars of feedback — golden stars
+ * rain across the page and a row of big stars pops up in the middle, glowing,
+ * for about three seconds. Clicks pass through; the pop-up with their words
+ * stays in the corner. Skipped with reduced or minimal motion.
+ */
+function StarShower({ s }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    if (!s) return undefined;
+    const m = document.documentElement.getAttribute('data-motion');
+    if (m === 'reduced' || m === 'minimal' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    setShow(true);
+    const t = setTimeout(() => setShow(false), 3400);
+    return () => clearTimeout(t);
+  }, [s?.at]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!show || !s) return null;
+  const drops = Array.from({ length: s.rating === 5 ? 60 : 40 }, () => ({
+    left: Math.random() * 100, delay: Math.random() * 1.1, dur: 1.8 + Math.random() * 1.2,
+    size: 12 + Math.random() * 18, spin: Math.random() * 540 - 270, drift: Math.random() * 120 - 60,
+  }));
+  return (
+    <div className="no-print pointer-events-none fixed inset-0 z-[60] overflow-hidden" aria-hidden="true">
+      <style>{`
+        @keyframes gp-starfall { 0% { transform: translate3d(0,-8vh,0) rotate(0) scale(.6); opacity: 0 } 10% { opacity: 1 }
+          100% { transform: translate3d(var(--drift),108vh,0) rotate(var(--spin)) scale(1); opacity: .85 } }
+        @keyframes gp-starpop { 0% { transform: scale(.3); opacity: 0 } 25% { transform: scale(1.15); opacity: 1 }
+          40% { transform: scale(1) } 80% { opacity: 1 } 100% { transform: scale(1.05); opacity: 0 } }
+        @keyframes gp-twinkle { 0%,100% { filter: drop-shadow(0 0 6px #f5c542) } 50% { filter: drop-shadow(0 0 18px #ffd966) } }
+      `}</style>
+      {drops.map((d, i) => (
+        <span key={i} className="absolute top-0" style={{
+          left: `${d.left}%`, fontSize: d.size, color: i % 3 ? '#f5a623' : '#ffd966', '--drift': `${d.drift}px`, '--spin': `${d.spin}deg`,
+          animation: `gp-starfall ${d.dur}s cubic-bezier(.3,.6,.5,1) ${d.delay}s both`, textShadow: '0 0 8px rgba(245,197,66,.8)',
+        }}>★</span>
+      ))}
+      <div className="absolute inset-0 grid place-items-center">
+        <div className="flex gap-2 text-6xl sm:text-7xl" style={{ animation: 'gp-starpop 2.6s cubic-bezier(.2,.9,.3,1.2) both' }}>
+          {Array.from({ length: s.rating }, (_, i) => (
+            <span key={i} style={{ color: '#f5a623', animation: `gp-twinkle 1.2s ease-in-out ${i * 0.1}s infinite` }}>★</span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** The pop-ups, bottom right. A tap opens what it is about. */
 export function Toasts() {
-  const { toasts, party, milestone } = useLive();
+  const { toasts, party, milestone, starParty } = useLive();
   const navigate = useNavigate();
   const where = (t) => (t.kind === 'payment' ? (t.mobile ? `/journey?mobile=${t.mobile}` : '/payments')
     : t.kind === 'hi' ? (t.mobile ? `/journey?mobile=${t.mobile}` : '/live')
     : t.kind === 'check' ? (t.reg_no ? `/vehicles/${t.reg_no}` : '/vehicles')
+    : t.kind === 'feedback' ? '/feedback'
     : '/alerts');
   return (
     <>
     <Confetti at={party} />
+    <StarShower s={starParty} />
     {milestone && <Celebration m={milestone} />}
     {toasts.length > 0 && (
     <div className="no-print fixed bottom-4 right-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2" role="status" aria-live="polite">

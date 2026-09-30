@@ -15,11 +15,12 @@ import { Empty, Spinner, Failed, Hint, Pager, PAGE_SIZE, Chip } from '../compone
  * first, with who said it and how to answer them.
  */
 export default function Feedback({ tabs }) {
-  const [tab, setTab] = useState('contact');
+  // Feedback first (user, 2026-09-30): ratings are what gets looked for here.
+  const [tab, setTab] = useState('feedback');
   return (
     <Shell tabs={tabs} title="Messages" subtitle="The website's Contact form, and feedback from customers">
       <div className="mb-4 flex gap-1 border-b border-line">
-        {[['contact', 'Contact form'], ['feedback', 'Feedback']].map(([k, label]) => (
+        {[['feedback', '⭐ Feedback'], ['contact', 'Contact form']].map(([k, label]) => (
           <button key={k} type="button" onClick={() => setTab(k)}
             className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition ${tab === k ? 'border-brand text-brand-deep' : 'border-transparent text-muted hover:text-ink'}`}>
             {label}

@@ -65,13 +65,15 @@ const TUNES = {
     [N.C6, N.E6, N.G6, N.C7].forEach((f, i) => bell(ac, out, f, t + 0.5 + i * 0.015, { dur: 2.4, gain: 0.12 }));
     [N.E6, N.G6, N.C7].forEach((f, i) => bell(ac, out, f * 2, t + 1.2 + i * 0.05, { dur: 1.6, gain: 0.05 }));
   },
+  // 4 or 5 stars of feedback (user, 2026-09-30): a quick sparkle, rising.
+  star: (ac, out, t) => [N.E6, N.G6, N.B6, N.E6 * 2].forEach((f, i) => bell(ac, out, f, t + i * 0.07, { dur: 0.9, gain: 0.11 })),
   recovered: (ac, out, t) => { bell(ac, out, N.G5, t, { dur: 0.9, gain: 0.16 }); bell(ac, out, N.D6, t + 0.13, { dur: 1.1, gain: 0.16 }); },
   critical: (ac, out, t) => [N.A5, N.E5, N.A4].forEach((f, i) => bell(ac, out, f, t + i * 0.16, { dur: 0.8, gain: 0.2, type: 'triangle' })),
   alert: (ac, out, t) => { bell(ac, out, N.A5, t, { dur: 0.7, gain: 0.15, type: 'triangle' }); bell(ac, out, N.E5, t + 0.16, { dur: 0.9, gain: 0.15, type: 'triangle' }); },
   hi: (ac, out, t) => bell(ac, out, N.E6, t, { dur: 0.5, gain: 0.07 }),
   check: (ac, out, t) => bell(ac, out, N.B6, t, { dur: 0.45, gain: 0.06 }),
 };
-const RANK = ['milestone', 'payment', 'critical', 'alert', 'recovered', 'hi', 'check'];
+const RANK = ['milestone', 'payment', 'star', 'critical', 'alert', 'recovered', 'hi', 'check'];
 
 function play(name) {
   const ac = audio();

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
@@ -34,6 +34,169 @@ const inr = (p) => `₹${(Number(p || 0) / 100).toLocaleString('en-IN', { maximu
 const show = (m, v) => (m === 'revenue_paise' ? inr(v) : count(v || 0));
 const SHORT = { visitors: 'Visitors', lookups: 'Lookups', reports: 'Reports', payments: 'Paid', revenue_paise: 'Revenue' };
 const MEDAL = ['🥇', '🥈', '🥉'];
+
+/*
+ * STATES & UTs → RTOs (user, 2026-10-01): one row per state and union
+ * territory — how many RTOs it has, how many GaadiPe has reached, and the
+ * period's lookups, reports, payments and revenue. Tap a state and its RTOs
+ * open beneath it in full: code, office, district or jurisdiction, notes and
+ * activity. Search reaches into the RTOs and opens the states that match;
+ * "Open all" / "Close all"; sort by name or by activity. Same data as the
+ * All RTOs tab.
+ */
+function StatesNested({ params, periodKey }) {
+  const [d, setD] = useState(null);
+  const [error, setError] = useState(null);
+  const [q, setQ] = useState('');
+  const [open, setOpen] = useState(() => new Set());
+  const [sort, setSort] = useState('activity');
+  const load = useCallback(() => api.geoAllRtos(params).then((x) => { setD(x); setError(null); }).catch(setError), [periodKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [load]);
+  if (error && !d) return <Failed error={error} onRetry={load} />;
+  if (!d) return <Skeleton rows={10} />;
+
+  const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const hit = (r) => !words.length || words.every((w) => `${r.code} ${r.office || ''} ${r.district || ''} ${r.state_name}`.toLowerCase().includes(w));
+  const groups = Object.values(d.rtos.reduce((m, r) => {
+    const g = (m[r.state] = m[r.state] || { code: r.state, name: r.state_name, rtos: [], lookups: 0, reports: 0, payments: 0, revenue_paise: 0, reached: 0 });
+    g.rtos.push(r);
+    for (const f of ['lookups', 'reports', 'payments', 'revenue_paise']) g[f] += r[f];
+    if (r.lookups > 0) g.reached += 1;
+    return m;
+  }, {}))
+    .map((g) => ({ ...g, shown: g.rtos.filter(hit).sort((a, b) => (b.lookups - a.lookups) || a.code.localeCompare(b.code, 'en', { numeric: true })) }))
+    .filter((g) => g.shown.length)
+    .sort((a, b) => (sort === 'name' ? a.name.localeCompare(b.name) : (b.lookups - a.lookups) || (b.reached - a.reached) || a.name.localeCompare(b.name)));
+  const isOpen = (c) => open.has(c) || words.length > 0;
+  const toggle = (c) => setOpen((s) => { const n = new Set(s); n.has(c) ? n.delete(c) : n.add(c); return n; });
+  const most = Math.max(1, ...groups.map((g) => g.lookups));
+  const still = motionLevel() !== 'full';
+  const totals = groups.reduce((t, g) => ({ rtos: t.rtos + g.rtos.length, reached: t.reached + g.reached }), { rtos: 0, reached: 0 });
+
+  return (
+    <div className="space-y-3">
+      <style>{`
+        @keyframes gp-open { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: none } }
+        @keyframes gp-row-in { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+      `}</style>
+      <div className="card flex flex-wrap items-center gap-2 p-3">
+        <input className="input !w-72 !py-1.5 text-sm" placeholder="Search a state, RTO code, office or district" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="flex overflow-hidden rounded-lg border border-line text-2xs">
+          {[['activity', 'Most active first'], ['name', 'A–Z']].map(([k, l]) => (
+            <button key={k} onClick={() => setSort(k)} className={`px-3 py-1.5 ${sort === k ? 'bg-brand text-white' : 'text-body hover:bg-shell'}`}>{l}</button>
+          ))}
+        </div>
+        <button className="btn-quiet !py-1.5 text-2xs" onClick={() => setOpen(new Set(groups.map((g) => g.code)))}>Open all</button>
+        <button className="btn-quiet !py-1.5 text-2xs" onClick={() => setOpen(new Set())}>Close all</button>
+        <span className="ml-auto text-2xs text-muted">
+          {groups.length} states & UTs · {count(totals.rtos)} RTOs · {count(totals.reached)} reached · {d.range.label}
+        </span>
+      </div>
+
+      <div className="card overflow-x-auto">
+        <table className="w-full min-w-[760px] text-sm">
+          <thead className="sticky top-0 z-10 bg-white">
+            <tr className="border-b border-line text-left text-2xs uppercase tracking-wider text-muted">
+              <th className="w-8 px-3 py-2" />
+              <th className="px-3 py-2">State / UT</th>
+              <th className="px-3 py-2 text-right">RTOs</th>
+              <th className="px-3 py-2">Reached</th>
+              <th className="px-3 py-2 text-right">Lookups</th>
+              <th className="px-3 py-2 text-right">Reports</th>
+              <th className="px-3 py-2 text-right">Paid</th>
+              <th className="px-3 py-2 text-right">Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {groups.map((g, gi) => {
+              const on = isOpen(g.code);
+              const pct = Math.round((g.reached / g.rtos.length) * 100);
+              return (
+                <Fragment key={g.code}>
+                  <tr onClick={() => toggle(g.code)}
+                    className={`cursor-pointer border-b border-line/70 transition-colors ${on ? 'bg-brand/[0.06]' : 'hover:bg-shell/70'}`}
+                    style={still ? undefined : { animation: `gp-row-in .35s ease-out ${Math.min(gi, 20) * 0.03}s both` }}>
+                    <td className="px-3 py-2.5 text-muted">
+                      <span className="inline-block transition-transform duration-300" style={{ transform: on ? 'rotate(90deg)' : 'none' }}>▸</span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="flex items-center gap-2.5">
+                        <span className="grid h-7 w-9 place-items-center rounded-md text-[10px] font-bold text-white"
+                          style={{ background: g.lookups ? `rgba(15,118,110,${0.4 + 0.6 * (g.lookups / most)})` : '#b8c7c4' }}>{g.code}</span>
+                        <span className="font-semibold text-ink">{g.name}</span>
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular text-body">{count(g.rtos.length)}</td>
+                    <td className="px-3 py-2.5">
+                      <span className="flex items-center gap-2">
+                        <span className="inline-block h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-shell">
+                          <span className="block h-full rounded-full bg-brand" style={{ width: `${pct}%`, transition: 'width .8s cubic-bezier(.2,.8,.2,1)' }} />
+                        </span>
+                        <span className="text-2xs text-muted">{g.reached}/{g.rtos.length}</span>
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-semibold text-ink"><Rolling text={count(g.lookups)} /></td>
+                    <td className="px-3 py-2.5 text-right"><Rolling text={count(g.reports)} /></td>
+                    <td className="px-3 py-2.5 text-right"><Rolling text={count(g.payments)} /></td>
+                    <td className="px-3 py-2.5 text-right"><Rolling text={inr(g.revenue_paise)} /></td>
+                  </tr>
+                  {on && (
+                    <tr className="border-b border-line/70 bg-shell/40">
+                      <td />
+                      <td colSpan={7} className="px-3 pb-3 pt-1">
+                        <div className="overflow-hidden rounded-lg border border-line bg-white" style={still ? undefined : { animation: 'gp-open .35s ease-out both' }}>
+                          <table className="w-full text-[13px]">
+                            <thead>
+                              <tr className="border-b border-line bg-shell/60 text-left text-[10px] uppercase tracking-wider text-muted">
+                                <th className="px-3 py-1.5">Code</th>
+                                <th className="px-3 py-1.5">Office</th>
+                                <th className="px-3 py-1.5">District / jurisdiction</th>
+                                <th className="px-3 py-1.5">Notes</th>
+                                <th className="px-3 py-1.5 text-right">Lookups</th>
+                                <th className="px-3 py-1.5 text-right">Reports</th>
+                                <th className="px-3 py-1.5 text-right">Paid</th>
+                                <th className="px-3 py-1.5 text-right">Revenue</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {g.shown.map((r, i) => (
+                                <tr key={r.code} className={`border-b border-line/50 last:border-0 hover:bg-brand/[0.04] ${r.lookups ? '' : 'text-muted'}`}
+                                  style={still ? undefined : { animation: `gp-row-in .3s ease-out ${Math.min(i, 25) * 0.02}s both` }}>
+                                  <td className="px-3 py-1.5">
+                                    <span className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-bold ${r.lookups ? 'bg-brand text-white' : 'bg-shell text-muted'}`}>{r.code}</span>
+                                  </td>
+                                  <td className="max-w-[220px] px-3 py-1.5">
+                                    <span className={`block truncate ${r.lookups ? 'font-semibold text-ink' : ''}`} title={r.office || undefined}>
+                                      {r.office || <i className="text-muted">Office name not known yet</i>}
+                                    </span>
+                                  </td>
+                                  <td className="max-w-[220px] px-3 py-1.5"><span className="block truncate" title={r.district || undefined}>{r.district || '—'}</span></td>
+                                  <td className="max-w-[200px] px-3 py-1.5"><span className="block truncate text-2xs" title={r.notes || undefined}>{r.notes || '—'}</span></td>
+                                  <td className="px-3 py-1.5 text-right tabular">{r.lookups ? count(r.lookups) : '—'}</td>
+                                  <td className="px-3 py-1.5 text-right tabular">{r.reports ? count(r.reports) : '—'}</td>
+                                  <td className="px-3 py-1.5 text-right tabular">{r.payments ? count(r.payments) : '—'}</td>
+                                  <td className="px-3 py-1.5 text-right tabular">{r.revenue_paise ? inr(r.revenue_paise) : '—'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {g.shown.length < g.rtos.length && (
+                            <div className="border-t border-line px-3 py-1.5 text-2xs text-muted">{g.shown.length} of {g.rtos.length} RTOs match the search</div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+        {!groups.length && <Empty>No state or RTO matches that.</Empty>}
+      </div>
+    </div>
+  );
+}
 
 /*
  * EVERY RTO IN INDIA (user, 2026-10-01): all 1,357 (and any code only a vehicle
@@ -244,7 +407,7 @@ export default function Geo() {
     <Shell title="Where" subtitle={data ? `${data.range.label} · by the state on the number plate` : ' '}
       tabs={
         <div className="flex gap-1">
-          {[['map', 'Map & states'], ['rtos', 'All RTOs in India']].map(([id, label]) => (
+          {[['map', 'Map & states'], ['nested', 'States & UTs → RTOs'], ['rtos', 'All RTOs in India']].map(([id, label]) => (
             <button key={id} onClick={() => setView(id)}
               className={`-mb-px border-b-2 px-4 py-2.5 text-sm transition ${view === id ? 'border-brand font-semibold text-ink' : 'border-transparent text-muted hover:text-ink'}`}>
               {label}
@@ -262,7 +425,9 @@ export default function Geo() {
           {controls}
         </>
       }>
-      {view === 'rtos' ? <AllRtos params={params} periodKey={key} /> : error && !data ? <Failed error={error} onRetry={load} /> : !data ? <Skeleton rows={6} /> : (
+      {view === 'rtos' ? <AllRtos params={params} periodKey={key} />
+        : view === 'nested' ? <StatesNested params={params} periodKey={key} />
+        : error && !data ? <Failed error={error} onRetry={load} /> : !data ? <Skeleton rows={6} /> : (
         <div className="grid gap-4 xl:grid-cols-5">
           <div className="card p-4 xl:col-span-3">
             <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(9, minmax(0, 1fr))' }}>

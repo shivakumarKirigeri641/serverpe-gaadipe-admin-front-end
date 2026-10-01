@@ -341,6 +341,8 @@ export const api = {
   blocks: (params) => call(`/blocks${qs(params)}`),
   block: (kind, value, reason) => call('/blocks', { method: 'POST', body: { kind, value, reason } }),
   release: (id) => call(`/blocks/${id}/release`, { method: 'POST' }),
+  ownerClaims: (params) => call(`/owner-claims${qs(params)}`),
+  ownerClaimAction: (id, action, note) => call(`/owner-claims/${id}/${action}`, { method: 'POST', body: { note } }),
 
   reports: (params) => call(`/reports${qs(params)}`),
   invoices: (params) => call(`/invoices${qs(params)}`),

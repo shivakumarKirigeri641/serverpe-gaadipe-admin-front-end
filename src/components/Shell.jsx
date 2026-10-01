@@ -137,6 +137,7 @@ const NAV = [
       { to: '/notes', label: 'Admin notes', icon: BookIcon, cap: 'dashboard.view' },
       { to: '/exports', label: 'Exports', icon: DocIcon, cap: 'dashboard.view' },
       { to: '/blocks', label: 'Blocked', icon: ShieldIcon },
+      { to: '/owner-claims', label: 'Owner claims', icon: ShieldIcon, cap: 'dashboard.view' },
       { to: '/security', label: 'Security', icon: ShieldIcon },
       // Website logins: kept, but not where customers are while GaadiPe is WhatsApp-first.
       { to: '/sign-ins', label: 'Website sign-ins', icon: DoorIcon },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Shell from '../components/Shell.jsx';
 import { api } from '../lib/api';
@@ -44,6 +44,14 @@ export default function Check() {
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState('rc');
   const [round, setRound] = useState(0);
+
+  // Close the open vehicle and start again (user, 2026-10-01).
+  const inputRef = useRef(null);
+  const clear = () => {
+    setData(null); setError(null); setReg(''); setTab('rc');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
 
   const [history, setHistory] = useState(null);
   const loadHistory = () => api.checkHistory().then((h) => setHistory(h.rows || [])).catch(() => setHistory([]));
@@ -104,8 +112,14 @@ export default function Check() {
       <form className="card mb-5 flex flex-wrap items-end gap-3 p-4" onSubmit={(e) => { e.preventDefault(); run(false); }}>
         <label className="min-w-[14rem] flex-1">
           <span className="label">Vehicle number</span>
-          <input className="input font-mono text-lg uppercase tracking-wider" value={reg} autoFocus
-            placeholder="KA01AB1234" maxLength={14} onChange={(e) => setReg(e.target.value)} />
+          <span className="relative block">
+            <input ref={inputRef} className="input pr-10 font-mono text-lg uppercase tracking-wider" value={reg} autoFocus
+              placeholder="KA01AB1234" maxLength={14} onChange={(e) => setReg(e.target.value)} />
+            {(reg || data || error) && (
+              <button type="button" onClick={clear} aria-label="Clear" title="Clear"
+                className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-muted transition hover:bg-shell hover:text-ink">✕</button>
+            )}
+          </span>
         </label>
         <button type="submit" className="btn-primary" disabled={busy}>{busy ? 'Looking…' : 'Check'}</button>
         <Hint note="Spends a live ULIP call instead of answering from the cache. Free today; the reason to be sparing is the day it is not.">
@@ -124,6 +138,7 @@ export default function Check() {
       {data && !busy && (
         <>
           <div className="mb-4 flex flex-wrap items-center gap-2">
+            <button type="button" onClick={clear} className="btn-quiet !px-3 !py-2 text-sm" title="Close this vehicle">← Back to list</button>
             {TABS.map((t) => (
               <button key={t.key} type="button" onClick={() => setTab(t.key)}
                 className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${tab === t.key ? 'bg-brand text-white' : 'border border-line bg-white text-muted hover:text-ink'}`}>

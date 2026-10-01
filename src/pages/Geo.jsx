@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import Shell from '../components/Shell.jsx';
 import { usePeriod } from '../components/Period.jsx';
-import { Failed, Empty, Table, Hint, Skeleton } from '../components/ui.jsx';
+import { Failed, Empty, Hint, Skeleton } from '../components/ui.jsx';
 import { count } from '../lib/format';
+import { Rolling, motionLevel } from '../lib/motion.jsx';
 
 /**
  * WHERE (user, 2026-09-25, command center phase 7).
@@ -31,6 +32,77 @@ const METRICS = [
 ];
 const inr = (p) => `₹${(Number(p || 0) / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const show = (m, v) => (m === 'revenue_paise' ? inr(v) : count(v || 0));
+const SHORT = { visitors: 'Visitors', lookups: 'Lookups', reports: 'Reports', payments: 'Paid', revenue_paise: 'Revenue' };
+const MEDAL = ['🥇', '🥈', '🥉'];
+
+/*
+ * THE LEADERBOARD (user, 2026-10-01): the table beside the map, made a ranked
+ * list worth looking at. Sorted by the figure chosen above; medals for the top
+ * three; a badge in the map's own shade; a bar that grows to each row's share,
+ * with the per cent beside it; the other figures underneath, rolling in. Rows
+ * slide in one after another, and pointing at a row lights its tile on the map.
+ * With reduced motion the bars and rows simply appear.
+ */
+export function Leaderboard({ rows, metric, label, code, fields, onPick, pickHint, hover, onHover }) {
+  const [grown, setGrown] = useState(motionLevel() !== 'full');
+  useEffect(() => {
+    if (motionLevel() !== 'full') return undefined;
+    const t = requestAnimationFrame(() => requestAnimationFrame(() => setGrown(true)));
+    return () => cancelAnimationFrame(t);
+  }, []);
+  const sorted = [...rows].sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
+  const total = sorted.reduce((t, r) => t + (Number(r[metric]) || 0), 0);
+  const most = Math.max(1, ...sorted.map((r) => r[metric] || 0));
+  const still = motionLevel() !== 'full';
+  return (
+    <div className="max-h-[560px] overflow-y-auto">
+      <style>{`@keyframes gp-row-in { from { opacity: 0; transform: translateX(14px) } to { opacity: 1; transform: none } }`}</style>
+      <div className="flex items-baseline justify-between border-b border-line/70 bg-shell/40 px-4 py-2 text-2xs text-muted">
+        <span>{sorted.length} {sorted.length === 1 ? 'place' : 'places'}</span>
+        <span>Total {SHORT[metric].toLowerCase()}: <b className="text-ink"><Rolling text={show(metric, total)} /></b></span>
+      </div>
+      <ol>
+        {sorted.map((r, i) => {
+          const v = Number(r[metric]) || 0;
+          const pct = total ? Math.round((v / total) * 100) : 0;
+          const lit = hover && hover === code(r);
+          return (
+            <li key={r.key}
+              onClick={() => onPick(r)} onMouseEnter={() => onHover?.(code(r))} onMouseLeave={() => onHover?.(null)} title={pickHint}
+              className={`group cursor-pointer border-b border-line/60 px-4 py-3 transition-colors ${lit ? 'bg-amber-50' : 'hover:bg-brand/[0.04]'}`}
+              style={still ? undefined : { animation: `gp-row-in .45s cubic-bezier(.2,.8,.2,1) ${Math.min(i, 12) * 0.05}s both` }}>
+              <div className="flex items-center gap-3">
+                <span className="w-6 shrink-0 text-center text-sm font-bold text-muted">{MEDAL[i] || i + 1}</span>
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[10px] font-bold text-white shadow-sm transition-transform group-hover:scale-110"
+                  style={{ background: `rgba(15,118,110,${0.35 + 0.65 * (v / most)})` }}>{code(r)}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-sm font-semibold text-ink">{label(r)}</span>
+                    <span className="shrink-0 text-sm font-bold text-ink"><Rolling text={show(metric, v)} /></span>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-shell">
+                      <div className="h-full rounded-full"
+                        style={{ width: grown ? `${Math.max(2, (v / most) * 100)}%` : '0%',
+                          background: i === 0 ? 'linear-gradient(90deg,#f5a623,#ffd966)' : 'linear-gradient(90deg,#0f766e,#14b8a6)',
+                          transition: still ? 'none' : `width .9s cubic-bezier(.2,.8,.2,1) ${0.15 + Math.min(i, 12) * 0.05}s` }} />
+                    </div>
+                    <span className="w-9 shrink-0 text-right text-2xs font-semibold text-muted">{pct}%</span>
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted">
+                    {fields.filter((f) => f !== metric).map((f) => (
+                      <span key={f}>{SHORT[f]} <b className="text-body"><Rolling text={show(f, r[f])} /></b></span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
 
 export default function Geo() {
   const navigate = useNavigate();
@@ -40,6 +112,7 @@ export default function Geo() {
   const [error, setError] = useState(null);
   const [state, setState] = useState(null);
   const [rtos, setRtos] = useState(null);
+  const [hover, setHover] = useState(null); // a state pointed at, in the list or on the map
 
   const load = useCallback(async () => {
     try { setData(await api.geoStates(params)); setError(null); } catch (e) { setError(e); }
@@ -77,8 +150,9 @@ export default function Geo() {
                 return (
                   <Hint key={i} note={`${data.names[code] || code}: ${show(metric, v)}`}>
                     <button type="button" onClick={() => setState(state === code ? null : code)}
+                      onMouseEnter={() => setHover(code)} onMouseLeave={() => setHover(null)}
                       className={`lift aspect-square w-full rounded-md border text-[10px] font-semibold transition ${
-                        state === code ? 'border-ink ring-2 ring-ink/20' : 'border-line'} ${on ? 'text-white' : 'text-muted'}`}
+                        state === code ? 'border-ink ring-2 ring-ink/20' : hover === code ? 'scale-110 border-amber-400 ring-2 ring-amber-300/60' : 'border-line'} ${on ? 'text-white' : 'text-muted'}`}
                       style={{ background: on ? `rgba(15,118,110,${0.25 + 0.75 * (v / most)})` : '#f3f8f7' }}>
                       {code}
                     </button>
@@ -93,43 +167,31 @@ export default function Geo() {
             </p>
           </div>
 
-          <div className="card xl:col-span-2">
+          <div className="card overflow-hidden xl:col-span-2">
             {state ? (
               <>
-                <div className="flex items-center justify-between border-b border-line px-4 py-3">
-                  <h2 className="text-sm font-semibold text-ink">{data.names[state] || state} · RTOs</h2>
-                  <button className="btn-quiet !py-1 text-2xs" onClick={() => setState(null)}>All states</button>
+                <div className="flex items-center justify-between border-b border-line bg-gradient-to-r from-brand/10 to-transparent px-4 py-3">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
+                    <span className="grid h-7 w-7 place-items-center rounded-md bg-brand text-[10px] font-bold text-white">{state}</span>
+                    {data.names[state] || state} · RTOs
+                  </h2>
+                  <button className="btn-quiet !py-1 text-2xs" onClick={() => setState(null)}>← All states</button>
                 </div>
-                {rtos === undefined ? <div className="p-4 text-sm text-muted">Loading…</div> : !rtos?.rtos.length ? <Empty>No activity in this state.</Empty> : (
-                  <Table head={<tr>{['RTO', 'Lookups', 'Reports', 'Paid', 'Revenue'].map((h) => <th key={h} className="th">{h}</th>)}</tr>}>
-                    {rtos.rtos.map((r) => (
-                      <tr key={r.key} className="cursor-pointer hover:bg-shell/70" onClick={() => navigate('/lookups')} title="See the lookups">
-                        <td className="td tabular text-sm font-semibold text-ink">{r.key}</td>
-                        <td className="td tabular">{count(r.lookups)}</td>
-                        <td className="td tabular">{count(r.reports)}</td>
-                        <td className="td tabular">{count(r.payments)}</td>
-                        <td className="td tabular">{inr(r.revenue_paise)}</td>
-                      </tr>
-                    ))}
-                  </Table>
+                {rtos === undefined ? <div className="p-4"><Skeleton rows={4} /></div> : !rtos?.rtos.length ? <Empty>No activity in this state.</Empty> : (
+                  <Leaderboard key={`rto-${state}-${metric}`} rows={rtos.rtos} metric={metric === 'visitors' ? 'lookups' : metric}
+                    label={(r) => r.key} code={(r) => r.key.replace(/\D/g, '').slice(0, 3) || r.key}
+                    fields={['lookups', 'reports', 'payments', 'revenue_paise']} onPick={() => navigate('/lookups')} pickHint="See the lookups" />
                 )}
               </>
             ) : (
               <>
-                <div className="border-b border-line px-4 py-3"><h2 className="text-sm font-semibold text-ink">States</h2></div>
+                <div className="border-b border-line bg-gradient-to-r from-brand/10 to-transparent px-4 py-3">
+                  <h2 className="text-sm font-semibold text-ink">States · ranked by {METRICS.find(([k]) => k === metric)[1].toLowerCase()}</h2>
+                </div>
                 {!data.states.length ? <Empty>No activity in this period.</Empty> : (
-                  <Table head={<tr>{['State', 'Visitors', 'Lookups', 'Reports', 'Paid', 'Revenue'].map((h) => <th key={h} className="th">{h}</th>)}</tr>}>
-                    {data.states.map((s) => (
-                      <tr key={s.key} className="cursor-pointer hover:bg-shell/70" onClick={() => setState(s.key)}>
-                        <td className="td text-sm text-ink">{s.name}</td>
-                        <td className="td tabular">{count(s.visitors)}</td>
-                        <td className="td tabular">{count(s.lookups)}</td>
-                        <td className="td tabular">{count(s.reports)}</td>
-                        <td className="td tabular">{count(s.payments)}</td>
-                        <td className="td tabular">{inr(s.revenue_paise)}</td>
-                      </tr>
-                    ))}
-                  </Table>
+                  <Leaderboard key={`st-${metric}-${key}`} rows={data.states} metric={metric}
+                    label={(s) => s.name} code={(s) => s.key} hover={hover} onHover={setHover}
+                    fields={['visitors', 'lookups', 'reports', 'payments', 'revenue_paise']} onPick={(s) => setState(s.key)} pickHint="Tap for its RTOs" />
                 )}
               </>
             )}

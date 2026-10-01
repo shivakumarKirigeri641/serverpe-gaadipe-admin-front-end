@@ -103,7 +103,7 @@ const GROUPS = [
       notify_sign_ins: 'An email each time someone signs in to gaadipe.in: who, device, place, IP. (The web sign-in is hidden while GaadiPe is WhatsApp-only.)',
       notify_contact: 'An email for every message sent through the website’s Contact form.',
       daily_summary_email: 'One summary of the day: revenue, take-home, payments, checks, sign-ins.',
-      daily_summary_hour_ist: 'Hour (IST) the daily summary is sent. 21 = 9 pm.',
+      daily_summary_hour_ist: 'Time (IST) the daily summary is sent, like 23:55 — late, so it covers the whole day. A plain hour works too: 21 = 9 pm.',
       contact_per_hour_per_ip: 'How many Contact messages one IP may send in an hour.',
     },
   },

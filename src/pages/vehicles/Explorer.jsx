@@ -375,7 +375,13 @@ function Cell({ c, r }) {
   switch (c.key) {
     case 'reg_no': return <Link to={`/vehicles/${r.reg_no}`} className="font-mono text-sm font-semibold text-brand-deep hover:underline">{r.display}</Link>;
     case 'variant': return NA;
-    case 'rto': return <span>{r.state} · {r.rto}</span>;
+    // The office beside the code (user, 2026-10-01).
+    case 'rto': return (
+      <span className="block leading-tight" title={r.rto_name || undefined}>
+        {r.state} · {r.rto}
+        {r.rto_name && <span className="block truncate text-[10px] text-muted">{r.rto_name}</span>}
+      </span>
+    );
     case 'first_seen': return r.first_seen ? <span title={dateTime(r.first_seen)}>{dateTime(r.first_seen)}</span> : '—';
     case 'last_seen': return r.last_seen ? (
       <span title={dateTime(r.last_seen)}>

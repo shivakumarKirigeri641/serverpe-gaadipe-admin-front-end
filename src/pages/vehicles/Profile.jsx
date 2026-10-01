@@ -197,7 +197,10 @@ function Header({ p, may, open }) {
             <span className="text-muted"> · Variant: not returned by the records API</span>
           </div>
           <div className="mt-1 text-2xs text-muted">
-            {v.state} · RTO {v.rto}{v.registered_at ? ` · ${v.registered_at}` : ''}{v.age_years != null ? ` · ${v.age_years} years old` : ''}
+            {/* The plate's RTO with its office; the record's own "registered at" can
+                differ when a vehicle has moved (user, 2026-10-01). */}
+            {v.state} · RTO {v.rto}{v.rto_name ? ` (${v.rto_name})` : ''}
+            {v.registered_at ? ` · Now registered at ${v.registered_at}` : ''}{v.age_years != null ? ` · ${v.age_years} years old` : ''}
             {' · '}First seen {dateTime(v.first_seen)} · Last updated {v.last_updated ? ago(v.last_updated) : 'never'}
             {p.admin.assigned_name ? ` · Assigned to ${p.admin.assigned_name}` : ''}
           </div>

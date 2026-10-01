@@ -36,6 +36,118 @@ const SHORT = { visitors: 'Visitors', lookups: 'Lookups', reports: 'Reports', pa
 const MEDAL = ['🥇', '🥈', '🥉'];
 
 /*
+ * EVERY RTO IN INDIA (user, 2026-10-01): all 1,357 (and any code only a vehicle
+ * record knew), each with this period's activity — zeros included, so the
+ * places GaadiPe has not reached yet are in plain sight. Search by code, office,
+ * district or state; filter by state and by "reached / not yet"; rows slide in;
+ * sixty at a time; the view downloads as CSV.
+ */
+const PAGE = 60;
+function AllRtos({ params, periodKey }) {
+  const [d, setD] = useState(null);
+  const [error, setError] = useState(null);
+  const [q, setQ] = useState('');
+  const [st, setSt] = useState('');
+  const [reach, setReach] = useState('all');
+  const [shown, setShown] = useState(PAGE);
+  const load = useCallback(() => api.geoAllRtos(params).then((x) => { setD(x); setError(null); }).catch(setError), [periodKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { setShown(PAGE); }, [q, st, reach]);
+  if (error && !d) return <Failed error={error} onRetry={load} />;
+  if (!d) return <Skeleton rows={8} />;
+
+  const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const rows = d.rtos
+    .filter((r) => !st || r.state === st)
+    .filter((r) => reach === 'all' || (reach === 'active' ? r.lookups > 0 : !r.lookups))
+    .filter((r) => !words.length || words.every((w) => `${r.code} ${r.office || ''} ${r.district || ''} ${r.state_name}`.toLowerCase().includes(w)))
+    .sort((a, b) => (b.lookups - a.lookups) || (b.revenue_paise - a.revenue_paise) || a.code.localeCompare(b.code, 'en', { numeric: true }));
+  const active = d.rtos.filter((r) => r.lookups > 0).length;
+  const states = [...new Set(d.rtos.map((r) => r.state))].sort((a, b) => (d.names[a] || a).localeCompare(d.names[b] || b));
+  const most = Math.max(1, ...rows.map((r) => r.lookups));
+  const still = motionLevel() !== 'full';
+
+  const csv = () => {
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lines = [['Code', 'Office', 'District', 'State', 'Lookups', 'Reports', 'Paid', 'Revenue (₹)'].join(',')]
+      .concat(rows.map((r) => [r.code, r.office, r.district, r.state_name, r.lookups, r.reports, r.payments, (r.revenue_paise / 100).toFixed(2)].map(esc).join(',')));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([`﻿${lines.join('\n')}`], { type: 'text/csv' }));
+    a.download = `gaadipe-rtos-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+
+  return (
+    <div className="space-y-3">
+      <style>{`@keyframes gp-row-in { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }`}</style>
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        {[['RTOs in India', d.rtos.length, 'from the state-wise lists, plus any code only a vehicle record knew'],
+          ['Reached', active, `RTOs with at least one lookup · ${d.range.label}`],
+          ['Not reached yet', d.rtos.length - active, 'Where an ad could find new customers'],
+          ['States & UTs', states.length, 'with at least one RTO listed']].map(([l, v, n]) => (
+          <Hint key={l} note={n} className="block">
+            <div className="card px-3 py-2">
+              <div className="text-2xs font-semibold uppercase tracking-wider text-muted">{l}</div>
+              <div className="text-xl font-bold text-ink"><Rolling text={count(v)} /></div>
+            </div>
+          </Hint>
+        ))}
+      </div>
+
+      <div className="card flex flex-wrap items-center gap-2 p-3">
+        <input className="input !w-64 !py-1.5 text-sm" placeholder="Search code, office, district or state" value={q} onChange={(e) => setQ(e.target.value)} />
+        <select className="input !w-auto !py-1.5 text-sm" value={st} onChange={(e) => setSt(e.target.value)}>
+          <option value="">All states</option>
+          {states.map((s) => <option key={s} value={s}>{d.names[s] || s}</option>)}
+        </select>
+        <div className="flex overflow-hidden rounded-lg border border-line text-2xs">
+          {[['all', 'All'], ['active', 'Reached'], ['none', 'Not yet']].map(([k, l]) => (
+            <button key={k} onClick={() => setReach(k)} className={`px-3 py-1.5 ${reach === k ? 'bg-brand text-white' : 'text-body hover:bg-shell'}`}>{l}</button>
+          ))}
+        </div>
+        <span className="ml-auto text-2xs text-muted">{count(rows.length)} shown</span>
+        <button className="btn-quiet !py-1.5 text-2xs" onClick={csv}>⬇ CSV</button>
+      </div>
+
+      <div className="card overflow-hidden">
+        {!rows.length ? <Empty>No RTO matches that.</Empty> : (
+          <ol>
+            {rows.slice(0, shown).map((r, i) => {
+              const on = r.lookups > 0;
+              return (
+                <li key={r.code} className={`flex items-center gap-3 border-b border-line/60 px-4 py-2.5 transition-colors hover:bg-brand/[0.04] ${on ? '' : 'opacity-80'}`}
+                  style={still ? undefined : { animation: `gp-row-in .35s ease-out ${Math.min(i % PAGE, 20) * 0.025}s both` }}>
+                  <span className="grid h-9 w-12 shrink-0 place-items-center rounded-lg text-[11px] font-bold text-white shadow-sm"
+                    style={{ background: on ? `rgba(15,118,110,${0.4 + 0.6 * (r.lookups / most)})` : '#b8c7c4' }}>{r.code}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold text-ink">{r.office || <span className="text-muted">Office name not known yet</span>}</div>
+                    <div className="truncate text-[11px] text-muted">{[r.district, r.state_name].filter(Boolean).join(' · ')}</div>
+                  </div>
+                  {on ? (
+                    <div className="hidden shrink-0 items-center gap-4 text-right text-[11px] text-muted sm:flex">
+                      {[['Lookups', count(r.lookups)], ['Reports', count(r.reports)], ['Paid', count(r.payments)], ['Revenue', inr(r.revenue_paise)]].map(([l, v]) => (
+                        <span key={l} className="w-14"><b className="block text-sm text-ink"><Rolling text={v} /></b>{l}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="chip shrink-0 bg-shell text-muted">Not reached yet</span>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        )}
+        {rows.length > shown && (
+          <div className="p-3 text-center">
+            <button className="btn-quiet !py-1.5 text-sm" onClick={() => setShown((n) => n + PAGE)}>Show {Math.min(PAGE, rows.length - shown)} more</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/*
  * THE LEADERBOARD (user, 2026-10-01): the table beside the map, made a ranked
  * list worth looking at. Sorted by the figure chosen above; medals for the top
  * three; a badge in the map's own shade; a bar that grows to each row's share,
@@ -113,6 +225,7 @@ export default function Geo() {
   const [state, setState] = useState(null);
   const [rtos, setRtos] = useState(null);
   const [hover, setHover] = useState(null); // a state pointed at, in the list or on the map
+  const [view, setView] = useState('map');  // map | rtos (every RTO in India)
 
   const load = useCallback(async () => {
     try { setData(await api.geoStates(params)); setError(null); } catch (e) { setError(e); }
@@ -129,15 +242,27 @@ export default function Geo() {
 
   return (
     <Shell title="Where" subtitle={data ? `${data.range.label} · by the state on the number plate` : ' '}
+      tabs={
+        <div className="flex gap-1">
+          {[['map', 'Map & states'], ['rtos', 'All RTOs in India']].map(([id, label]) => (
+            <button key={id} onClick={() => setView(id)}
+              className={`-mb-px border-b-2 px-4 py-2.5 text-sm transition ${view === id ? 'border-brand font-semibold text-ink' : 'border-transparent text-muted hover:text-ink'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      }
       actions={
         <>
-          <select className="input !w-auto !py-1.5 text-sm" value={metric} onChange={(e) => setMetric(e.target.value)}>
-            {METRICS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-          </select>
+          {view === 'map' && (
+            <select className="input !w-auto !py-1.5 text-sm" value={metric} onChange={(e) => setMetric(e.target.value)}>
+              {METRICS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          )}
           {controls}
         </>
       }>
-      {error && !data ? <Failed error={error} onRetry={load} /> : !data ? <Skeleton rows={6} /> : (
+      {view === 'rtos' ? <AllRtos params={params} periodKey={key} /> : error && !data ? <Failed error={error} onRetry={load} /> : !data ? <Skeleton rows={6} /> : (
         <div className="grid gap-4 xl:grid-cols-5">
           <div className="card p-4 xl:col-span-3">
             <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(9, minmax(0, 1fr))' }}>
@@ -179,7 +304,7 @@ export default function Geo() {
                 </div>
                 {rtos === undefined ? <div className="p-4"><Skeleton rows={4} /></div> : !rtos?.rtos.length ? <Empty>No activity in this state.</Empty> : (
                   <Leaderboard key={`rto-${state}-${metric}`} rows={rtos.rtos} metric={metric === 'visitors' ? 'lookups' : metric}
-                    label={(r) => r.key} code={(r) => r.key.replace(/\D/g, '').slice(0, 3) || r.key}
+                    label={(r) => (r.name ? `${r.key} · ${r.name}` : r.key)} code={(r) => r.key.replace(/\D/g, '').slice(0, 3) || r.key}
                     fields={['lookups', 'reports', 'payments', 'revenue_paise']} onPick={() => navigate('/lookups')} pickHint="See the lookups" />
                 )}
               </>

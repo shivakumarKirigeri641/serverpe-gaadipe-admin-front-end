@@ -159,7 +159,9 @@ function Breakdown({ title, note, rows, onPick }) {
         <ul className="mt-2 space-y-1">
           {rows.map((r) => (
             <li key={r.name} className={`flex items-center gap-2 text-2xs ${onPick ? 'cursor-pointer hover:text-ink' : ''}`} onClick={() => onPick?.(r.name)}>
-              <span className="w-28 shrink-0 truncate text-body">{r.name}</span>
+              <span className={`${r.office ? 'w-44' : 'w-28'} shrink-0 truncate text-body`} title={r.office || undefined}>
+                {r.name}{r.office && <span className="text-muted"> · {r.office}</span>}
+              </span>
               <span className="h-2 flex-1 rounded bg-shell"><span className="block h-2 rounded bg-brand/70" style={{ width: `${r.count / most * 100}%` }} /></span>
               <span className="tabular w-8 text-right text-ink">{count(r.count)}</span>
             </li>

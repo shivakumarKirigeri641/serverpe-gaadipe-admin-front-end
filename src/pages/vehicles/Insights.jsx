@@ -74,7 +74,11 @@ function Patterns() {
       {error && !d ? <Failed error={error} onRetry={load} /> : !d ? <Skeleton rows={6} /> : (
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           <Ranked title="Most searched vehicles" rows={d.most_searched} render={(r) => <span><V reg={r.reg_no} display={r.display} /> <span className="text-2xs text-muted">· {r.people} {r.people === 1 ? 'person' : 'people'}</span></span>} />
-          <Ranked title="Most searched RTOs" rows={d.rtos} render={(r) => <Link to={`/vehicles?rto=${r.name}`} className="hover:underline">{r.name}</Link>} />
+          <Ranked title="Most searched RTOs" rows={d.rtos} render={(r) => (
+            <Link to={`/vehicles?rto=${r.name}`} className="min-w-0 truncate hover:underline" title={r.office || undefined}>
+              {r.name}{r.office && <span className="text-2xs text-muted"> · {r.office}</span>}
+            </Link>
+          )} />
           <Ranked title="Most searched manufacturers" rows={d.makers} render={(r) => <span className="truncate">{r.name}</span>} />
           <Ranked title="Most searched models" rows={d.models} render={(r) => <span className="truncate">{r.name}</span>} />
           <Ranked title="Searched again and again" rows={d.repeated} render={(r) => <V reg={r.reg_no} display={r.display} />} empty="No vehicle was searched twice." />

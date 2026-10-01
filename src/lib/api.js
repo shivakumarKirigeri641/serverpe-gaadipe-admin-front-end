@@ -212,6 +212,7 @@ export const api = {
   // Where (phase 7).
   geoStates: (params) => call(`/geo/states${qs(params)}`),
   geoRtos: (code, params) => call(`/geo/states/${code}${qs(params)}`),
+  geoAllRtos: (params) => call(`/geo/rtos${qs(params)}`),
   exportCsv: (kind, params) => pdf(`/export/${kind}${qs(params)}`),
   dashboard: () => call('/dashboard'),
   health: () => call('/health'),

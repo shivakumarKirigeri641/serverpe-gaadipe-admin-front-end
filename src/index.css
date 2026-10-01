@@ -239,3 +239,6 @@ tbody tr { transition: background-color var(--m-fast) ease; }
 .nav-scroll::-webkit-scrollbar-track { background: transparent; }
 .nav-scroll::-webkit-scrollbar-thumb { background: #d7e2df; border-radius: 9999px; border: 2px solid #fff; }
 .nav-scroll:hover::-webkit-scrollbar-thumb { background: #b3c4c0; }
+/* The services strip scrolls sideways on a phone without a scrollbar. */
+.strip-scroll { scrollbar-width: none; }
+.strip-scroll::-webkit-scrollbar { display: none; }

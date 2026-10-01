@@ -9,6 +9,7 @@ import { useSession, allowed } from '../lib/session';
 import { BusyBar } from './ui.jsx';
 import { useLive, Toasts } from './Live.jsx';
 import OutageBanner from './OutageBanner.jsx';
+import StatusStrip from './StatusStrip.jsx';
 import GlobalSearch from './GlobalSearch.jsx';
 import Notifications from './Notifications.jsx';
 
@@ -441,6 +442,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
 
         {/* A screen made of tabs passes them here, so they sit under the
             header rather than floating over the sidebar. */}
+        <StatusStrip />
         {tabs && <div className="border-b border-line bg-white px-4 lg:px-6">{tabs}</div>}
         {/* Each screen arrives with a short fade-rise (motion system). */}
         <main className="m-enter px-4 py-5 lg:px-6"><OutageBanner />{children}</main>

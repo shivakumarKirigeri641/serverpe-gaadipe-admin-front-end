@@ -326,6 +326,8 @@ export const api = {
   pref: (key) => call(`/prefs/${key}`, { quiet: true }),
   setPref: (key, value) => call(`/prefs/${key}`, { method: 'PUT', body: { value }, quiet: true }),
   check: (regNo, params) => call(`/check/${encodeURIComponent(regNo)}${qs(params)}`, { timeoutMs: 60000 }),
+  checkHistory: () => call('/check/history'),
+  checkSaved: (regNo) => call(`/check/${encodeURIComponent(regNo)}/saved`),
 
   blocks: (params) => call(`/blocks${qs(params)}`),
   block: (kind, value, reason) => call('/blocks', { method: 'POST', body: { kind, value, reason } }),

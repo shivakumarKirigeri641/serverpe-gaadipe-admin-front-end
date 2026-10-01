@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Shell from '../components/Shell.jsx';
 import { api } from '../lib/api';
-import { plate, dateTime } from '../lib/format';
+import { plate, dateTime, ago } from '../lib/format';
 import { RcView, ChallanView, FastagView, FastagNotApplicable, Section, isTwoWheeler, EXPIRY_KEY, expiryOf, BAD_STATUS } from '../components/VehicleRecord.jsx';
 import { Banner, Chip, Hint, Table } from '../components/ui.jsx';
 
@@ -45,8 +45,11 @@ export default function Check() {
   const [tab, setTab] = useState('rc');
   const [round, setRound] = useState(0);
 
-  const run = async (refresh) => {
-    const value = reg.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const [history, setHistory] = useState(null);
+  const loadHistory = () => api.checkHistory().then((h) => setHistory(h.rows || [])).catch(() => setHistory([]));
+  useEffect(() => { loadHistory(); }, []);
+
+  const run = async (refresh, value = reg.toUpperCase().replace(/[^A-Z0-9]/g, '')) => {
     if (value.length < 5) { setError({ message: 'Enter a full registration number.' }); return; }
     setBusy(true); setError(null); setData(null);
     try {
@@ -54,6 +57,20 @@ export default function Check() {
       if (out.success === false) { setError({ message: out.message || 'Not found.' }); return; }
       setData(out);
       setRound((n) => n + 1);
+      loadHistory();
+    } catch (e) { setError(e); } finally { setBusy(false); }
+  };
+
+  /* A vehicle from "Vehicles you checked": its saved record, instantly and with
+     no ULIP call (user, 2026-10-01); a live check only if nothing is saved. */
+  const openSaved = async (r) => {
+    setReg(r.reg_no); setTab('rc');
+    if (!r.saved_at) { run(false, r.reg_no); return; }
+    setBusy(true); setError(null); setData(null);
+    try {
+      setData(await api.checkSaved(r.reg_no));
+      setRound((n) => n + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) { setError(e); } finally { setBusy(false); }
   };
 
@@ -116,11 +133,18 @@ export default function Check() {
             <span className="ml-auto font-mono text-sm font-semibold text-ink">{plate(data.vehicle_number)}</span>
           </div>
 
-          <p className="mb-3 text-2xs text-muted">
-            {data.source ? `${data.source} · ` : ''}
-            {data.cached ? `from cache, ${data.age_minutes ?? 0} min old` : 'fresh from ULIP'}
-            {` · ${data.ulip_calls_made} ULIP call${data.ulip_calls_made === 1 ? '' : 's'} · ${data.latency_ms} ms`}
-          </p>
+          {data.saved ? (
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-2xs text-body">
+              <span>📁 <b>Saved record</b> — fetched {dateTime(data.fetched_at)} ({ago(data.fetched_at)}) · {data.source} · no ULIP call</span>
+              <button type="button" className="btn-quiet ml-auto !py-1 text-2xs" disabled={busy} onClick={() => run(true, data.vehicle_number)}>↻ Refresh live from ULIP</button>
+            </div>
+          ) : (
+            <p className="mb-3 text-2xs text-muted">
+              {data.source ? `${data.source} · ` : ''}
+              {data.cached ? `from cache, ${data.age_minutes ?? 0} min old` : 'fresh from ULIP'}
+              {` · ${data.ulip_calls_made} ULIP call${data.ulip_calls_made === 1 ? '' : 's'} · ${data.latency_ms} ms`}
+            </p>
+          )}
 
           <div key={`${round}:${tab}`} className="cv-rise">
             {tab === 'rc' && <RcView body={{ rc, vehicle_number: data.vehicle_number }} />}
@@ -134,7 +158,74 @@ export default function Check() {
           </div>
         </>
       )}
+
+      <CheckedList rows={history} current={data?.vehicle_number} onOpen={openSaved} />
     </Shell>
+  );
+}
+
+/*
+ * VEHICLES YOU CHECKED (user, 2026-10-01): every vehicle you have looked up
+ * here, newest first — make and model, how often and when, its documents and
+ * challans at a glance. Tap one and it opens in full above from its saved
+ * record (RC, every challan, FASTag tags and IDs), without spending a lookup.
+ */
+const DOCS = [['insurance_upto', 'Insurance'], ['pucc_upto', 'PUC'], ['fitness_upto', 'Fitness'], ['tax_upto', 'Tax']];
+const daysTo = (d) => (d ? Math.round((new Date(d) - Date.now()) / 864e5) : null);
+function DocChip({ label, date }) {
+  const n = daysTo(date);
+  if (n == null) return null;
+  const tone = n < 0 ? 'bg-wrong-50 text-wrong-700' : n <= 30 ? 'bg-watch-50 text-watch-700' : 'bg-good-50 text-good-700';
+  return <span className={`chip ${tone}`} title={`${label}: ${dateTime(date).split(',')[0]}`}>{n < 0 ? '✕' : n <= 30 ? '!' : '✓'} {label}</span>;
+}
+function CheckedList({ rows, current, onOpen }) {
+  const [q, setQ] = useState('');
+  if (!rows) return null;
+  const words = q.trim().toLowerCase();
+  const shown = rows.filter((r) => !words || `${r.reg_no} ${r.maker || ''} ${r.model || ''}`.toLowerCase().includes(words));
+  return (
+    <div className="card mt-6 overflow-hidden">
+      <div className="flex flex-wrap items-center gap-2 border-b border-line bg-gradient-to-r from-brand/10 to-transparent px-4 py-3">
+        <h2 className="text-sm font-semibold text-ink">Vehicles you checked <span className="font-normal text-muted">· {rows.length}</span></h2>
+        <input className="input ml-auto !w-56 !py-1.5 text-sm" placeholder="Filter by plate, make, model" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+      {!shown.length ? <p className="px-4 py-6 text-sm text-muted">{rows.length ? 'Nothing matches that.' : 'Vehicles you check here will be listed, so you can open them again without a new lookup.'}</p> : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[820px] text-sm">
+            <thead>
+              <tr className="border-b border-line text-left text-2xs uppercase tracking-wider text-muted">
+                <th className="px-4 py-2">Vehicle</th><th className="px-3 py-2">Make · model</th><th className="px-3 py-2">Documents</th>
+                <th className="px-3 py-2 text-right">Challans</th><th className="px-3 py-2 text-right">Checked</th><th className="px-3 py-2">Last checked</th><th className="px-3 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((r, i) => (
+                <tr key={r.reg_no} onClick={() => onOpen(r)}
+                  className={`cursor-pointer border-b border-line/60 transition-colors hover:bg-brand/[0.05] ${current === r.reg_no ? 'bg-brand/[0.07]' : ''}`}
+                  style={{ animation: `cv-row .35s ease-out ${Math.min(i, 20) * 0.025}s both` }}>
+                  <td className="px-4 py-2.5"><span className="plate">{plate(r.reg_no)}</span></td>
+                  <td className="max-w-[260px] px-3 py-2.5">
+                    {r.maker || r.model ? (
+                      <>
+                        <span className="block truncate font-medium text-ink" title={r.model}>{r.model || '—'}</span>
+                        <span className="block truncate text-2xs text-muted">{[r.maker, r.vehicle_class, r.fuel].filter(Boolean).join(' · ')}</span>
+                      </>
+                    ) : <span className="text-2xs text-muted">Not saved yet — tap to check live</span>}
+                  </td>
+                  <td className="px-3 py-2.5"><span className="flex flex-wrap gap-1">{DOCS.map(([k, l]) => <DocChip key={k} label={l} date={r[k]} />)}</span></td>
+                  <td className="px-3 py-2.5 text-right">{r.challans_pending == null ? <span className="text-muted">—</span>
+                    : r.challans_pending ? <span className="chip bg-wrong-50 text-wrong-700">{r.challans_pending} pending</span> : <span className="text-good-700">0</span>}</td>
+                  <td className="px-3 py-2.5 text-right tabular text-body">{r.times}×</td>
+                  <td className="px-3 py-2.5 text-2xs text-muted" title={dateTime(r.last_at)}>{ago(r.last_at)}</td>
+                  <td className="px-3 py-2.5 text-right text-2xs font-semibold text-brand-deep">{r.saved_at ? 'Open →' : 'Check →'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <style>{`@keyframes cv-row { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }`}</style>
+    </div>
   );
 }
 

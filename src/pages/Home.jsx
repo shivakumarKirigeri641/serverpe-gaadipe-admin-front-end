@@ -101,6 +101,8 @@ export default function Home() {
           note="Vehicles with monitoring still running. It ends 28 days after each payment unless they renew."
           sub={`${count(t.customers)} customers${t.customers_stopped ? ` (+${count(t.customers_stopped)} said STOP)` : ''} · ${count(t.vehicles)} vehicles`} />
       </div>
+      <WaLimit />
+
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Today's funnel: the shape matters more than the numbers. */}
@@ -168,6 +170,30 @@ export default function Home() {
 }
 
 /** A number, and whether it is better or worse than the day before. */
+/*
+ * THE META MESSAGING LIMIT (user, 2026-10-01): business-started conversations
+ * on GaadiPe's number in the last 24 hours against the limit — so a broadcast
+ * is never sent past it. QuizPe shares the limit and is not counted here.
+ */
+function WaLimit() {
+  const [l, setL] = useState(null);
+  useEffect(() => { api.waLimit().then(setL).catch(() => {}); }, []);
+  if (!l) return null;
+  const pct = Math.min(100, Math.round((l.used / Math.max(1, l.limit)) * 100));
+  const tone = pct >= 90 ? 'bg-wrong-500' : pct >= 70 ? 'bg-watch-500' : 'bg-good-500';
+  return (
+    <Hint note={l.note} className="mt-3 block">
+      <div className="card flex flex-wrap items-center gap-3 px-4 py-2.5">
+        <span className="text-2xs font-semibold uppercase tracking-wider text-muted">WhatsApp limit · 24 h</span>
+        <span className="h-2 min-w-[8rem] flex-1 overflow-hidden rounded-full bg-shell">
+          <span className={`block h-full rounded-full ${tone}`} style={{ width: `${pct}%`, transition: 'width .8s ease' }} />
+        </span>
+        <span className="text-sm"><b className="text-ink">{count(l.used)}</b> <span className="text-muted">of {count(l.limit)} people · {count(l.remaining)} left</span></span>
+      </div>
+    </Hint>
+  );
+}
+
 function Number({ label, now, before, money = false, flat = false, sub, note, delay = 0 }) {
   // Money keeps its paise and wears its sign in front of the symbol: "-₹10.62",
   // never "₹-11", which reads as a price and rounds away what changed.

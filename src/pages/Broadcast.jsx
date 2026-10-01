@@ -111,6 +111,9 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
   const fields = data.recipients?.fields || {};
   const chosen = rows.filter((r) => picked.has(r.mobile));
   const toggle = (m) => setPicked((s) => { const n = new Set(s); n.has(m) ? n.delete(m) : n.add(m); return n; });
+  // The Meta limit (user, 2026-10-01): never send past what is left in 24 hours.
+  const [limit, setLimit] = useState(null);
+  useEffect(() => { api.waLimit().then(setLimit).catch(() => {}); }, []);
   const allOn = rows.length > 0 && rows.every((r) => picked.has(r.mobile));
 
   const body = () => ({
@@ -310,6 +313,13 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
 
       {err && <Banner tone="wrong" className="mt-3">{err}</Banner>}
 
+      {limit && chosen.length > 0 && (
+        <Banner tone={chosen.length > limit.remaining ? 'wrong' : 'info'} className="mt-4">
+          {chosen.length > limit.remaining
+            ? <>⚠️ <b>{count(chosen.length)}</b> chosen, but only <b>{count(limit.remaining)}</b> of the {count(limit.limit)}-person daily WhatsApp limit is left. The rest would fail — choose fewer, or send later.</>
+            : <>WhatsApp limit: {count(limit.used)} of {count(limit.limit)} used in the last 24 hours — this broadcast fits ({count(limit.remaining)} left). QuizPe shares the same limit.</>}
+        </Banner>
+      )}
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button className="btn-quiet" onClick={doPreview} disabled={!tpl || chosen.length === 0 || busy}>
           Preview {chosen.length > 0 ? `(${count(chosen.length)} chosen)` : ''}

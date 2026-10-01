@@ -40,6 +40,8 @@ import CustomerIntel from './pages/ops/CustomerIntel.jsx';
 import Retention from './pages/ops/Retention.jsx';
 import Attribution from './pages/ops/Attribution.jsx';
 import WhatsAppOps from './pages/ops/WhatsAppOps.jsx';
+import AdSpend from './pages/ops/AdSpend.jsx';
+import WhyNotPaid from './pages/ops/WhyNotPaid.jsx';
 import DataQuality from './pages/ops/DataQuality.jsx';
 import ApiProviders from './pages/ops/ApiProviders.jsx';
 import Jobs from './pages/ops/Jobs.jsx';
@@ -110,6 +112,8 @@ export default function App() {
       <Route path="/retention" element={<Retention />} />
       <Route path="/attribution" element={<Attribution />} />
       <Route path="/whatsapp/operations" element={<WhatsAppOps />} />
+      <Route path="/ad-spend" element={<AdSpend />} />
+      <Route path="/why-not-paid" element={<WhyNotPaid />} />
       <Route path="/data-quality" element={<DataQuality />} />
       <Route path="/api-providers" element={<ApiProviders />} />
       <Route path="/jobs" element={<Jobs />} />

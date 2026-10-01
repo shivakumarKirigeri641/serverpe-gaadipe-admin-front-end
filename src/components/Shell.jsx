@@ -8,6 +8,7 @@ import CommandPalette, { rememberVisit } from './CommandPalette.jsx';
 import { useSession, allowed } from '../lib/session';
 import { BusyBar } from './ui.jsx';
 import { useLive, Toasts } from './Live.jsx';
+import OutageBanner from './OutageBanner.jsx';
 import GlobalSearch from './GlobalSearch.jsx';
 import Notifications from './Notifications.jsx';
 
@@ -106,6 +107,8 @@ const NAV = [
       { to: '/analytics', label: 'Website analytics', icon: ChartIcon },
       { to: '/attribution', label: 'Campaigns & attribution', icon: SendIcon, cap: 'customers.view' },
       { to: '/drop-off', label: 'Conversion funnel', icon: ChartIcon },
+      { to: '/why-not-paid', label: 'Why didn’t they pay?', icon: ChartIcon, cap: 'dashboard.view' },
+      { to: '/ad-spend', label: 'Ad spend & cost per customer', icon: RupeeIcon, cap: 'dashboard.view' },
       { to: '/profitability', label: 'Revenue', icon: RupeeIcon, cap: 'finance.view',
         match: (p, s) => p === '/profitability' && new URLSearchParams(s).get('tab') !== 'transactions' },
       { to: '/profitability?tab=transactions', label: 'Profitability', icon: ListIcon, cap: 'finance.view',
@@ -440,7 +443,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
             header rather than floating over the sidebar. */}
         {tabs && <div className="border-b border-line bg-white px-4 lg:px-6">{tabs}</div>}
         {/* Each screen arrives with a short fade-rise (motion system). */}
-        <main className="m-enter px-4 py-5 lg:px-6">{children}</main>
+        <main className="m-enter px-4 py-5 lg:px-6"><OutageBanner />{children}</main>
       </div>
       <Toasts />
       <IconTips />

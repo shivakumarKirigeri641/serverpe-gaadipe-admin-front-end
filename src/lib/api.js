@@ -327,6 +327,15 @@ export const api = {
   setPref: (key, value) => call(`/prefs/${key}`, { method: 'PUT', body: { value }, quiet: true }),
   check: (regNo, params) => call(`/check/${encodeURIComponent(regNo)}${qs(params)}`, { timeoutMs: 60000 }),
   checkHistory: () => call('/check/history'),
+  // The admin additions of 2026-10-01.
+  waitlist: () => call('/waitlist', { quiet: true }),
+  adSpend: (params) => call(`/ad-spend${qs(params)}`),
+  saveAdSpend: (body) => call('/ad-spend', { method: 'POST', body }),
+  removeAdSpend: (id) => call(`/ad-spend/${id}`, { method: 'DELETE' }),
+  whyNotPaid: (params) => call(`/why-not-paid${qs(params)}`),
+  waLimit: () => call('/whatsapp/limit', { quiet: true }),
+  broadcastCosts: () => call('/whatsapp/broadcast-costs'),
+  waReply: (mobile, text) => call('/whatsapp/reply', { method: 'POST', body: { mobile, text } }),
   checkSaved: (regNo) => call(`/check/${encodeURIComponent(regNo)}/saved`),
 
   blocks: (params) => call(`/blocks${qs(params)}`),

@@ -6,6 +6,7 @@ import Shell from '../components/Shell.jsx';
 import { Hint, Failed, Empty, Chip, Skeleton } from '../components/ui.jsx';
 import { count, dateTime, date, mobile as fmtMobile, ago } from '../lib/format';
 import { JourneyStages } from '../components/Status.jsx';
+import ReplyBox from '../components/ReplyBox.jsx';
 
 /**
  * CUSTOMER JOURNEY (user, 2026-09-25, command center phase 3).
@@ -81,6 +82,11 @@ export default function Journey() {
         <Empty>GaadiPe has never heard from this number.</Empty>
       ) : (
         <>
+          {/* Reply on WhatsApp while their window is open (user, 2026-10-01). */}
+          {p.mobile && !p.opted_out && (
+            <div className="mb-3"><ReplyBox mobile={p.mobile} lastInboundAt={p.last_inbound_at}
+              onSent={() => api.journey(who).then(setData).catch(() => {})} /></div>
+          )}
           {/* ─────────────────────────────── who ── */}
           <div className="grid gap-3 md:grid-cols-4">
             <div className="card p-4 md:col-span-2">

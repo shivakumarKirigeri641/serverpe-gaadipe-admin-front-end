@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { mobile as fmtMobile, ago, dateTime, count, plate as fmtPlate, duration } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import CustomerActivity from '../components/CustomerActivity.jsx';
+import ReplyBox, { windowLeft } from '../components/ReplyBox.jsx';
 import { Banner, Chip, Empty, Spinner, Failed, Hint, Modal } from '../components/ui.jsx';
 
 /**
@@ -26,6 +27,8 @@ export default function Live() {
   const [error, setError] = useState(null);
   const [q, setQ] = useState('');
   const [openMobile, setOpenMobile] = useState(null);
+  // "Can message now" (user, 2026-10-01): only people inside their 24-hour window.
+  const [nowOnly, setNowOnly] = useState(false);
   const [visitors, setVisitors] = useState(null);
   const [openVisit, setOpenVisit] = useState(null);
   const [paused, setPaused] = useState(false);
@@ -106,15 +109,23 @@ export default function Live() {
             <div className="card lg:col-span-3">
               <div className="flex items-center justify-between border-b border-line px-4 py-3">
                 <h2 className="text-sm font-semibold text-ink">WhatsApp conversations</h2>
-                <span className="text-2xs text-muted">Tap to read the whole chat</span>
+                <span className="flex items-center gap-2">
+                  <span className="hidden text-2xs text-muted sm:inline">Tap to read and reply</span>
+                  <span className="flex overflow-hidden rounded-lg border border-line text-2xs">
+                    {[[false, 'All'], [true, `💬 Can message now${rows ? ` · ${rows.filter((r) => r.in_window).length}` : ''}`]].map(([v, l]) => (
+                      <button key={String(v)} type="button" onClick={() => setNowOnly(v)}
+                        className={`px-2.5 py-1 ${nowOnly === v ? 'bg-brand text-white' : 'text-body hover:bg-shell'}`}>{l}</button>
+                    ))}
+                  </span>
+                </span>
               </div>
-              {!rows ? <Spinner /> : !rows.length ? (
-                <Empty>{pulse?.whatsapp_on
+              {!rows ? <Spinner /> : !(nowOnly ? rows.filter((r) => r.in_window) : rows).length ? (
+                <Empty>{nowOnly ? 'Nobody is inside their 24-hour window right now.' : pulse?.whatsapp_on
                   ? 'Nobody has messaged yet.'
                   : 'Nothing here while the chat is switched off.'}</Empty>
               ) : (
                 <div className="divide-y divide-line">
-                  {rows.map((r) => (
+                  {(nowOnly ? rows.filter((r) => r.in_window) : rows).map((r) => (
                     <button key={r.id} onClick={() => setOpenMobile(r.mobile)}
                       className="row-hover flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-shell/70">
                       <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
@@ -142,6 +153,9 @@ export default function Live() {
                       </span>
                       <span className="shrink-0 text-right">
                         <span className="block text-2xs text-muted">{ago(r.last_inbound_at)}</span>
+                        {r.in_window && windowLeft(r.last_inbound_at) && (
+                          <span className="block text-[10px] font-semibold text-good-700">💬 {windowLeft(r.last_inbound_at)} left</span>
+                        )}
                         <Hint right note={`State: ${r.state}${r.state_reason ? ` — ${r.state_reason}` : ''}`}>
                           <span className="text-2xs text-brand-deep">{r.state}</span>
                         </Hint>
@@ -191,19 +205,19 @@ export default function Live() {
         </>
       )}
 
-      {openMobile && <Thread mobile={openMobile} onClose={() => setOpenMobile(null)} />}
+      {openMobile && <Thread mobile={openMobile} lastInboundAt={(rows || []).find((r) => r.mobile === openMobile)?.last_inbound_at}
+        onClose={() => setOpenMobile(null)} />}
       {openVisit && <Visit visit={openVisit} onClose={() => setOpenVisit(null)} />}
     </Shell>
   );
 }
 
-function Thread({ mobile, onClose }) {
+function Thread({ mobile, lastInboundAt, onClose }) {
   const [rows, setRows] = useState(null);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    api.thread(mobile).then((d) => setRows(d.rows)).catch(setError);
-  }, [mobile]);
+  const load = useCallback(() => api.thread(mobile).then((d) => setRows(d.rows)).catch(setError), [mobile]);
+  useEffect(() => { load(); }, [load]);
 
   return (
     <Modal wide title={fmtMobile(mobile)} subtitle="The whole conversation, oldest first" onClose={onClose}>
@@ -225,6 +239,8 @@ function Thread({ mobile, onClose }) {
           ))}
         </div>
       )}
+      {/* Reply here while their window is open (user, 2026-10-01). */}
+      <div className="mt-3"><ReplyBox mobile={mobile} lastInboundAt={lastInboundAt} onSent={load} /></div>
     </Modal>
   );
 }

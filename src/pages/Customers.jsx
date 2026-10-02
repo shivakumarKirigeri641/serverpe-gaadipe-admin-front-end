@@ -162,6 +162,23 @@ export default function Customers() {
         </div>
       )}
 
+      {/* Why people said STOP, counted (user, 2026-10-02). */}
+      {filter === 'stopped' && data?.stop_reasons?.length > 0 && (
+        <div className="card mb-3 p-3">
+          <div className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted">Why they said STOP</div>
+          <div className="flex flex-wrap gap-2">
+            {data.stop_reasons.map((s) => {
+              const all = data.stop_reasons.reduce((a, x) => a + x.n, 0);
+              return (
+                <span key={s.reason} className={`rounded-full border px-3 py-1 text-sm ${s.reason === 'No answer' ? 'border-line text-muted' : 'border-wrong-500/30 bg-wrong-50 text-wrong-700'}`}>
+                  {s.reason} · <b>{s.n}</b> <span className="text-2xs opacity-70">({Math.round((s.n / all) * 100)}%)</span>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="card">
         {error ? <Failed error={error} onRetry={load} />
           : !data ? <Spinner />
@@ -220,6 +237,14 @@ export default function Customers() {
                     ) : <span className="text-muted">—</span>}
                     {WA_STATUS[r.wa_status] && (
                       <div className="mt-0.5"><Chip tone={WA_STATUS[r.wa_status][1]}>{WA_STATUS[r.wa_status][0]}</Chip></div>
+                    )}
+                    {/* Why they said STOP, if they answered (user, 2026-10-02). */}
+                    {r.wa_status === 'stopped' && (
+                      <Hint note={r.stop_said ? `In their words: “${r.stop_said}”` : r.stop_reason ? 'Their answer to “May we ask why?” after STOP.' : 'They did not answer “May we ask why?”.'}>
+                        <div className={`mt-0.5 max-w-[11rem] truncate text-2xs ${r.stop_reason ? 'font-semibold text-wrong-700' : 'text-muted'}`}>
+                          Why: {r.stop_reason || 'no answer'}{r.stop_said ? ` — “${r.stop_said}”` : ''}
+                        </div>
+                      </Hint>
                     )}
                   </td>
                   <td className="td text-2xs">

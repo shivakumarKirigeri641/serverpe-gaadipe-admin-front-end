@@ -93,7 +93,7 @@ export default function Journey() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-lg font-bold text-ink">{p.name || 'Unknown'}</span>
                 {p.mobile && <span className="tabular text-sm text-muted">{fmtMobile(p.mobile)}</span>}
-                {p.opted_out ? <Chip tone="wrong">Replied STOP</Chip>
+                {p.opted_out ? <Chip tone="wrong">Replied STOP{p.stop_reason?.reason ? ` · ${p.stop_reason.reason}${p.stop_reason.said ? `: “${p.stop_reason.said}”` : ''}` : ''}</Chip>
                   : p.in_window ? <Chip tone="good">In the 24-hour window</Chip> : p.mobile ? <Chip tone="info">WhatsApp quiet</Chip> : null}
                 {p.spent_paise > 0 && <Chip tone="good">Paid</Chip>}
                 {p.unfinished > 0 && <Chip tone="watch">{p.unfinished} unfinished payment{p.unfinished === 1 ? '' : 's'}</Chip>}

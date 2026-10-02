@@ -22,7 +22,13 @@ const LOOK = {
 /** The card's lines: [label, value, tone?]. */
 function facts(p) {
   const rows = [];
-  if (p.state === 'idle') return [['', 'Nothing has used it in the last 24 hours, so its state is not known yet.']];
+  // The paid RC backup (user, 2026-10-02): switched on or not, and today's spend.
+  const b = p.backup;
+  if (b) {
+    rows.push(['Switch', b.on ? 'On — used only when ULIP’s VAHAN fails' : 'Off (Feature flags → RC backup)', b.on ? null : 'bad']);
+    rows.push(['Today', `${b.used ?? 0} of ${b.limit ?? '—'} calls · ₹${(((b.used || 0) * (b.cost_paise || 0)) / 100).toFixed(2)}`]);
+  }
+  if (p.state === 'idle') return [...rows, ['', b ? 'Not needed in the last 24 hours — ULIP answered.' : 'Nothing has used it in the last 24 hours, so its state is not known yet.']];
   if (p.last_ok_at) rows.push(['Last worked', `${ago(p.last_ok_at)}${p.last_ms != null ? ` · ${p.last_ms} ms` : ''}`]);
   else rows.push(['Last worked', 'not since it was first watched', 'bad']);
   if (p.recent_total) rows.push(['Recent calls', `${p.recent_ok} of the last ${p.recent_total} worked`, p.recent_ok < p.recent_total ? 'bad' : null]);

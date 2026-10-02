@@ -161,8 +161,8 @@ const GROUPS = [
   {
     title: 'What customers are shown',
     keys: {
-      owner_name_display: "hidden, masked or full. 'hidden' is the promise the site and the bot both make.",
-      document_numbers_display: 'hidden, masked or full. Masked shows the last four characters.',
+      owner_name_display: "masked or hidden. Masked shows the name as Parivahan stars it. There is no 'full' — personal details are never shown unmasked.",
+      document_numbers_display: 'masked or hidden. Masked shows the last four characters; never shown in full.',
     },
   },
 ];

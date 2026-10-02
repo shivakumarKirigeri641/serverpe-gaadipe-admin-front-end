@@ -28,6 +28,8 @@ const SEGMENTS = [
   ['pay_failed', 'Payment not completed'], ['suspicious', 'Worth a look'],
   // Left out of every other view and the total (user, 2026-09-30).
   ['stopped', 'Said STOP'],
+  // Said STOP, then turned messages back on — START or Undo (user, 2026-10-02).
+  ['came_back', 'Came back after STOP'],
 ];
 /* Joined today (this browser's date): a light tint on the row (user, 2026-09-26). */
 const isToday = (t) => Boolean(t) && new Date(t).toDateString() === new Date().toDateString();
@@ -237,6 +239,12 @@ export default function Customers() {
                     ) : <span className="text-muted">—</span>}
                     {WA_STATUS[r.wa_status] && (
                       <div className="mt-0.5"><Chip tone={WA_STATUS[r.wa_status][1]}>{WA_STATUS[r.wa_status][0]}</Chip></div>
+                    )}
+                    {/* Came back after STOP (user, 2026-10-02): when, how, and why they had stopped. */}
+                    {r.came_back && (
+                      <Hint note={`Said STOP ${r.times_stopped > 1 ? `${r.times_stopped} times, last ` : ''}${ago(r.stopped_at)}${r.earlier_reason ? ` — “${r.earlier_reason}”` : ''}. Messages on again ${ago(r.came_back.at)} by ${r.came_back.how === 'Undo' ? 'tapping Undo' : 'replying START'}.`}>
+                        <div className="mt-0.5"><Chip tone="good">↩ Back via {r.came_back.how} · {ago(r.came_back.at)}</Chip></div>
+                      </Hint>
                     )}
                     {/* Why they said STOP, if they answered (user, 2026-10-02). */}
                     {r.wa_status === 'stopped' && (

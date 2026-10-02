@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { chartAnim, Rolling } from '../lib/motion.jsx';
 import { api } from '../lib/api';
-import { count, rupees } from '../lib/format';
+import { count, rupees, ago } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Chip, Failed, Hint, SkeletonCards } from '../components/ui.jsx';
 import { TOOLTIP, AXIS } from './analytics/kit.jsx';
@@ -181,14 +181,27 @@ function WaLimit() {
   if (!l) return null;
   const pct = Math.min(100, Math.round((l.used / Math.max(1, l.limit)) * 100));
   const tone = pct >= 90 ? 'bg-wrong-500' : pct >= 70 ? 'bg-watch-500' : 'bg-good-500';
+  // Live from Meta (user, 2026-10-02): tier, quality and the account checks.
+  const m = l.meta;
+  const Q = { GREEN: ['High', 'bg-good-50 text-good-700'], YELLOW: ['Medium', 'bg-watch-50 text-watch-700'], RED: ['Low', 'bg-wrong-50 text-wrong-700'] };
+  const q = m?.quality && Q[m.quality];
+  const metaNote = m ? [
+    `From Meta, checked ${ago(m.checked_at)}.`,
+    `Limit tier ${m.tier || '—'}, quality ${m.quality || '—'}, number ${m.status || '—'}.`,
+    `Business verification: ${m.business_verification || '—'} · account review: ${m.account_review || '—'} · can send: ${m.can_send || '—'}.`,
+    m.numbers?.length ? `${m.numbers.length} numbers on the account: ${m.numbers.map((n) => `${n.name} (${n.tier}, ${n.quality})`).join(', ')}.` : '',
+    'Meta raises the limit by itself; you get an email when it changes.',
+  ].filter(Boolean).join(' ') : l.note;
   return (
-    <Hint note={l.note} className="mt-3 block">
+    <Hint note={metaNote} className="mt-3 block">
       <div className="card flex flex-wrap items-center gap-3 px-4 py-2.5">
         <span className="text-2xs font-semibold uppercase tracking-wider text-muted">WhatsApp limit · 24 h</span>
         <span className="h-2 min-w-[8rem] flex-1 overflow-hidden rounded-full bg-shell">
           <span className={`block h-full rounded-full ${tone}`} style={{ width: `${pct}%`, transition: 'width .8s ease' }} />
         </span>
         <span className="text-sm"><b className="text-ink">{count(l.used)}</b> <span className="text-muted">of {count(l.limit)} people · {count(l.remaining)} left</span></span>
+        {q && <span className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${q[1]}`}>Quality {q[0]}</span>}
+        {m && <span className="text-2xs text-muted">Meta · {ago(m.checked_at)}</span>}
       </div>
     </Hint>
   );

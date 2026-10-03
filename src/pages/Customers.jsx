@@ -159,7 +159,9 @@ export default function Customers() {
                   )}
                   +{count(data.today.checks_today)} today{data.today.checks_today_distinct != null ? ` (${count(data.today.checks_today_distinct)} distinct)` : ''} vs +{count(data.today.checks_yesterday_full)} yesterday · <Delta now={data.today.checks_today} before={data.today.checks_yesterday_full} />
                 </>, null,
-                'Every vehicle check customers made on WhatsApp and the website, all time — a repeat of the same vehicle included. Distinct: different vehicles. Repeated: the rest. (Repeats are counted from 3 Oct 2026; before that they were not recorded.) Below: today against the whole of yesterday (IST).'],
+                `Every vehicle check customers made on WhatsApp and the website, all time — a repeat of the same vehicle included. Distinct: different vehicles. Repeated: the rest. ${data.today.repeats_since
+                  ? `Repeats are counted from ${date(data.today.repeats_since)}; earlier repeats were not recorded.`
+                  : 'Repeats are counted from the first one recorded after this update went live; earlier repeats were not recorded.'} Below: today against the whole of yesterday (IST).`],
             ] : []),
             ['New today', data.today.joined, <>vs {count(data.today.joined_yesterday)} yesterday · <Delta now={data.today.joined} before={data.today.joined_yesterday} /></>, 'joined',
               'People who used GaadiPe for the first time since midnight (IST), against yesterday up to the same time. Their rows are tinted green. Tap to sort newest first.'],

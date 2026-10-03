@@ -239,7 +239,7 @@ export default function Settings() {
                 checkout page together.
               </p>
             </div>
-            <Table head={<tr><th className="th">Plan</th><th className="th">Price</th><th className="th">Days</th><th className="th">Active</th><th className="th"></th></tr>}>
+            <Table head={<tr><th className="th">Plan</th><th className="th">Price</th><th className="th">Discount</th><th className="th">Days</th><th className="th">Active</th><th className="th"></th></tr>}>
               {data.plans.map((p) => <PlanRow key={p.code} plan={p} onSaved={load} />)}
             </Table>
           </div>
@@ -326,6 +326,8 @@ function PlanRow({ plan, onSaved }) {
         price_paise: Number(edit.price_paise),
         duration_days: Number(edit.duration_days),
         is_active: edit.is_active,
+        // Typed in rupees (₹4), kept in paise (2026-10-03).
+        discount_paise: Math.round(Number(edit.discount_rupees || 0) * 100),
       });
       setEdit(null); onSaved();
     } catch (e) { window.alert(e.message); } finally { setBusy(false); }
@@ -346,6 +348,24 @@ function PlanRow({ plan, onSaved }) {
             <span className="font-semibold">{rupees(plan.price_paise)}</span>
           </Hint>
         )}
+      </td>
+      {/* THE DISCOUNT (user, 2026-10-03): comes off the price everywhere — bot,
+          website, checkout, invoice — and shows as the old price struck through. */}
+      <td className="td tabular">
+        {edit ? (
+          <span className="flex items-center gap-1">
+            <span className="text-muted">₹</span>
+            <input className="input !w-20 !py-1.5" inputMode="decimal" value={edit.discount_rupees}
+              onChange={(e) => setEdit({ ...edit, discount_rupees: e.target.value })} aria-label="Discount in rupees" />
+            <span className="whitespace-nowrap text-2xs text-muted">
+              → pays {rupees(Math.max(0, Number(edit.price_paise) - Math.round(Number(edit.discount_rupees || 0) * 100)))}
+            </span>
+          </span>
+        ) : Number(plan.discount_paise) > 0 ? (
+          <Hint note="Comes off the price everywhere the customer sees and pays it.">
+            <span><b className="text-good-700">{rupees(plan.discount_paise)} off</b> <span className="text-2xs text-muted">→ pays {rupees(plan.price_paise - plan.discount_paise)}</span></span>
+          </Hint>
+        ) : <span className="text-muted">—</span>}
       </td>
       <td className="td tabular">
         {edit ? (
@@ -369,7 +389,7 @@ function PlanRow({ plan, onSaved }) {
           </div>
         ) : (
           <button className="btn-quiet !px-2.5 !py-1 text-2xs"
-            onClick={() => setEdit({ price_paise: plan.price_paise, duration_days: plan.duration_days, is_active: plan.is_active })}>
+            onClick={() => setEdit({ price_paise: plan.price_paise, duration_days: plan.duration_days, is_active: plan.is_active, discount_rupees: String(Number(plan.discount_paise || 0) / 100) })}>
             Edit
           </button>
         )}

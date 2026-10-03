@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, getToken } from '../lib/api';
-import { chime } from '../lib/sound';
+import { chime, soundOn } from '../lib/sound';
 
 /**
  * WHAT THE PANEL HEARS WHILE IT IS OPEN (user, 2026-09-25, command center
@@ -80,6 +80,32 @@ function push(item) {
   setTimeout(() => dismiss(item.id), ms);
 }
 
+/* A timer that keeps time while the tab is hidden: a worker's interval is not
+   slowed the way the page's own is. Falls back to a plain interval. */
+function tick(ms, fn) {
+  try {
+    const src = `setInterval(function(){postMessage(0)},${ms});`;
+    const w = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    w.onmessage = fn;
+    return;
+  } catch { /* no workers here */ }
+  setInterval(fn, ms);
+}
+
+/* One listening tab: the visible one, else whichever claimed it last and is
+   still alive. Stored in localStorage, shared by every tab of this panel. */
+const TAB = Math.random().toString(36).slice(2);
+const LEADER_KEY = 'gp.feed.leader';
+const readLeader = () => { try { return JSON.parse(localStorage.getItem(LEADER_KEY) || 'null'); } catch { return null; } };
+function claim() {
+  const l = readLeader();
+  const stale = !l || Date.now() - l.at > FEED_MS * 3;
+  if (!document.hidden || stale || l.tab === TAB) {
+    try { localStorage.setItem(LEADER_KEY, JSON.stringify({ tab: TAB, at: Date.now() })); } catch { /* private window */ }
+  }
+}
+const leader = () => readLeader()?.tab === TAB;
+
 function start() {
   if (started) return;
   started = true;
@@ -91,8 +117,17 @@ function start() {
     if (!getToken() || document.hidden) return;
     try { state.badges = await api.badges(); emit(); } catch { /* next time */ }
   };
+  /*
+   * POP-UP SOUNDS WHILE THE PC IS LOCKED (user, 2026-10-03). A locked screen
+   * hides the tab, and the feed used to stop for hidden tabs — so nothing
+   * arrived to chime. Now it keeps listening while hidden (when sound is on),
+   * ticked from a small worker, because browsers slow a hidden page's own
+   * timers to once a minute or less. With several admin tabs open, only one
+   * listens while hidden, so a payment rings once.
+   */
   const feed = async () => {
-    if (!getToken() || document.hidden) return;
+    if (!getToken()) return;
+    if (document.hidden && !(soundOn() && leader())) return;
     try {
       const out = await api.feed(since());
       out.items.forEach(push);
@@ -102,7 +137,7 @@ function start() {
   };
   badges(); feed();
   setInterval(badges, BADGE_MS);
-  setInterval(feed, FEED_MS);
+  tick(FEED_MS, () => { claim(); feed(); });
   // Back to the tab, or just signed in: look now rather than at the next tick,
   // so a waiting celebration greets the admin on landing.
   document.addEventListener('visibilitychange', () => { if (!document.hidden) feed(); });

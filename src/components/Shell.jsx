@@ -46,6 +46,21 @@ const NAV = [
       { to: '/where', label: 'Where', icon: CarIcon },
     ],
   },
+  // Everything drawn (user, 2026-10-03): one page per subject, each chart with
+  // its tooltip and a click for the level below. Website analytics moved here.
+  {
+    group: 'Graphs',
+    items: [
+      { to: '/graphs/overview', label: 'Overview', icon: ChartIcon, cap: 'dashboard.view' },
+      { to: '/graphs/funnel', label: 'Funnel', icon: ChartIcon, cap: 'dashboard.view' },
+      { to: '/graphs/money', label: 'Money', icon: RupeeIcon, cap: 'dashboard.view' },
+      { to: '/graphs/customers', label: 'Customers', icon: UsersIcon, cap: 'dashboard.view' },
+      { to: '/graphs/vehicles', label: 'Vehicles', icon: CarIcon, cap: 'dashboard.view' },
+      { to: '/graphs/whatsapp', label: 'WhatsApp', icon: SendIcon, cap: 'dashboard.view' },
+      { to: '/graphs/services', label: 'Services & APIs', icon: PulseIcon, cap: 'dashboard.view' },
+      { to: '/analytics', label: 'Website analytics', icon: ChartIcon },
+    ],
+  },
   {
     group: 'Customers',
     items: [
@@ -105,7 +120,6 @@ const NAV = [
   {
     group: 'Analytics',
     items: [
-      { to: '/analytics', label: 'Website analytics', icon: ChartIcon },
       { to: '/attribution', label: 'Campaigns & attribution', icon: SendIcon, cap: 'customers.view' },
       { to: '/drop-off', label: 'Conversion funnel', icon: ChartIcon },
       { to: '/why-not-paid', label: 'Why didn’t they pay?', icon: ChartIcon, cap: 'dashboard.view' },
@@ -170,14 +184,14 @@ const NAV = [
 
 /* Each group's icon in the tree. */
 const GROUP_ICON = {
-  Dashboard: GridIcon, Customers: UsersIcon, Vehicles: CarIcon, WhatsApp: SendIcon, Reports: DocIcon, Payments: RupeeIcon,
+  Dashboard: GridIcon, Graphs: ChartIcon, Customers: UsersIcon, Vehicles: CarIcon, WhatsApp: SendIcon, Reports: DocIcon, Payments: RupeeIcon,
   Analytics: ChartIcon, Technical: PulseIcon, Operations: BellIcon, Finance: RupeeIcon, System: CogIcon,
 };
 /* Words people might type for a screen, beyond its name. */
 const ALSO = {
   '/finance/export': 'gst tax accounting csv', '/finance': 'gst revenue', '/payments': 'razorpay transactions', '/vehicles': 'rc registration number plate',
   '/health': 'status uptime', '/jobs': 'cron background', '/audit': 'log history who', '/people': 'admins users roles', '/flags': 'switch maintenance',
-  '/configuration': 'price gst fee settings', '/exports': 'csv download', '/where': 'map states rto geo', '/activity': 'stream live events',
+  '/configuration': 'price gst fee settings', '/exports': 'csv download', '/where': 'map states rto geo', '/activity': 'stream live events', '/graphs/overview': 'charts plots graphs trends',
 };
 /* Menu items matching the typed words — every word must appear in the name, group or keywords. */
 function menuMatches(nav, q) {

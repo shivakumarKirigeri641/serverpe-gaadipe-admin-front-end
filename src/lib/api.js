@@ -333,6 +333,9 @@ export const api = {
   saveAdSpend: (body) => call('/ad-spend', { method: 'POST', body }),
   removeAdSpend: (id) => call(`/ad-spend/${id}`, { method: 'DELETE' }),
   whyNotPaid: (params) => call(`/why-not-paid${qs(params)}`),
+  // The Graphs section (2026-10-03).
+  graph: (page, params) => call(`/graphs/${page}${qs(params)}`, { quiet: true }),
+  graphDrill: (page, params) => call(`/graphs/${page}/drill${qs(params)}`, { quiet: true }),
   waLimit: () => call('/whatsapp/limit', { quiet: true }),
   broadcastCosts: () => call('/whatsapp/broadcast-costs'),
   waReply: (mobile, text) => call('/whatsapp/reply', { method: 'POST', body: { mobile, text } }),

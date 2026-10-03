@@ -69,6 +69,7 @@ import VehicleApiLogs from './pages/vehicles/ApiLogs.jsx';
    /assets/pages/Analytics.jsx, got index.html back, and the screen never
    opened. Only production was affected: development is not obfuscated. */
 import Analytics from './pages/Analytics.jsx';
+import Graphs from './pages/graphs/Graphs.jsx';
 import Finance from './pages/Finance.jsx';
 import Documents from './pages/Documents.jsx';
 import Check from './pages/Check.jsx';
@@ -163,6 +164,8 @@ export default function App() {
       <Route path="/vehicles/insights" element={<VehicleInsights />} />
       <Route path="/vehicles/api-logs" element={<VehicleApiLogs />} />
       <Route path="/vehicles/:reg" element={<VehicleProfile />} />
+      <Route path="/graphs" element={<Graphs />} />
+      <Route path="/graphs/:page" element={<Graphs />} />
       <Route path="/analytics" element={
         <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-muted">Loading charts…</div>}>
           <Analytics />

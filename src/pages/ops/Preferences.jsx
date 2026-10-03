@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PhoneNotifications from '../../components/PhoneNotifications.jsx';
 import Shell from '../../components/Shell.jsx';
 import { snack, setActivityPopups, celebrate } from '../../components/Live.jsx';
 import { usePrefs, savePrefs, motionLevel } from '../../lib/motion.jsx';
@@ -50,6 +51,7 @@ export default function Preferences() {
   return (
     <Shell title="Display & motion" subtitle="Your own settings — saved to your account">
       <div className="space-y-4">
+        <PhoneNotifications />
         {group('motion', 'Motion')}
         {os && <p className="-mt-2 text-2xs text-muted">Your device asks for reduced motion, so the panel moves no more than “Reduced” whatever is chosen here (now: {motionLevel()}).</p>}
         {group('realtime', 'Realtime')}

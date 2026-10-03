@@ -334,6 +334,11 @@ export const api = {
   removeAdSpend: (id) => call(`/ad-spend/${id}`, { method: 'DELETE' }),
   whyNotPaid: (params) => call(`/why-not-paid${qs(params)}`),
   // The Graphs section (2026-10-03).
+  // Phone notifications (2026-10-03).
+  pushKey: () => call('/push/key', { quiet: true }),
+  pushSubscribe: (subscription, device) => call('/push/subscribe', { method: 'POST', body: { subscription, device } }),
+  pushUnsubscribe: (endpoint) => call('/push/unsubscribe', { method: 'POST', body: { endpoint } }),
+  pushTest: () => call('/push/test', { method: 'POST', body: {} }),
   graph: (page, params) => call(`/graphs/${page}${qs(params)}`, { quiet: true }),
   graphDrill: (page, params) => call(`/graphs/${page}/drill${qs(params)}`, { quiet: true }),
   waLimit: () => call('/whatsapp/limit', { quiet: true }),

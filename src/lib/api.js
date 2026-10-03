@@ -334,6 +334,9 @@ export const api = {
   removeAdSpend: (id) => call(`/ad-spend/${id}`, { method: 'DELETE' }),
   whyNotPaid: (params) => call(`/why-not-paid${qs(params)}`),
   // The Graphs section (2026-10-03).
+  hotLeads: () => call('/hot-leads', { quiet: true }),
+  adReturn: (params) => call(`/ad-return${qs(params)}`),
+  saveAdReturnSpend: (body) => call('/ad-return/spend', { method: 'POST', body }),
   // Phone notifications (2026-10-03).
   pushKey: () => call('/push/key', { quiet: true }),
   pushSubscribe: (subscription, device) => call('/push/subscribe', { method: 'POST', body: { subscription, device } }),

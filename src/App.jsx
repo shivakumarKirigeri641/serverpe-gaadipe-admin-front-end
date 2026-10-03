@@ -75,6 +75,8 @@ import Documents from './pages/Documents.jsx';
 import Check from './pages/Check.jsx';
 import Blocks from './pages/Blocks.jsx';
 import OwnerClaims from './pages/ops/OwnerClaims.jsx';
+import HotLeads from './pages/ops/HotLeads.jsx';
+import AdReturn from './pages/ops/AdReturn.jsx';
 import Feedback from './pages/Feedback.jsx';
 import Settings from './pages/Settings.jsx';
 import Policies from './pages/Policies.jsx';
@@ -175,6 +177,8 @@ export default function App() {
       <Route path="/check" element={<Check />} />
       <Route path="/blocks" element={<Blocks />} />
       <Route path="/owner-claims" element={<OwnerClaims />} />
+      <Route path="/hot-leads" element={<HotLeads />} />
+      <Route path="/ad-return" element={<AdReturn />} />
       <Route path="/feedback" element={<Feedback />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/policies" element={<Policies />} />

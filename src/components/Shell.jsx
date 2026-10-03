@@ -69,6 +69,7 @@ const NAV = [
       { to: '/journey', label: 'Customer journeys', icon: PulseIcon },
       { to: '/customer-intelligence', label: 'Customer intelligence', icon: UsersIcon, cap: 'customers.view' },
       { to: '/retention', label: 'Retention & repeat', icon: ChartIcon, cap: 'customers.view' },
+      { to: '/hot-leads', label: 'Hot leads 🔥', icon: RupeeIcon, cap: 'dashboard.view', badge: 'hot_leads' },
     ],
   },
   {
@@ -124,6 +125,7 @@ const NAV = [
       { to: '/drop-off', label: 'Conversion funnel', icon: ChartIcon },
       { to: '/why-not-paid', label: 'Why didn’t they pay?', icon: ChartIcon, cap: 'dashboard.view' },
       { to: '/ad-spend', label: 'Ad spend & cost per customer', icon: RupeeIcon, cap: 'dashboard.view' },
+      { to: '/ad-return', label: 'What each ad brought', icon: ChartIcon, cap: 'dashboard.view' },
       { to: '/profitability', label: 'Revenue', icon: RupeeIcon, cap: 'finance.view',
         match: (p, s) => p === '/profitability' && new URLSearchParams(s).get('tab') !== 'transactions' },
       { to: '/profitability?tab=transactions', label: 'Profitability', icon: ListIcon, cap: 'finance.view',

@@ -335,6 +335,9 @@ export const api = {
   whyNotPaid: (params) => call(`/why-not-paid${qs(params)}`),
   // The Graphs section (2026-10-03).
   hotLeads: () => call('/hot-leads', { quiet: true }),
+  dataRequests: () => call('/data-requests'),
+  eraseDataRequest: (id) => call(`/data-requests/${id}/erase`, { method: 'POST', body: { confirm: true } }),
+  rejectDataRequest: (id, note) => call(`/data-requests/${id}/reject`, { method: 'POST', body: { note } }),
   adReturn: (params) => call(`/ad-return${qs(params)}`),
   saveAdReturnSpend: (body) => call('/ad-return/spend', { method: 'POST', body }),
   // Phone notifications (2026-10-03).

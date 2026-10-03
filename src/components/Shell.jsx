@@ -154,6 +154,7 @@ const NAV = [
       { to: '/exports', label: 'Exports', icon: DocIcon, cap: 'dashboard.view' },
       { to: '/blocks', label: 'Blocked', icon: ShieldIcon },
       { to: '/owner-claims', label: 'Owner claims', icon: ShieldIcon, cap: 'dashboard.view' },
+      { to: '/data-requests', label: 'Data requests', icon: ShieldIcon, cap: 'dashboard.view', badge: 'data_requests' },
       { to: '/security', label: 'Security', icon: ShieldIcon },
       // Website logins: kept, but not where customers are while GaadiPe is WhatsApp-first.
       { to: '/sign-ins', label: 'Website sign-ins', icon: DoorIcon },
@@ -225,6 +226,8 @@ function Badge({ kind, b }) {
     alerts: [b.alerts_open, String(b.alerts_open), b.alerts_critical ? 'bg-wrong-500 text-white' : 'bg-watch-50 text-watch-700'],
     payments: [b.payments_pending, `${b.payments_pending} pending`, 'bg-shell text-body'],
     vehicles: [b.vehicles_today, `${b.vehicles_today} today`, 'bg-brand/10 text-brand-deep'],
+    hot_leads: [b.hot_leads, String(b.hot_leads), 'bg-wrong-500 text-white'],
+    data_requests: [b.data_requests, `${b.data_requests} waiting`, 'bg-watch-50 text-watch-700'],
   }[kind] || [0];
   return n ? <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tone}`}>{text}</span> : null;
 }

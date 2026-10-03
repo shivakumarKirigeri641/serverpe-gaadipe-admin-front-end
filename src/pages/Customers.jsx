@@ -153,8 +153,13 @@ export default function Customers() {
                 <>+{count(data.today.reports_today)} today vs +{count(data.today.reports_yesterday_full)} yesterday · <Delta now={data.today.reports_today} before={data.today.reports_yesterday_full} /></>, null,
                 'Paid full reports, all time. Below: bought today against the whole of yesterday (IST).'],
               ['Vehicle checks', data.today.checks_total,
-                <>+{count(data.today.checks_today)} today vs +{count(data.today.checks_yesterday_full)} yesterday · <Delta now={data.today.checks_today} before={data.today.checks_yesterday_full} /></>, null,
-                'Vehicle numbers customers checked on WhatsApp and the website, all time — the same vehicle again soon after is not counted twice. Below: today against the whole of yesterday (IST).'],
+                <>
+                  {data.today.checks_distinct != null && (
+                    <span className="block"><b className="text-ink">{count(data.today.checks_distinct)}</b> distinct · <b className="text-ink">{count(data.today.checks_total - data.today.checks_distinct)}</b> repeated</span>
+                  )}
+                  +{count(data.today.checks_today)} today{data.today.checks_today_distinct != null ? ` (${count(data.today.checks_today_distinct)} distinct)` : ''} vs +{count(data.today.checks_yesterday_full)} yesterday · <Delta now={data.today.checks_today} before={data.today.checks_yesterday_full} />
+                </>, null,
+                'Every vehicle check customers made on WhatsApp and the website, all time — a repeat of the same vehicle included. Distinct: different vehicles. Repeated: the rest. (Repeats are counted from 3 Oct 2026; before that they were not recorded.) Below: today against the whole of yesterday (IST).'],
             ] : []),
             ['New today', data.today.joined, <>vs {count(data.today.joined_yesterday)} yesterday · <Delta now={data.today.joined} before={data.today.joined_yesterday} /></>, 'joined',
               'People who used GaadiPe for the first time since midnight (IST), against yesterday up to the same time. Their rows are tinted green. Tap to sort newest first.'],

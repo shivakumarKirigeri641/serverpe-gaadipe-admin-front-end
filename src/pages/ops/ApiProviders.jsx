@@ -55,7 +55,7 @@ export default function ApiProviders() {
           {d.providers.some((p) => p.calls) && (
             <div className="card flex flex-wrap justify-around gap-4 p-4">
               {d.providers.filter((p) => p.calls).map((p) => (
-                <AnimatedGauge key={p.provider} label={`${p.provider} latency (p95)`} value={p.p95_ms} max={d.threshold_ms * 1.5} text={p.p95_ms == null ? null : `${p.p95_ms} ms`}
+                <AnimatedGauge key={p.provider} label={`${p.provider} latency (p95)`} value={p.p95_ms} max={d.threshold_ms * 1.5} danger="high" bands={[0.7 / 1.5, 1 / 1.5]} text={p.p95_ms == null ? null : `${p.p95_ms} ms`}
                   tone={p.p95_ms == null ? 'muted' : p.p95_ms > d.threshold_ms ? 'wrong' : p.p95_ms > d.threshold_ms * 0.7 ? 'watch' : 'good'}
                   caption={`avg ${p.avg_ms ?? '—'} ms · alert at ${d.threshold_ms} ms`} />
               ))}

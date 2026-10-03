@@ -207,4 +207,9 @@ export function Stats({ items }) {
   );
 }
 
+/** Speedometers in one card, above the charts (user, 2026-10-03). */
+export function Gauges({ children }) {
+  return <section className="card cv-rise mb-4 flex flex-wrap items-start justify-around gap-6 p-4">{children}</section>;
+}
+
 export const sumOf = (rows, key) => (rows || []).reduce((a, r) => a + Number(r[key] || 0), 0);

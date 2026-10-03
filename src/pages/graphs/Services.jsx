@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, LabelList } from 'recharts';
 import { count, dateTime } from '../../lib/format';
-import { SERIES, STATUS, AXIS, GRID, anim, Card, Tip, Drill, Stats, drill, dayLabel, rupeeAxis, inr, sumOf } from './kit.jsx';
+import { AnimatedGauge } from '../../lib/motion.jsx';
+import { SERIES, STATUS, AXIS, GRID, anim, Card, Tip, Drill, Stats, Gauges, drill, dayLabel, rupeeAxis, inr, sumOf } from './kit.jsx';
 
 /*
  * Services: each outside API's calls in the period — answered and failed —
@@ -27,6 +28,14 @@ export default function Services({ data, days }) {
         ['Failed', count(sumOf(providers, 'failed'))],
         ['RC backup spend', inr(sumOf(data.series, 'backup_paise'))],
       ]} />
+      {data.backup_today && (
+        <Gauges>
+          <AnimatedGauge label="RC backup today" value={data.backup_today.used} max={data.backup_today.limit || 200} danger="high" bands={[0.7, 0.9]}
+            text={`${data.backup_today.used}/${data.backup_today.limit}`}
+            tone={data.backup_today.used >= (data.backup_today.limit || 200) * 0.9 ? 'wrong' : data.backup_today.used >= (data.backup_today.limit || 200) * 0.7 ? 'watch' : 'good'}
+            caption="Paid calls used today, of the daily limit" />
+        </Gauges>
+      )}
       {!providers.length ? <div className="card p-6 text-center text-sm text-muted">No API calls recorded in this period.</div> : (
         <div className="grid gap-4 lg:grid-cols-2">
           <Card title="Calls answered and failed" note={`By provider. Click one for its errors. ${data.note}`}

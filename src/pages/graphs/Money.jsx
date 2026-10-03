@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Link } from 'react-router-dom';
 import { dateTime, plate } from '../../lib/format';
-import { SERIES, AXIS, GRID, anim, Card, Tip, Drill, Stats, drill, dayLabel, rupeeAxis, inr, sumOf } from './kit.jsx';
+import { AnimatedGauge } from '../../lib/motion.jsx';
+import { SERIES, AXIS, GRID, anim, Card, Tip, Drill, Stats, Gauges, drill, dayLabel, rupeeAxis, inr, sumOf } from './kit.jsx';
 
 /*
  * Money: where each day's revenue went — GST, the gateway's fee, the vehicle
@@ -41,6 +42,16 @@ export default function Money({ data }) {
         ['GST', inr(totals.gst)], ['Costs', inr(totals.gateway + totals.api + totals.whatsapp), 'gateway · APIs · WhatsApp'],
         ['Ads', inr(totals.ads)],
       ]} />
+      {(() => {
+        const m = gross ? Math.round((totals.left / gross) * 1000) / 10 : null;
+        return (
+          <Gauges>
+            <AnimatedGauge label="Margin" value={m == null ? null : Math.max(0, m)} max={100} danger="low" bands={[0.5, 0.25]}
+              text={m == null ? null : `${m}%`} tone={m == null ? 'muted' : m >= 50 ? 'good' : m >= 25 ? 'watch' : 'wrong'}
+              caption="Left with you ÷ revenue, after GST, fees, APIs, WhatsApp and ads" />
+          </Gauges>
+        );
+      })()}
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2" title="Where each day's money went" note={`Stacked: the parts make the revenue. Click a day for its payments. ${data.note}`}
           legend={PARTS.map(([, l, c]) => [l, c])} table={table} height={300}>

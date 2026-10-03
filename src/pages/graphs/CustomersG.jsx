@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, LabelList } from 'recharts';
 import { count } from '../../lib/format';
-import { SERIES, AXIS, GRID, anim, Card, Tip, Drill, People, Stats, drill, dayLabel, sumOf } from './kit.jsx';
+import { AnimatedGauge } from '../../lib/motion.jsx';
+import { SERIES, AXIS, GRID, anim, Card, Tip, Drill, People, Stats, Gauges, drill, dayLabel, sumOf } from './kit.jsx';
 
 /*
  * Customers: new and returning people per day; STOP and coming back; where new
@@ -27,6 +28,17 @@ export default function CustomersG({ data, days }) {
         ['Returning', count(Math.max(0, ...s.map((x) => x.returning))), 'busiest day'],
         ['Said STOP', count(sumOf(s, 'stops'))], ['Came back', count(sumOf(s, 'back'))],
       ]} />
+      {(() => {
+        const n = sumOf(s, 'new'); const st = sumOf(s, 'stops');
+        const r = n ? Math.round((st / n) * 1000) / 10 : null;
+        return (
+          <Gauges>
+            <AnimatedGauge label="STOP rate" value={r} max={20} danger="high" bands={[0.25, 0.5]}
+              text={r == null ? null : `${r}%`} tone={r == null ? 'muted' : r >= 10 ? 'wrong' : r >= 5 ? 'watch' : 'good'}
+              caption="Said STOP ÷ new customers, this period" />
+          </Gauges>
+        );
+      })()}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="New and returning people" note="Returning: people who joined earlier and did something that day."
           legend={[['New', SERIES[0]], ['Returning', SERIES[2]]]} table={table([['new', 'New'], ['returning', 'Returning']])}>

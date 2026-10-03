@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList } from 'recharts';
 import { count } from '../../lib/format';
-import { SERIES, AXIS, anim, Card, Drill, People, Stats, drill } from './kit.jsx';
+import { AnimatedGauge } from '../../lib/motion.jsx';
+import { SERIES, AXIS, anim, Card, Drill, People, Stats, Gauges, drill } from './kit.jsx';
 
 /*
  * The funnel: people at each step in the period, as horizontal bars from the
@@ -44,6 +45,17 @@ export default function Funnel({ data, days }) {
         ['Paid', count(paid), 'people'],
         ['Hi → paid', first ? `${Math.round((paid / first) * 1000) / 10}%` : '—', 'conversion'],
       ]} />
+      {(() => {
+        const conv = first ? Math.round((paid / first) * 1000) / 10 : null;
+        const top = Math.max(10, Math.ceil(((conv || 0) * 2) / 5) * 5);
+        return (
+          <Gauges>
+            <AnimatedGauge label="Conversion" value={conv} max={top} danger="low" bands={[0.4, 0.2]}
+              text={conv == null ? null : `${conv}%`} tone={conv == null ? 'muted' : conv >= top * 0.4 ? 'good' : conv >= top * 0.2 ? 'watch' : 'wrong'}
+              caption="Said hi → paid, this period" />
+          </Gauges>
+        );
+      })()}
       <Card title="From hi to paid" note="Different people who reached each step in the period. Click a step to see who stopped there."
         height={340}
         table={{ columns: [['label', 'Step'], ['people', 'People'], ['from_prev', 'From the step before', (v) => (v == null ? '—' : `${v}%`)]], rows: steps }}>

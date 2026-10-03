@@ -256,30 +256,44 @@ function useNeedle(frac) {
 const short = (n) => (n >= 1000 ? `${Math.round(n / 100) / 10}k`.replace('.0k', 'k') : String(Math.round(n)));
 
 /**
- * A 1990s dashboard dial (user, 2026-09-30) for a bounded figure — a success
- * rate, latency against its threshold, memory, disk. A chrome bezel, a black
- * face with cream ticks and numbers, a red zone at the bad end, an orange
- * needle, and an amber LCD readout underneath. `tone` (from real thresholds)
- * lights the LCD and the label says the status in words — colour is never the
- * only signal. The red zone sits at the low end for anything named "success",
- * at the high end otherwise; `danger` overrides it.
+ * A workshop pressure gauge (user, 2026-10-03, chosen from six old-instrument
+ * styles: "D"). A brass bezel, a white face with green, yellow and red bands,
+ * bold black ticks and numbers, a black arrow needle drawn last, and the exact
+ * figure printed under the hub. It replaces the 1990s amber dial, whose thin
+ * orange needle was hard to see and vanished altogether with no data.
+ *
+ *   danger  'high' (default) red at the top end — memory, latency, STOP rate;
+ *           'low' red at the bottom end — anything named "success", or set it.
+ *   bands   [warn, bad] as fractions of max where the yellow and red bands
+ *           start, from the real thresholds; thirds-ish when not given.
+ *   tone    from the same thresholds; the readout says the status in words
+ *           under the label, so colour is never the only signal.
+ *
+ * With no figure the needle still shows, parked at zero and faded, and the
+ * readout says NO DATA.
  */
-export function AnimatedGauge({ value, max = 100, label, text, tone = 'info', caption, size = 132, danger }) {
+export function AnimatedGauge({ value, max = 100, label, text, tone = 'info', caption, size = 150, danger, bands }) {
   const has = value != null && Number.isFinite(Number(value)) && max > 0;
   const frac = has ? Math.max(0, Math.min(1, Number(value) / max)) : 0;
   const f = useNeedle(frac);
   const low = danger ? danger === 'low' : /success/i.test(String(label || ''));
-  const W = 140; const cx = 70; const cy = 70; const R = 58;
-  const ang = (x) => (-120 + 240 * x) * (Math.PI / 180);
+  const [warn, bad] = bands || (low ? [0.85, 0.6] : [0.6, 0.85]);
+  const W = 300; const cx = 150; const cy = 150;
+  const A0 = -135; const SPAN = 270;
+  const ang = (x) => (A0 + SPAN * x) * (Math.PI / 180);
   const pt = (x, r) => [cx + r * Math.sin(ang(x)), cy - r * Math.cos(ang(x))];
-  const arc = (a, b, r) => { const [x1, y1] = pt(a, r); const [x2, y2] = pt(b, r); return `M ${x1} ${y1} A ${r} ${r} 0 ${(b - a) * 240 > 180 ? 1 : 0} 1 ${x2} ${y2}`; };
-  const [z0, z1] = low ? [0, 0.2] : [0.8, 1];
-  const uid = useRef(`g${Math.random().toString(36).slice(2, 8)}`).current;
-  const lcd = { good: '#7dff8a', watch: '#ffb000', wrong: '#ff5a4f', info: '#ffb000', muted: '#8a8a8a' }[tone] || '#ffb000';
+  const arc = (a, b, r) => {
+    const [x1, y1] = pt(a, r); const [x2, y2] = pt(b, r);
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${(b - a) * SPAN > 180 ? 1 : 0} 1 ${x2} ${y2}`;
+  };
+  const zones = low
+    ? [[0, bad, '#d6342a'], [bad, warn, '#f2b705'], [warn, 1, '#1e9e4a']]
+    : [[0, warn, '#1e9e4a'], [warn, bad, '#f2b705'], [bad, 1, '#d6342a']];
+  const word = { good: 'OK', watch: 'Watch', wrong: 'Alert', muted: '', info: '' }[tone] ?? '';
+  const wordColour = { good: 'text-good-700', watch: 'text-watch-700', wrong: 'text-wrong-700' }[tone] || 'text-muted';
   /*
-   * A LIVE READOUT (user, 2026-09-30): while the needle moves, the LCD reads
-   * where the needle is — counting up through the start-up sweep and across
-   * every change — then settles on the exact figure. `text` gives the shape
+   * A LIVE READOUT (user, 2026-09-30): while the needle moves, the readout
+   * counts with it, then settles on the exact figure. `text` gives the shape
    * ("97%", "3200 ms", "₹1.2k"): its prefix, suffix and decimals are kept.
    */
   const shape = String(text ?? '').match(/^([^\d-]*)(-?[\d,]*\.?\d+)(.*)$/);
@@ -288,59 +302,43 @@ export function AnimatedGauge({ value, max = 100, label, text, tone = 'info', ca
     : shape
       ? `${shape[1]}${(f * max).toLocaleString('en-IN', { minimumFractionDigits: (shape[2].split('.')[1] || '').length, maximumFractionDigits: (shape[2].split('.')[1] || '').length, useGrouping: shape[2].includes(',') })}${shape[3]}`
       : Math.round(f * max);
-  const [nx, ny] = pt(f, R - 12);
-  const [tx, ty] = pt(f + 0.5, 9);
+  const rot = A0 + SPAN * f;
   return (
-    <div className="flex flex-col items-center" role="img" aria-label={`${label}: ${text ?? value ?? 'no data'}${caption ? `, ${caption}` : ''}`}>
-      <svg width={size} height={size * 0.92} viewBox={`0 0 ${W} ${W * 0.92}`} aria-hidden="true">
-        <defs>
-          <linearGradient id={`${uid}b`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#f4f6f8" /><stop offset=".45" stopColor="#8d949c" /><stop offset=".55" stopColor="#c9ced4" /><stop offset="1" stopColor="#3a3f45" />
-          </linearGradient>
-          <radialGradient id={`${uid}f`} cx=".5" cy=".42" r=".62">
-            <stop offset="0" stopColor="#2a2f36" /><stop offset="1" stopColor="#0a0c0f" />
-          </radialGradient>
-          <radialGradient id={`${uid}c`} cx=".35" cy=".35" r=".8">
-            <stop offset="0" stopColor="#e9edf1" /><stop offset="1" stopColor="#4a5058" />
-          </radialGradient>
-        </defs>
-        <circle cx={cx} cy={cy} r={67} fill={`url(#${uid}b)`} />
-        <circle cx={cx} cy={cy} r={63} fill={`url(#${uid}f)`} />
-        {/* the red zone */}
-        <path d={arc(z0, z1, R - 2)} fill="none" stroke="#d92d20" strokeWidth="5" opacity=".9" />
-        {/* ticks: 40 minor, 10 major; numbers on every other major */}
-        {Array.from({ length: 41 }, (_, i) => {
-          const x = i / 40; const major = i % 4 === 0;
-          const [x1, y1] = pt(x, R); const [x2, y2] = pt(x, R - (major ? 9 : 4.5));
-          const red = x >= z0 - 1e-9 && x <= z1 + 1e-9;
-          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={red ? '#ff6b5f' : '#f2ead3'} strokeWidth={major ? 1.8 : 0.9} strokeLinecap="round" />;
+    <div className="flex flex-col items-center" role="img" aria-label={`${label}: ${text ?? value ?? 'no data'}${word ? `, ${word}` : ''}${caption ? `, ${caption}` : ''}`}>
+      <svg width={size} height={size} viewBox={`0 0 ${W} ${W}`} aria-hidden="true">
+        <circle cx={cx} cy={cy} r={146} fill="#b8862d" />
+        <circle cx={cx} cy={cy} r={139} fill="#e3c27a" />
+        <circle cx={cx} cy={cy} r={130} fill="#fbfbf8" stroke="#333" strokeWidth="1.5" />
+        {zones.map(([a, b, c]) => (b > a ? <path key={c} d={arc(a, b, 110)} fill="none" stroke={c} strokeWidth="16" /> : null))}
+        {Array.from({ length: 51 }, (_, i) => {
+          const x = i / 50; const major = i % 5 === 0;
+          const [x1, y1] = pt(x, 121); const [x2, y2] = pt(x, 121 - (major ? 16 : 8));
+          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#1d1d1d" strokeWidth={major ? 3.2 : 1.4} strokeLinecap="round" />;
         })}
         {[0, 0.2, 0.4, 0.6, 0.8, 1].map((x) => {
-          const [lx, ly] = pt(x, R - 17);
-          return <text key={x} x={lx} y={ly + 2.6} textAnchor="middle" fontSize="7.5" fontWeight="700" fill="#f2ead3" fontFamily="ui-sans-serif, system-ui">{short(max * x)}</text>;
+          const [lx, ly] = pt(x, 84);
+          return <text key={x} x={lx} y={ly + 6} textAnchor="middle" fontSize="18" fontWeight="700" fill="#1d1d1d" fontFamily="ui-sans-serif, system-ui">{short(max * x)}</text>;
         })}
-        <text x={cx} y={cy + 26} textAnchor="middle" fontSize="6" letterSpacing="1.2" fill="#9aa3ab" fontFamily="ui-sans-serif, system-ui">GAADIPE</text>
-        {/* the needle, with a short tail, and its glow */}
-        {has && (
-          <g style={{ filter: 'drop-shadow(0 0 2px rgba(255,90,31,.8))' }}>
-            <line x1={tx} y1={ty} x2={nx} y2={ny} stroke="#ff5a1f" strokeWidth="2.6" strokeLinecap="round" />
-          </g>
-        )}
-        <circle cx={cx} cy={cy} r={7} fill={`url(#${uid}c)`} stroke="#1b1f24" strokeWidth="1" />
-        {/* the amber LCD */}
-        <rect x={cx - 27} y={cy + 33} width="54" height="17" rx="3" fill="#120d02" stroke="#3a3f45" strokeWidth="1.2" />
-        <text x={cx} y={cy + 45.5} textAnchor="middle" fontSize="10.5" fontWeight="700" fill={has ? lcd : '#6b6b6b'}
-          fontFamily="ui-monospace, 'Courier New', monospace" style={{ filter: has ? `drop-shadow(0 0 2px ${lcd})` : 'none' }}>
-          {has ? live : '— —'}
-        </text>
+        {/* the readout, under the hub */}
+        <text x={cx} y={cy + 80} textAnchor="middle" fontSize={has ? 26 : 16} fontWeight="700" fill={has ? '#111' : '#8a8a8a'}
+          fontFamily="ui-monospace, 'Courier New', monospace">{has ? live : 'NO DATA'}</text>
+        {/* the needle, drawn last so nothing ever covers it */}
+        <g transform={`rotate(${rot} ${cx} ${cy})`} opacity={has ? 1 : 0.3}>
+          <path d={`M${cx - 4.5} ${cy + 28} L${cx - 4.5} ${cy - 90} L${cx - 11} ${cy - 90} L${cx} ${cy - 122} L${cx + 11} ${cy - 90} L${cx + 4.5} ${cy - 90} L${cx + 4.5} ${cy + 28} Z`}
+            fill="#111" stroke="#fbfbf8" strokeWidth="1.2" strokeLinejoin="round" />
+        </g>
+        <circle cx={cx} cy={cy} r={13} fill="#111" />
+        <circle cx={cx} cy={cy} r={4.5} fill="#e3c27a" />
       </svg>
       <div className="mt-1 text-center">
         <div className="text-2xs font-semibold uppercase tracking-wider text-muted">{label}</div>
+        {word && has && <div className={`text-[10px] font-semibold ${wordColour}`}>{word}</div>}
         {caption && <div className="text-[10px] text-muted">{caption}</div>}
       </div>
     </div>
   );
 }
+
 
 /** A full ring for a percentage (CPU, memory, disk). */
 export function AnimatedProgressRing({ value, label, tone = 'info', size = 72, stroke = 7 }) {

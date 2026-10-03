@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { count } from '../../lib/format';
-import { SERIES, AXIS, GRID, anim, Card, Tip, Drill, Stats, drill, dayLabel, rupeeAxis, inr, sumOf } from './kit.jsx';
+import { AnimatedGauge } from '../../lib/motion.jsx';
+import { SERIES, AXIS, GRID, anim, Card, Tip, Drill, Stats, Gauges, drill, dayLabel, rupeeAxis, inr, sumOf } from './kit.jsx';
 
 /* Overview: four daily series; a click on any day opens that day by the hour. */
 export default function Overview({ data }) {
@@ -26,6 +27,15 @@ export default function Overview({ data }) {
         ['Full reports', count(sumOf(s, 'reports')), 'paid'],
         ['Revenue', inr(sumOf(s, 'revenue_paise')), 'incl. GST'],
       ]} />
+      {data.pace && (() => {
+        const top = Math.max(10, Math.ceil(Math.max(data.pace.best_hour, data.pace.last_hour) / 10) * 10);
+        return (
+          <Gauges>
+            <AnimatedGauge label="Check speed" value={data.pace.last_hour} max={top} danger="high" bands={[1, 1]}
+              text={`${data.pace.last_hour}/h`} caption={`Checks in the last hour · best hour ${data.pace.best_hour}`} />
+          </Gauges>
+        );
+      })()}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="New customers" note="People using GaadiPe for the first time, per day. Click a day for its hours."
           table={table([['customers', 'New customers']])}>

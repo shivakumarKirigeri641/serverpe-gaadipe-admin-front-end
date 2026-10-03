@@ -30,9 +30,9 @@ export default function PaymentFailures() {
       {error && !d ? <div className="card"><Failed error={error} onRetry={load} /></div> : !d ? <SkeletonCards n={8} /> : (
         <div className="space-y-4">
           <div className="card flex flex-wrap items-center justify-around gap-4 p-4">
-            <AnimatedGauge label="Payment success" value={d.success_rate} text={d.success_rate == null ? null : `${d.success_rate}%`}
+            <AnimatedGauge label="Payment success" danger="low" bands={[0.8, 0.5]} value={d.success_rate} text={d.success_rate == null ? null : `${d.success_rate}%`}
               tone={d.success_rate == null ? 'muted' : d.success_rate >= 80 ? 'good' : d.success_rate >= 50 ? 'watch' : 'wrong'} caption="Completed ÷ started" />
-            <AnimatedGauge label="Failure rate" value={d.failure_rate} text={d.failure_rate == null ? null : `${d.failure_rate}%`}
+            <AnimatedGauge label="Failure rate" danger="high" bands={[0.05, 0.2]} value={d.failure_rate} text={d.failure_rate == null ? null : `${d.failure_rate}%`}
               tone={d.failure_rate == null ? 'muted' : d.failure_rate >= 20 ? 'wrong' : d.failure_rate > 0 ? 'watch' : 'good'} caption="Failed at Razorpay, never paid" />
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

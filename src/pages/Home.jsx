@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { chartAnim, Rolling } from '../lib/motion.jsx';
+import { chartAnim, Rolling, AnimatedGauge } from '../lib/motion.jsx';
 import { api } from '../lib/api';
 import { count, rupees, ago } from '../lib/format';
 import Shell from '../components/Shell.jsx';
@@ -195,6 +195,9 @@ function WaLimit() {
   return (
     <Hint note={metaNote} className="mt-3 block">
       <div className="card flex flex-wrap items-center gap-3 px-4 py-2.5">
+        {/* The limit as a gauge (user, 2026-10-03): red as Meta's limit nears. */}
+        <AnimatedGauge label="Messaged / 24 h" value={l.used} max={l.limit} size={112} danger="high" bands={[0.7, 0.9]}
+          text={`${l.used}/${l.limit}`} tone={pct >= 90 ? 'wrong' : pct >= 70 ? 'watch' : 'good'} />
         <span className="text-2xs font-semibold uppercase tracking-wider text-muted">WhatsApp limit · 24 h</span>
         <span className="h-2 min-w-[8rem] flex-1 overflow-hidden rounded-full bg-shell">
           <span className={`block h-full rounded-full ${tone}`} style={{ width: `${pct}%`, transition: 'width .8s ease' }} />

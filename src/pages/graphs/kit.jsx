@@ -5,7 +5,7 @@ import { api } from '../../lib/api';
 import { useAutoRefresh } from '../../lib/useAutoRefresh';
 import { chartAnim } from '../../lib/motion.jsx';
 import { count, rupees, date } from '../../lib/format';
-import { Failed, Skeleton } from '../../components/ui.jsx';
+import { Failed, Skeleton, Modal } from '../../components/ui.jsx';
 
 /*
  * THE GRAPHS SECTION'S KIT (user, 2026-10-03). Every chart here is drawn with
@@ -152,22 +152,21 @@ export function Tip({ active, payload, label, title, fmt = count, total }) {
       {total && items.length > 1 && (
         <div className="mt-1 flex border-t border-line pt-1 text-body"><span>{total}</span><b className="ml-auto pl-4 tabular text-ink">{fmt(sum)}</b></div>
       )}
-      <div className="mt-1 text-[10px] text-muted">Click for more</div>
     </div>
   );
 }
 
-/** The panel under a chart for the clicked mark: a title, a close button, the next level. */
-export function Drill({ title, onClose, loading, children }) {
+/**
+ * The details of a tapped mark, in a popup over the page (user, 2026-10-03:
+ * "on tap, a details popup"): the next level down. Esc, Close or a tap outside
+ * closes it; a popup opened from inside another (state → RTO → vehicles) sits
+ * on top of it.
+ */
+export function Drill({ title, subtitle, onClose, loading, children }) {
   return (
-    <section className="card cv-rise mt-3 border-brand/30 p-4">
-      <div className="mb-2 flex items-center gap-2">
-        <span className="text-brand" aria-hidden="true">↳</span>
-        <h3 className="text-sm font-semibold text-ink">{title}</h3>
-        <button type="button" onClick={onClose} className="btn-quiet ml-auto !py-1 text-2xs">Close</button>
-      </div>
+    <Modal wide title={title} subtitle={subtitle} onClose={onClose}>
       {loading ? <Skeleton rows={4} /> : children}
-    </section>
+    </Modal>
   );
 }
 

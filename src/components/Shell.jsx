@@ -106,6 +106,7 @@ const NAV = [
       { to: '/documents', label: 'Reports', icon: DocIcon },
       { to: '/reports/delivery', label: 'Delivery status', icon: SendIcon, cap: 'dashboard.view' },
       { to: '/free-reports', label: 'Free reports', icon: GiftIcon },
+      { to: '/gift-reports', label: 'Gift full reports 🎁', icon: GiftIcon, cap: 'settings' },
     ],
   },
   {

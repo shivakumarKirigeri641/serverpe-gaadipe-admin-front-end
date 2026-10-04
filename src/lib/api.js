@@ -336,6 +336,9 @@ export const api = {
   // The Graphs section (2026-10-03).
   hotLeads: () => call('/hot-leads', { quiet: true }),
   dataRequests: () => call('/data-requests'),
+  giftCustomers: (params) => call(`/gifts/customers${qs(params)}`),
+  grantGifts: (body) => call('/gifts/grant', { method: 'POST', body }),
+  revokeGifts: (userId) => call(`/gifts/${userId}/revoke`, { method: 'POST', body: {} }),
   supportInbox: (params) => call(`/support-inbox${qs(params)}`),
   checkSupportInbox: () => call('/support-inbox/check', { method: 'POST', body: {} }),
   supportInboxDone: (id, done = true) => call(`/support-inbox/${id}/done`, { method: 'POST', body: { done } }),

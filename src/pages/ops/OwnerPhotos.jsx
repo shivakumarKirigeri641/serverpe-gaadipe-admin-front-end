@@ -28,7 +28,7 @@ const NOTICE = {
   sent: ['✓ Told on WhatsApp', 'text-good-700'],
 };
 
-const TEMPLATE_TEXT = 'Hello {{1}}, the ownership check for your vehicle {{2}} is complete: {{3}}. Reply to this message to see the details and what you get.';
+const TEMPLATE_TEXT = 'Hello {{1}}, the ownership check for your vehicle {{2}} is complete: {{3}}. Tap See details below to see the result and what you get.';
 
 export default function OwnerPhotos() {
   const { can } = useSession();
@@ -331,6 +331,7 @@ function Settings({ s, counts, canSet, onSaved }) {
           <div>Category: <b>Utility</b> · Name: <span className="font-mono">{f.owner_verify_template_name || 'owner_verification_update'}</span> · Language: English</div>
           <p className="mt-2 rounded bg-white p-2 font-mono text-[11px] text-ink">{TEMPLATE_TEXT}</p>
           <div className="mt-1 text-2xs text-muted">Samples: {'{{1}}'} Ramesh · {'{{2}}'} KA01AB1234 · {'{{3}}'} approved ✅</div>
+          <div className="mt-1 text-2xs text-body">Button (Quick reply): <b>See details</b></div>
         </div>
         {canSet && <button type="button" className="btn-primary mt-4" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button>}
       </section>
@@ -343,7 +344,7 @@ function Settings({ s, counts, canSet, onSaved }) {
  * src/owners/checkAlerts.js): the verified owner is told when another number
  * checks their vehicle — vehicle, time and that number's last 4 digits.
  */
-const ALERT_TEMPLATE = 'Vehicle check alert: your vehicle {{1}} was checked on GaadiPe on {{2}} by a mobile number ending {{3}}. They see public vehicle details only, never your name, number or address. Reply to this message if you would like to hide your vehicle from other people\'s checks.';
+const ALERT_TEMPLATE = 'Vehicle check alert: your vehicle {{1}} was checked on GaadiPe on {{2}} by a mobile number ending {{3}}. They see public vehicle details only, never your name, number or address. If you were not expecting this, you can hide your vehicle from other people\'s checks.';
 const ALERT_STATUS = { sent: ['✓ Told on WhatsApp', 'text-good-700'], template: ['📨 Template', 'text-brand-deep'],
   summarised: ['✓ In a summary', 'text-good-700'], pending: ['⏳ When they next write', 'text-watch-700'] };
 
@@ -395,6 +396,7 @@ function CheckAlerts({ canSet }) {
           <div>Category: <b>Utility</b> · Name: <span className="font-mono">{f.owner_check_alert_template_name || 'vehicle_check_alert'}</span> · Language: English</div>
           <p className="mt-2 rounded bg-white p-2 font-mono text-[11px] text-ink">{ALERT_TEMPLATE}</p>
           <div className="mt-1 text-2xs text-muted">Samples: {'{{1}}'} KA01AB1234 · {'{{2}}'} 4 Oct, 4:12 pm · {'{{3}}'} 1234</div>
+          <div className="mt-1 text-2xs text-body">Buttons (Quick reply), exactly: <b>Hide my vehicle</b> · <b>That’s fine</b> · <b>Stop these alerts</b></div>
         </div>
         {canSet && <button type="button" className="btn-primary mt-4" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button>}
       </section>

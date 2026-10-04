@@ -67,7 +67,10 @@ export default function HotLeads() {
         <>
           <p className="mb-3 text-sm text-body">{TABS.find(([k]) => k === tab)[2]} Newest first. Replies are written by you; nothing is sent automatically.</p>
           <div className="grid gap-3 lg:grid-cols-2">
-            {d.leads.filter((l) => l.stage === tab).map((l) => (
+            {d.leads.filter((l) => l.stage === tab)
+              // Newest first, by when they reached this stage.
+              .sort((a, b) => new Date(b.at || b.last_inbound_at) - new Date(a.at || a.last_inbound_at))
+              .map((l) => (
               <article key={l.mobile} className="card p-4">
                 <div className="flex flex-wrap items-baseline gap-2">
                   <b className="text-ink">{l.name || 'Unknown'}</b>

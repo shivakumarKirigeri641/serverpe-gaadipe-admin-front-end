@@ -379,6 +379,9 @@ function CheckAlerts({ canSet }) {
         <Row label="Tell the person checking" hint="A line on their result: the owner is told, with the last 4 digits of their number. Keeps it fair and legal.">
           <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={f.owner_check_alert_tell_checker === 'true'} onChange={set('owner_check_alert_tell_checker')} disabled={!canSet} /> Yes</label>
         </Row>
+        <Row label="Never alert for checks by" hint="Your checks never alert anyone: every admin login’s mobile and the admin WhatsApp numbers are left out automatically, and the admin panel’s own checks never count. Add other test or family numbers here.">
+          <input className="input font-mono text-sm" placeholder="e.g. 98xxxxxx12, 97xxxxxx34" value={f.owner_check_alert_ignore_numbers || ''} onChange={set('owner_check_alert_ignore_numbers')} disabled={!canSet} />
+        </Row>
         <Row label="Most alerts per owner a day" hint="The rest go into one summary when they next write.">
           <input type="number" min="1" className="input !w-24" value={f.owner_check_alert_per_day} onChange={set('owner_check_alert_per_day')} disabled={!canSet} />
         </Row>

@@ -17,6 +17,69 @@ const FIELDS = [
   ['first_name', 'Customer first name'], ['full_name', 'Customer full name'], ['last_vehicle', 'Their last vehicle'],
 ];
 
+/*
+ * THE AUTOMATIC GIFT (user, 2026-10-04): switch on a rule and every paying
+ * customer who qualifies gets it once per round, the next time they use
+ * GaadiPe on WhatsApp — no message to send. "Start a new round" gives
+ * everyone a fresh one.
+ */
+function AutoGift({ onChanged }) {
+  const [a, setA] = useState(null);
+  const [f, setF] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = useCallback(() => api.giftAuto().then((x) => { setA(x); setF({
+    on: x.rule.on, count: String(x.rule.count), days: String(x.rule.days), min_paid: String(x.rule.min_paid),
+    paid_within_days: x.rule.paid_within_days == null ? '' : String(x.rule.paid_within_days) }); }).catch(() => {}), []);
+  useEffect(() => { load(); }, [load]);
+  if (!a || !f) return <Skeleton rows={3} />;
+
+  const save = async (patch = {}) => {
+    setBusy(true);
+    try {
+      const r = await api.setGiftAuto({ ...f, ...patch });
+      snack(r.rule.on ? `On — ${r.eligible} paying customer${r.eligible === 1 ? '' : 's'} qualify` : 'Automatic gift is off');
+      load(); onChanged?.();
+    } catch (e) { snack(e.message || 'Could not save', 'wrong'); } finally { setBusy(false); }
+  };
+  const field = (k, label, w = '!w-20') => (
+    <label className="text-2xs font-semibold text-muted" htmlFor={`ag-${k}`}>{label}
+      <input id={`ag-${k}`} className={`input mt-1 ${w}`} inputMode="numeric" value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+    </label>
+  );
+  return (
+    <section className={`card p-4 ${a.rule.on ? 'border-good-500/40 bg-good-50/40' : ''}`}>
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-semibold text-ink">🎁 Automatic gift for paying customers</h2>
+          <p className="text-2xs text-muted">
+            Every paying customer who qualifies gets the gift once, the next time they use GaadiPe on WhatsApp — they see “🎁 You have {f.count} free full
+            reports” with their next check. No message is sent, so it costs nothing until a report is used.
+          </p>
+        </div>
+        <button type="button" role="switch" aria-checked={f.on} disabled={busy}
+          onClick={() => save({ on: !a.rule.on })}
+          className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition ${a.rule.on ? 'bg-brand' : 'bg-line'}`}>
+          <span className={`inline-block h-6 w-6 rounded-full bg-white shadow transition ${a.rule.on ? 'translate-x-5' : 'translate-x-0.5'}`} />
+        </button>
+      </div>
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        {field('count', 'Free reports each')}
+        {field('days', 'Valid for (days)')}
+        {field('min_paid', 'Paid at least (times)')}
+        {field('paid_within_days', 'Paid within last (days, empty = any time)', '!w-28')}
+        <button type="button" className="btn-quiet !py-2 text-sm" disabled={busy} onClick={() => save({ on: a.rule.on })}>Save</button>
+        {a.rule.on && <button type="button" className="btn-quiet !py-2 text-sm" disabled={busy}
+          onClick={() => window.confirm('Start a new round? Every qualifying paying customer gets a fresh gift when they next come back.') && save({ on: true, new_round: true })}>Start a new round</button>}
+      </div>
+      <p className="mt-3 text-2xs text-body">
+        {a.rule.on
+          ? <>Round started {ago(a.rule.started_at)} · <b className="text-ink">{a.eligible}</b> paying customers qualify · <b className="text-ink">{a.received}</b> have received it so far.</>
+          : <>Off. {a.eligible} paying customers would qualify with these settings.</>}
+      </p>
+    </section>
+  );
+}
+
 export default function GiftReports() {
   const [q, setQ] = useState('');
   const [d, setD] = useState(null);
@@ -61,6 +124,8 @@ export default function GiftReports() {
   const s = d?.summary;
   return (
     <Shell title="Gift full reports" subtitle="Give paying customers free full reports — used on WhatsApp instead of paying">
+      <AutoGift onChanged={load} />
+      <h2 className="mb-2 mt-6 text-sm font-semibold text-ink">Or give to chosen customers now</h2>
       {s && (
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[['Given', s.given], ['Used', s.used], ['Still open', s.open], ['Customers', s.customers]].map(([l, v]) => (

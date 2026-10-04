@@ -25,8 +25,6 @@ export default function Documents() {
   /* Customer view = the PDF the customer received (masked). Admin view = every
      field as stored, unmasked, made fresh for the admin only (user, 2026-10-04). */
   const mayOpen = allowed(can, 'vehicles.view_sensitive');
-  const [view, setView] = useState('customer');
-  const adminView = view === 'admin' && mayOpen;
 
   useEffect(() => { setPage(1); }, [tab, q]);
 
@@ -47,11 +45,11 @@ export default function Documents() {
   }, [load, q]);
   useAutoRefresh(load);
 
-  const get = async (id, download) => {
+  const get = async (id, download, admin = false) => {
     setBusy(id);
     try {
       const { blob, filename } = isReports
-        ? await (adminView ? api.reportAdminPdf(id, download) : api.reportPdf(id, download))
+        ? await (admin ? api.reportAdminPdf(id, download) : api.reportPdf(id, download))
         : await api.invoicePdf(id, download);
       download ? saveBlob(blob, filename) : openBlob(blob);
     } catch (e) { window.alert(e.message); } finally { setBusy(null); }
@@ -76,25 +74,6 @@ export default function Documents() {
             </button>
           ))}
       </div>
-
-      {isReports && mayOpen && (
-        <div className="mb-3 flex flex-wrap items-center gap-3">
-          <div className="inline-flex rounded-lg border border-line p-0.5" role="radiogroup" aria-label="Report view">
-            {[['customer', '👤 Customer view'], ['admin', '🔓 Admin view (all open)']].map(([k, label]) => (
-              <button key={k} type="button" role="radio" aria-checked={view === k} onClick={() => setView(k)}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${view === k
-                  ? (k === 'admin' ? 'bg-wrong-500 text-white' : 'bg-brand text-white') : 'text-muted hover:text-ink'}`}>
-                {label}
-              </button>
-            ))}
-          </div>
-          <span className="text-2xs text-muted">
-            {adminView
-              ? 'View and Save open an ADMIN COPY: every detail as stored, unmasked. Made fresh, never sent to the customer, and logged.'
-              : 'View and Save open the exact PDF the customer received — personal details masked.'}
-          </span>
-        </div>
-      )}
 
       <div className="card">
         {error ? <Failed error={error} onRetry={load} />
@@ -126,8 +105,19 @@ export default function Documents() {
                     </Hint>
                   </td>
                   <td className="td">
-                    <Buttons busy={busy === r.id} disabled={!r.has_pdf}
-                      onView={() => get(r.id, false)} onSave={() => get(r.id, true)} />
+                    <div className="flex flex-wrap gap-1.5">
+                      <button className="btn-quiet !px-2.5 !py-1 text-2xs" disabled={!r.has_pdf || busy === r.id}
+                        title="The exact PDF the customer received — personal details masked"
+                        onClick={() => get(r.id, false)}>{busy === r.id ? '…' : '👤 Customer view'}</button>
+                      {mayOpen && (
+                        <button className="!px-2.5 !py-1 rounded-lg border border-wrong-500 text-2xs font-semibold text-wrong-700 hover:bg-wrong-50 disabled:opacity-50"
+                          disabled={busy === r.id}
+                          title="ADMIN COPY — every detail as stored, unmasked. Never sent to the customer; logged."
+                          onClick={() => get(r.id, false, true)}>🔓 Admin view</button>
+                      )}
+                      <button className="btn-quiet !px-2 !py-1 text-2xs" disabled={!r.has_pdf || busy === r.id}
+                        title="Save the customer’s PDF" onClick={() => get(r.id, true)}>Save</button>
+                    </div>
                   </td>
                 </tr>
               ))}

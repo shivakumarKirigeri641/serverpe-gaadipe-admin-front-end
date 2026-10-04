@@ -328,7 +328,7 @@ function Settings({ s, counts, canSet, onSaved }) {
         </Row>
         <div className="mt-3 rounded-lg bg-shell p-3 text-xs text-body">
           <div className="mb-1 flex items-center justify-between"><b className="text-ink">Submit this to Meta</b><CopyButton value={TEMPLATE_TEXT} /></div>
-          <div>Category: <b>Utility</b> · Name: <span className="font-mono">{f.owner_verify_template_name || 'owner_verification_update'}</span> · Language: English</div>
+          <div>Category: <b>Utility</b> · Name: <span className="font-mono">{f.owner_verify_template_name || 'gp_owner_verification_update_v1'}</span> · Language: English</div>
           <p className="mt-2 rounded bg-white p-2 font-mono text-[11px] text-ink">{TEMPLATE_TEXT}</p>
           <div className="mt-1 text-2xs text-muted">Samples: {'{{1}}'} Ramesh · {'{{2}}'} KA01AB1234 · {'{{3}}'} approved ✅</div>
           <div className="mt-1 text-2xs text-body">Button (Quick reply): <b>See details</b></div>
@@ -396,7 +396,7 @@ function CheckAlerts({ canSet }) {
         </Row>
         <div className="mt-3 rounded-lg bg-shell p-3 text-xs text-body">
           <div className="mb-1 flex items-center justify-between"><b className="text-ink">Submit this to Meta</b><CopyButton value={ALERT_TEMPLATE} /></div>
-          <div>Category: <b>Utility</b> · Name: <span className="font-mono">{f.owner_check_alert_template_name || 'vehicle_check_alert'}</span> · Language: English</div>
+          <div>Category: <b>Utility</b> · Name: <span className="font-mono">{f.owner_check_alert_template_name || 'gp_vehicle_check_alert_v1'}</span> · Language: English</div>
           <p className="mt-2 rounded bg-white p-2 font-mono text-[11px] text-ink">{ALERT_TEMPLATE}</p>
           <div className="mt-1 text-2xs text-muted">Samples: {'{{1}}'} KA01AB1234 · {'{{2}}'} 4 Oct, 4:12 pm · {'{{3}}'} 1234</div>
           <div className="mt-1 text-2xs text-body">Buttons (Quick reply), exactly: <b>Hide my vehicle</b> · <b>That’s fine</b> · <b>Stop these alerts</b></div>

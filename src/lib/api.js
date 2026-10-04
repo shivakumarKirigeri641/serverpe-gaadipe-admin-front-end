@@ -365,6 +365,10 @@ export const api = {
   release: (id) => call(`/blocks/${id}/release`, { method: 'POST' }),
   ownerClaims: (params) => call(`/owner-claims${qs(params)}`),
   ownerClaimAction: (id, action, note) => call(`/owner-claims/${id}/${action}`, { method: 'POST', body: { note } }),
+  ownerPhotos: (view) => call(`/owner-photos${qs({ view })}`),
+  ownerPhotoFile: (id) => pdf(`/owner-photos/${id}/photo`),
+  ownerPhotoAction: (id, action, body = {}) => call(`/owner-photos/${id}/${action}`, { method: 'POST', body }),
+  saveOwnerPhotoSettings: (settings) => call('/owner-photos/settings', { method: 'PUT', body: { settings } }),
 
   reports: (params) => call(`/reports${qs(params)}`),
   invoices: (params) => call(`/invoices${qs(params)}`),

@@ -17,6 +17,7 @@ import { useSession, allowed } from '../../lib/session';
 const STATUS = {
   verified: ['✅ Verified', 'bg-good-50 text-good-700'],
   pending: ['⏳ In progress', 'bg-shell text-body'],
+  review: ['📸 Photo to check', 'bg-watch-50 text-watch-700'],
   failed: ['✕ Did not match', 'bg-watch-50 text-watch-700'],
   locked: ['🔒 Locked', 'bg-wrong-50 text-wrong-700'],
   rejected: ['⛔ Rejected', 'bg-wrong-50 text-wrong-700'],

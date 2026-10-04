@@ -157,6 +157,7 @@ const NAV = [
       { to: '/notes', label: 'Admin notes', icon: BookIcon, cap: 'dashboard.view' },
       { to: '/exports', label: 'Exports', icon: DocIcon, cap: 'dashboard.view' },
       { to: '/blocks', label: 'Blocked', icon: ShieldIcon },
+      { to: '/owner-photos', label: 'Verify owners 📸', icon: ShieldIcon, cap: 'dashboard.view', badge: 'owner_photos' },
       { to: '/owner-claims', label: 'Owner claims', icon: ShieldIcon, cap: 'dashboard.view' },
       { to: '/data-requests', label: 'Data requests', icon: ShieldIcon, cap: 'dashboard.view', badge: 'data_requests' },
       { to: '/security', label: 'Security', icon: ShieldIcon },
@@ -233,6 +234,7 @@ function Badge({ kind, b }) {
     hot_leads: [b.hot_leads, String(b.hot_leads), 'bg-wrong-500 text-white'],
     data_requests: [b.data_requests, `${b.data_requests} waiting`, 'bg-watch-50 text-watch-700'],
     support_emails: [b.support_emails, `${b.support_emails} new`, 'bg-wrong-500 text-white'],
+    owner_photos: [b.owner_photos, `${b.owner_photos} to check`, 'bg-wrong-500 text-white'],
   }[kind] || [0];
   return n ? <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tone}`}>{text}</span> : null;
 }

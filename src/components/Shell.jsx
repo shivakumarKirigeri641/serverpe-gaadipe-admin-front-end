@@ -70,6 +70,8 @@ const NAV = [
       { to: '/customer-intelligence', label: 'Customer intelligence', icon: UsersIcon, cap: 'customers.view' },
       { to: '/retention', label: 'Retention & repeat', icon: ChartIcon, cap: 'customers.view' },
       { to: '/hot-leads', label: 'Hot leads 🔥', icon: RupeeIcon, cap: 'dashboard.view', badge: 'hot_leads' },
+      // Feedback and testimonials (user, 2026-10-04: the page existed but was not in the menu).
+      { to: '/feedback', label: 'Feedback & testimonials', icon: StarIcon },
     ],
   },
   {
@@ -196,7 +198,7 @@ const GROUP_ICON = {
 const ALSO = {
   '/finance/export': 'gst tax accounting csv', '/finance': 'gst revenue', '/payments': 'razorpay transactions', '/vehicles': 'rc registration number plate',
   '/health': 'status uptime', '/jobs': 'cron background', '/audit': 'log history who', '/people': 'admins users roles', '/flags': 'switch maintenance',
-  '/configuration': 'price gst fee settings', '/exports': 'csv download', '/where': 'map states rto geo', '/activity': 'stream live events', '/graphs/overview': 'charts plots graphs trends',
+  '/configuration': 'price gst fee settings', '/exports': 'csv download', '/where': 'map states rto geo', '/activity': 'stream live events', '/feedback': 'reviews ratings stars testimonials', '/graphs/overview': 'charts plots graphs trends',
 };
 /* Menu items matching the typed words — every word must appear in the name, group or keywords. */
 function menuMatches(nav, q) {

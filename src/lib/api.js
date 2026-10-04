@@ -336,6 +336,9 @@ export const api = {
   // The Graphs section (2026-10-03).
   hotLeads: () => call('/hot-leads', { quiet: true }),
   dataRequests: () => call('/data-requests'),
+  supportInbox: (params) => call(`/support-inbox${qs(params)}`),
+  checkSupportInbox: () => call('/support-inbox/check', { method: 'POST', body: {} }),
+  supportInboxDone: (id, done = true) => call(`/support-inbox/${id}/done`, { method: 'POST', body: { done } }),
   eraseDataRequest: (id) => call(`/data-requests/${id}/erase`, { method: 'POST', body: { confirm: true } }),
   rejectDataRequest: (id, note) => call(`/data-requests/${id}/reject`, { method: 'POST', body: { note } }),
   adReturn: (params) => call(`/ad-return${qs(params)}`),

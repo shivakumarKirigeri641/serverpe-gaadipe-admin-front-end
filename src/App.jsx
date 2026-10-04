@@ -78,6 +78,7 @@ import OwnerClaims from './pages/ops/OwnerClaims.jsx';
 import HotLeads from './pages/ops/HotLeads.jsx';
 import AdReturn from './pages/ops/AdReturn.jsx';
 import DataRequests from './pages/ops/DataRequests.jsx';
+import SupportInbox from './pages/ops/SupportInbox.jsx';
 import Feedback from './pages/Feedback.jsx';
 import Settings from './pages/Settings.jsx';
 import Policies from './pages/Policies.jsx';
@@ -181,6 +182,7 @@ export default function App() {
       <Route path="/hot-leads" element={<HotLeads />} />
       <Route path="/ad-return" element={<AdReturn />} />
       <Route path="/data-requests" element={<DataRequests />} />
+      <Route path="/support-inbox" element={<SupportInbox />} />
       <Route path="/feedback" element={<Feedback />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/policies" element={<Policies />} />

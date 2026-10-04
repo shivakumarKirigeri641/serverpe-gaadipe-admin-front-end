@@ -148,6 +148,7 @@ const NAV = [
     group: 'Operations',
     items: [
       { to: '/alerts', label: 'Alerts', icon: BellIcon, badge: 'alerts' },
+      { to: '/support-inbox', label: 'Support inbox', icon: LifebuoyIcon, cap: 'dashboard.view', badge: 'support_emails' },
       { to: '/alert-rules', label: 'Alert rules', icon: BellIcon, cap: 'dashboard.view' },
       { to: '/tasks', label: 'Tasks', icon: ListIcon, cap: 'dashboard.view' },
       { to: '/notes', label: 'Admin notes', icon: BookIcon, cap: 'dashboard.view' },
@@ -228,6 +229,7 @@ function Badge({ kind, b }) {
     vehicles: [b.vehicles_today, `${b.vehicles_today} today`, 'bg-brand/10 text-brand-deep'],
     hot_leads: [b.hot_leads, String(b.hot_leads), 'bg-wrong-500 text-white'],
     data_requests: [b.data_requests, `${b.data_requests} waiting`, 'bg-watch-50 text-watch-700'],
+    support_emails: [b.support_emails, `${b.support_emails} new`, 'bg-wrong-500 text-white'],
   }[kind] || [0];
   return n ? <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tone}`}>{text}</span> : null;
 }

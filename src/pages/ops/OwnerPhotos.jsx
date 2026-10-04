@@ -73,7 +73,10 @@ export default function OwnerPhotos() {
       </div>
 
       {error && !d ? <Failed error={error} onRetry={load} /> : !d ? <Skeleton rows={6} /> : tab === 'settings' ? (
-        <Settings s={d.settings} counts={c} canSet={canSet} onSaved={load} />
+        <>
+          <Settings s={d.settings} counts={c} canSet={canSet} onSaved={load} />
+          <CheckAlerts canSet={canSet} />
+        </>
       ) : tab === 'review' ? (
         !d.rows.length ? (
           <div className="card p-8 text-center text-sm text-muted">Nothing waiting. New RC photos appear here, and you get a ping when one arrives.</div>
@@ -330,6 +333,96 @@ function Settings({ s, counts, canSet, onSaved }) {
           <div className="mt-1 text-2xs text-muted">Samples: {'{{1}}'} Ramesh · {'{{2}}'} KA01AB1234 · {'{{3}}'} approved ✅</div>
         </div>
         {canSet && <button type="button" className="btn-primary mt-4" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button>}
+      </section>
+    </div>
+  );
+}
+
+/*
+ * "SOMEONE CHECKED YOUR VEHICLE" (user, 2026-10-04; back end
+ * src/owners/checkAlerts.js): the verified owner is told when another number
+ * checks their vehicle — vehicle, time and that number's last 4 digits.
+ */
+const ALERT_TEMPLATE = 'Vehicle check alert: your vehicle {{1}} was checked on GaadiPe on {{2}} by a mobile number ending {{3}}. They see public vehicle details only, never your name, number or address. Reply to this message if you would like to hide your vehicle from other people\'s checks.';
+const ALERT_STATUS = { sent: ['✓ Told on WhatsApp', 'text-good-700'], template: ['📨 Template', 'text-brand-deep'],
+  summarised: ['✓ In a summary', 'text-good-700'], pending: ['⏳ When they next write', 'text-watch-700'] };
+
+function CheckAlerts({ canSet }) {
+  const [d, setD] = useState(null);
+  const [f, setF] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = useCallback(() => api.ownerCheckAlerts().then((x) => { setD(x); setF(x.settings); }).catch(() => {}), []);
+  useEffect(() => { load(); }, [load]);
+  if (!d || !f) return null;
+  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.type === 'checkbox' ? String(e.target.checked) : e.target.value }));
+  const save = async () => {
+    setBusy(true);
+    try { await api.saveOwnerCheckAlertSettings(f); snack('Saved'); load(); }
+    catch (e) { snack(e.message || 'Could not save', 'wrong'); } finally { setBusy(false); }
+  };
+  return (
+    <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <section className="card p-4">
+        <h2 className="text-sm font-bold text-ink">🔔 Tell owners when their vehicle is checked</h2>
+        <p className="mt-1 text-xs text-body">
+          When another number checks a vehicle with a verified owner, the owner gets: “<i>KA31N8147 was checked on GaadiPe on 4 Oct, 4:12 pm,
+          by a number ending ••••1234</i>” with a <b>Hide from others</b> button. Only the last 4 digits are shared, never more.
+          The same number checking again within 24 hours is not repeated.
+        </p>
+        <Row label="Switch on" hint="Off: nobody is told.">
+          <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={f.owner_check_alert_on === 'true'} onChange={set('owner_check_alert_on')} disabled={!canSet} /> On</label>
+        </Row>
+        <Row label="Only owners with a running report" hint="Recommended: the alert is part of what their report gives them.">
+          <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={f.owner_check_alert_need_report === 'true'} onChange={set('owner_check_alert_need_report')} disabled={!canSet} /> Yes</label>
+        </Row>
+        <Row label="Tell the person checking" hint="A line on their result: the owner is told, with the last 4 digits of their number. Keeps it fair and legal.">
+          <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={f.owner_check_alert_tell_checker === 'true'} onChange={set('owner_check_alert_tell_checker')} disabled={!canSet} /> Yes</label>
+        </Row>
+        <Row label="Most alerts per owner a day" hint="The rest go into one summary when they next write.">
+          <input type="number" min="1" className="input !w-24" value={f.owner_check_alert_per_day} onChange={set('owner_check_alert_per_day')} disabled={!canSet} />
+        </Row>
+        <Row label="Use the template (chat closed)" hint="Switch on only after Meta approves it. Off: told in a summary when they next write.">
+          <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={f.owner_check_alert_template_on === 'true'} onChange={set('owner_check_alert_template_on')} disabled={!canSet} /> On</label>
+        </Row>
+        <Row label="Template name / language">
+          <div className="flex gap-2">
+            <input className="input font-mono text-sm" value={f.owner_check_alert_template_name} onChange={set('owner_check_alert_template_name')} disabled={!canSet} />
+            <input className="input !w-20 font-mono text-sm" value={f.owner_check_alert_template_language} onChange={set('owner_check_alert_template_language')} disabled={!canSet} />
+          </div>
+        </Row>
+        <div className="mt-3 rounded-lg bg-shell p-3 text-xs text-body">
+          <div className="mb-1 flex items-center justify-between"><b className="text-ink">Submit this to Meta</b><CopyButton value={ALERT_TEMPLATE} /></div>
+          <div>Category: <b>Utility</b> · Name: <span className="font-mono">{f.owner_check_alert_template_name || 'vehicle_check_alert'}</span> · Language: English</div>
+          <p className="mt-2 rounded bg-white p-2 font-mono text-[11px] text-ink">{ALERT_TEMPLATE}</p>
+          <div className="mt-1 text-2xs text-muted">Samples: {'{{1}}'} KA01AB1234 · {'{{2}}'} 4 Oct, 4:12 pm · {'{{3}}'} 1234</div>
+        </div>
+        {canSet && <button type="button" className="btn-primary mt-4" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button>}
+      </section>
+
+      <section className="card p-4">
+        <h2 className="text-sm font-bold text-ink">Latest check alerts</h2>
+        <p className="mt-1 text-2xs text-muted">Last 24 hours: {d.totals.today} · waiting to be told: {d.totals.waiting} · all time: {d.totals.total}</p>
+        {!d.rows.length ? <p className="py-6 text-center text-sm text-muted">None yet.</p> : (
+          <table className="mt-2 w-full text-sm">
+            <thead><tr className="border-b border-line text-left text-2xs text-muted">
+              <th className="py-1.5">Vehicle</th><th>Owner</th><th>Checked by</th><th>When</th><th>Owner told</th>
+            </tr></thead>
+            <tbody>
+              {d.rows.map((r) => {
+                const [l, t] = ALERT_STATUS[r.status] || [r.status, 'text-muted'];
+                return (
+                  <tr key={r.id} className="border-b border-line/60">
+                    <td className="py-1.5 font-mono text-xs">{plate(r.reg_no)}</td>
+                    <td className="tabular text-2xs">{r.owner}</td>
+                    <td className="tabular text-2xs">••••{r.checker_last4} <span className="text-muted">({r.channel})</span></td>
+                    <td className="text-2xs text-muted">{ago(r.created_at)}</td>
+                    <td className={`text-2xs ${t}`}>{l}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </section>
     </div>
   );

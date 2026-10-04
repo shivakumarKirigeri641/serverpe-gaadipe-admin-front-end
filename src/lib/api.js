@@ -369,6 +369,8 @@ export const api = {
   ownerPhotoFile: (id) => pdf(`/owner-photos/${id}/photo`),
   ownerPhotoAction: (id, action, body = {}) => call(`/owner-photos/${id}/${action}`, { method: 'POST', body }),
   saveOwnerPhotoSettings: (settings) => call('/owner-photos/settings', { method: 'PUT', body: { settings } }),
+  ownerCheckAlerts: () => call('/owner-check-alerts'),
+  saveOwnerCheckAlertSettings: (settings) => call('/owner-check-alerts/settings', { method: 'PUT', body: { settings } }),
 
   reports: (params) => call(`/reports${qs(params)}`),
   invoices: (params) => call(`/invoices${qs(params)}`),

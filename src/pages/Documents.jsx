@@ -22,6 +22,11 @@ export default function Documents() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(null);
   const [page, setPage] = useState(1);
+  /* Customer view = the PDF the customer received (masked). Admin view = every
+     field as stored, unmasked, made fresh for the admin only (user, 2026-10-04). */
+  const mayOpen = allowed(can, 'vehicles.view_sensitive');
+  const [view, setView] = useState('customer');
+  const adminView = view === 'admin' && mayOpen;
 
   useEffect(() => { setPage(1); }, [tab, q]);
 
@@ -46,7 +51,8 @@ export default function Documents() {
     setBusy(id);
     try {
       const { blob, filename } = isReports
-        ? await api.reportPdf(id, download) : await api.invoicePdf(id, download);
+        ? await (adminView ? api.reportAdminPdf(id, download) : api.reportPdf(id, download))
+        : await api.invoicePdf(id, download);
       download ? saveBlob(blob, filename) : openBlob(blob);
     } catch (e) { window.alert(e.message); } finally { setBusy(null); }
   };
@@ -70,6 +76,25 @@ export default function Documents() {
             </button>
           ))}
       </div>
+
+      {isReports && mayOpen && (
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <div className="inline-flex rounded-lg border border-line p-0.5" role="radiogroup" aria-label="Report view">
+            {[['customer', '👤 Customer view'], ['admin', '🔓 Admin view (all open)']].map(([k, label]) => (
+              <button key={k} type="button" role="radio" aria-checked={view === k} onClick={() => setView(k)}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${view === k
+                  ? (k === 'admin' ? 'bg-wrong-500 text-white' : 'bg-brand text-white') : 'text-muted hover:text-ink'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <span className="text-2xs text-muted">
+            {adminView
+              ? 'View and Save open an ADMIN COPY: every detail as stored, unmasked. Made fresh, never sent to the customer, and logged.'
+              : 'View and Save open the exact PDF the customer received — personal details masked.'}
+          </span>
+        </div>
+      )}
 
       <div className="card">
         {error ? <Failed error={error} onRetry={load} />

@@ -369,6 +369,7 @@ export const api = {
   reports: (params) => call(`/reports${qs(params)}`),
   invoices: (params) => call(`/invoices${qs(params)}`),
   reportPdf: (id, download) => pdf(`/reports/${id}/file${download ? '?download=1' : ''}`),
+  reportAdminPdf: (id, download) => pdf(`/reports/${id}/admin-view${download ? '?download=1' : ''}`),
   invoicePdf: (id, download) => pdf(`/invoices/${id}/file${download ? '?download=1' : ''}`),
 
   settings: () => call('/settings'),

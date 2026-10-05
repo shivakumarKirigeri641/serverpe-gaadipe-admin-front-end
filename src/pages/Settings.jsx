@@ -32,6 +32,17 @@ const GROUPS = [
     },
   },
   {
+    // (user, 2026-10-05) The paid backup used when ULIP's VAHAN fails.
+    title: 'RC backup (IDSPay, paid)',
+    keys: {
+      rc_backup_paid_only: 'true = the backup is used ONLY for paying customers: a free check waits for ULIP (waiting list) and is offered the full report at once, whose lookup uses the backup. false = free checks use the backup too (₹3 each — at ~7 payers in 100 this loses money). Recommended: true.',
+      rc_backup_daily_limit: 'Most backup calls in a day (IST). Past it, ULIP failures stand. Each call costs the price below.',
+      rc_backup_cost_paise: 'What one backup call costs, in paise, before GST (300 = ₹3). Used for the Profit & loss.',
+      pnl_ads_daily_paise: 'Profit & loss: GaadiPe ad spend counted for a day not entered on the Ad spend page, in paise (15000 = ₹150).',
+      pnl_fixed_monthly_paise: 'Profit & loss: fixed costs a month — server, domain, email — in paise (e.g. 150000 = ₹1,500).',
+    },
+  },
+  {
     title: 'Reports and alerts',
     keys: {
       free_view_detail: 'How much a FREE check gives away: labels (names the lapsed documents and challan count), count (only how many things need attention — recommended), none (vehicle identity only). Applies to the vehicle page, My vehicles and the every-few-days email.',

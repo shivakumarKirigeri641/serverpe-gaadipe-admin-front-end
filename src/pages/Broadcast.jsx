@@ -26,6 +26,8 @@ import { Banner, Chip, Empty, Failed, Modal, Spinner, Stat, Table } from '../com
 // fixed words need room too.
 const VAR_MAX = 900;
 
+import { BatchSend, PlansSection } from './BroadcastPlans.jsx';
+
 export default function Broadcast({ tabs }) {
   const { can } = useSession();
   const canSend = allowed(can, 'settings');
@@ -36,6 +38,7 @@ export default function Broadcast({ tabs }) {
   const [q, setQ] = useState('');
   // The broadcast just queued: its live progress opens straight away.
   const [live, setLive] = useState(null);
+  const [plansKey, setPlansKey] = useState(0);
 
   const load = useCallback(() => {
     api.broadcasts({ filter: filter.join(','), q: q || undefined }).then(setData).catch(setError);
@@ -61,9 +64,11 @@ export default function Broadcast({ tabs }) {
 
           {canSend
             ? <Compose data={data} filter={filter} setFilter={setFilter} q={q} setQ={setQ}
-                onQueued={(b) => { load(); if (b?.id) setLive(b); }} />
+                onQueued={(b) => { load(); if (b?.id) setLive(b); }}
+                onPlanned={() => { load(); setPlansKey((k) => k + 1); }} />
             : <Banner tone="info" className="mt-3">Your account cannot send broadcasts.</Banner>}
 
+          <PlansSection canSend={canSend} refreshKey={plansKey} />
           <Sent rows={data.broadcasts} onChange={load} canSend={canSend} />
           {live && <Targets broadcast={live} canSend={canSend} onChange={load} onClose={() => { setLive(null); load(); }} />}
         </>
@@ -78,7 +83,7 @@ export default function Broadcast({ tabs }) {
 const SEGMENT_SHORT = { hi_only: 'Said Hi only', checked: 'Checked, unpaid', lapsed: 'Lapsed', active: 'Active', never_broadcast: 'No broadcast yet' };
 const SEGMENT_TONE = { hi_only: 'watch', checked: 'info', lapsed: 'wrong', active: 'good', never_broadcast: 'info' };
 
-function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
+function Compose({ data, filter, setFilter, q, setQ, onQueued, onPlanned }) {
   const templates = data.templates?.templates || [];
   const [name, setName] = useState('');
   const [lang, setLang] = useState('');
@@ -89,6 +94,7 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [confirming, setConfirming] = useState(false);
+  const [batching, setBatching] = useState(false);
 
   const tpl = useMemo(
     () => templates.find((t) => t.name === name && t.language === lang) || null,
@@ -320,7 +326,7 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
       {limit && chosen.length > 0 && (
         <Banner tone={chosen.length > limit.remaining ? 'wrong' : 'info'} className="mt-4">
           {chosen.length > limit.remaining
-            ? <>⚠️ <b>{count(chosen.length)}</b> chosen, but only <b>{count(limit.remaining)}</b> of the {count(limit.limit)}-person daily WhatsApp limit is left. The rest would fail — choose fewer, or send later.</>
+            ? <>⚠️ <b>{count(chosen.length)}</b> chosen, but only <b>{count(limit.remaining)}</b> of the {count(limit.limit)}-person daily WhatsApp limit is left. The rest would fail — use <b>Send in batches</b>, choose fewer, or send later.</>
             : <>WhatsApp limit: {count(limit.used)} of {count(limit.limit)} used in the last 24 hours — this broadcast fits ({count(limit.remaining)} left). QuizPe shares the same limit.</>}
         </Banner>
       )}
@@ -331,6 +337,11 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
         <button className="btn-primary" onClick={() => setConfirming(true)}
           disabled={!preview?.ok || chosen.length === 0 || busy}>
           Send to {count(chosen.length)}
+        </button>
+        <button className="btn-quiet" onClick={() => setBatching(true)}
+          disabled={!preview?.ok || chosen.length === 0 || busy}
+          title="Send in parts, each 24 hours apart, never over the WhatsApp limit">
+          Send in batches…
         </button>
       </div>
 
@@ -352,6 +363,11 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
         </div>
       )}
 
+      {batching && (
+        <BatchSend body={body()} chosen={chosen.length} template={`${name} · ${lang}`} limit={limit}
+          onClose={() => setBatching(false)}
+          onCreated={() => { setBatching(false); setPicked(new Set()); setPreview(null); setNote(''); onPlanned?.(); }} />
+      )}
       {confirming && (
         <Confirm chosen={chosen.length} template={`${name} · ${lang}`} busy={busy}
           onClose={() => setConfirming(false)} onSend={send} />

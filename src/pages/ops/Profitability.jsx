@@ -41,6 +41,97 @@ export default function Profitability() {
   );
 }
 
+/*
+ * PROFIT & LOSS (user, 2026-10-05; back end src/admin/profitability.js): the
+ * period as a statement — what reports brought in, every cost down to ads and
+ * fixed costs, and what is left. The two assumptions (ads on days not entered,
+ * fixed costs a month) are edited right here.
+ */
+function ProfitAndLoss({ p, onSaved }) {
+  const { can } = useSession();
+  const canSet = allowed(can, 'settings');
+  const [ads, setAds] = useState(String(p.ads_daily_paise / 100));
+  const [fixed, setFixed] = useState(String(p.fixed_monthly_paise / 100));
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setAds(String(p.ads_daily_paise / 100)); setFixed(String(p.fixed_monthly_paise / 100)); }, [p.ads_daily_paise, p.fixed_monthly_paise]);
+  const save = async () => {
+    const a = Math.round(Number(ads) * 100); const f = Math.round(Number(fixed) * 100);
+    if (!Number.isFinite(a) || a < 0 || !Number.isFinite(f) || f < 0) { snack('Enter amounts in rupees', 'wrong'); return; }
+    setBusy(true);
+    try { await api.saveSettings({ pnl_ads_daily_paise: String(a), pnl_fixed_monthly_paise: String(f) }); snack('Saved'); onSaved(); }
+    catch (e) { snack(e.message || 'Could not save', 'wrong'); } finally { setBusy(false); }
+  };
+  const Row = ({ label, v, note, sub, strong, minus, tone }) => (
+    <div className={`flex items-baseline justify-between gap-3 py-1.5 ${strong ? 'border-t border-line pt-2 font-semibold text-ink' : 'text-body'}`}>
+      <span className={sub ? 'pl-4 text-2xs text-muted' : 'text-sm'}>{label}{note && <span className="ml-1 text-2xs font-normal text-muted">{note}</span>}</span>
+      <span className={`tabular text-sm ${tone || ''}`}>{minus && v > 0 ? '− ' : ''}{rs(v)}</span>
+    </div>
+  );
+  const red = (v) => (v < 0 ? 'text-wrong-700' : 'text-good-700');
+  return (
+    <div className="card p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-sm font-semibold text-ink">Profit &amp; loss — {p.days} day{p.days === 1 ? '' : 's'}</h2>
+        <span className="text-2xs text-muted">GST on costs is left out — you claim it back as input credit.</span>
+      </div>
+      <div className="mt-3 grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+        <div>
+          <Row label="Customers paid" v={p.revenue_paise} note={`${p.paid_reports} report${p.paid_reports === 1 ? '' : 's'}`} />
+          <Row label="GST you pay the government" v={p.gst_paise} minus />
+          {p.refund_paise > 0 && <Row label="Refunds" v={p.refund_paise} minus />}
+          <Row label="Your revenue" v={p.net_revenue_paise} strong />
+          <Row label="Razorpay fee" v={p.gateway_paise} minus />
+          <Row label="ULIP (VAHAN, e-Challan, FASTag)" v={p.ulip_cost_paise} minus />
+          <Row label="RC backup (IDSPay)" v={p.rc_backup_cost_paise} minus note={`${p.rc_backup_calls} call${p.rc_backup_calls === 1 ? '' : 's'} × ₹${(p.rc_backup_rate_paise / 100).toFixed(2)}`} />
+          <Row label="WhatsApp & SMS" v={p.messaging_paise} minus />
+          <Row label="Left from reports" v={p.operating_paise} strong tone={red(p.operating_paise)} />
+          <Row label="Meta ads — GaadiPe" v={p.ads_paise} minus
+            note={p.ads_assumed_days ? `${p.ads_entered_days} day(s) entered + ${p.ads_assumed_days} × ₹${(p.ads_daily_paise / 100).toFixed(0)} assumed` : 'as entered'} />
+          <Row label="Fixed costs (server, domain, email…)" v={p.fixed_paise} minus note={`₹${(p.fixed_monthly_paise / 100).toFixed(0)}/month`} />
+          <div className={`mt-1 flex items-baseline justify-between rounded-lg px-3 py-2 ${p.profit_paise < 0 ? 'bg-wrong-50' : 'bg-good-50'}`}>
+            <span className="text-sm font-bold text-ink">{p.profit_paise < 0 ? 'Loss' : 'Profit'} for the period</span>
+            <span className={`tabular text-lg font-bold ${red(p.profit_paise)}`}>{rs(p.profit_paise)}</span>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg bg-shell p-3">
+              <div className="text-2xs text-muted">Take-home per report</div>
+              <div className="tabular text-lg font-semibold text-ink">{p.take_home_per_report_paise == null ? '—' : rs(p.take_home_per_report_paise)}</div>
+              <div className="text-2xs text-muted">after GST, Razorpay, messages</div>
+            </div>
+            <div className="rounded-lg bg-shell p-3">
+              <div className="text-2xs text-muted">Per report, after everything</div>
+              <div className={`tabular text-lg font-semibold ${p.per_report_profit_paise == null ? 'text-ink' : red(p.per_report_profit_paise)}`}>{p.per_report_profit_paise == null ? '—' : rs(p.per_report_profit_paise)}</div>
+              <div className="text-2xs text-muted">incl. backup, ads, fixed</div>
+            </div>
+          </div>
+          {p.take_home_per_report_paise > 0 && (
+            <p className="rounded-lg bg-shell p-3 text-xs text-body">
+              To cover ads and fixed costs at this rate you need about{' '}
+              <b className="text-ink">{Math.ceil((p.ads_paise + p.fixed_paise) / p.take_home_per_report_paise)} reports</b> in these {p.days} days
+              (about {Math.ceil((p.ads_paise + p.fixed_paise) / p.take_home_per_report_paise / p.days)} a day) — you had {p.paid_reports}.
+            </p>
+          )}
+          <div className="rounded-lg border border-line p-3">
+            <div className="text-2xs font-semibold uppercase tracking-wider text-muted">Assumptions</div>
+            <label className="mt-2 flex items-center justify-between gap-2 text-xs text-body">
+              Ads a day, when not entered on Ad spend
+              <span className="flex items-center gap-1">₹<input className="input !w-24 !py-1 text-sm" value={ads} onChange={(e) => setAds(e.target.value)} disabled={!canSet} /></span>
+            </label>
+            <label className="mt-2 flex items-center justify-between gap-2 text-xs text-body">
+              Fixed costs a month (server, domain, email…)
+              <span className="flex items-center gap-1">₹<input className="input !w-24 !py-1 text-sm" value={fixed} onChange={(e) => setFixed(e.target.value)} disabled={!canSet} /></span>
+            </label>
+            {canSet && <button type="button" className="btn-primary mt-3 !py-1.5 text-xs" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button>}
+            <p className="mt-2 text-2xs text-muted">Enter real daily ad spend on the <Link to="/ad-spend" className="text-brand hover:underline">Ad spend</Link> page — entered days replace the assumption.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Overview({ params, pkey }) {
   const [grain, setGrain] = useState('');
   const [d, setD] = useState(null);
@@ -69,6 +160,7 @@ function Overview({ params, pkey }) {
         {tile('Net contribution', rs(t.net_paise), 'Net revenue less every cost above.', t.net_paise < 0 ? 'text-wrong-700' : 'text-good-700')}
         {tile('Margin', t.margin_pct == null ? '—' : `${t.margin_pct}%`, 'Net contribution ÷ net revenue.')}
       </div>
+      {d.pnl && <ProfitAndLoss p={d.pnl} onSaved={load} />}
       <div className="card p-4">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-ink">Revenue, costs and net — by {d.grain}</h2>

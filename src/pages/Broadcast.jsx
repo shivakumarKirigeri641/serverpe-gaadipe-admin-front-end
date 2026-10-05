@@ -75,8 +75,8 @@ export default function Broadcast({ tabs }) {
 /* ───────────────────────────────────────────────────────── composing ── */
 
 /* The audience column: short enough to sit beside a name. */
-const SEGMENT_SHORT = { hi_only: 'Said Hi only', checked: 'Checked, unpaid', lapsed: 'Lapsed', active: 'Active' };
-const SEGMENT_TONE = { hi_only: 'watch', checked: 'info', lapsed: 'wrong', active: 'good' };
+const SEGMENT_SHORT = { hi_only: 'Said Hi only', checked: 'Checked, unpaid', lapsed: 'Lapsed', active: 'Active', never_broadcast: 'No broadcast yet' };
+const SEGMENT_TONE = { hi_only: 'watch', checked: 'info', lapsed: 'wrong', active: 'good', never_broadcast: 'info' };
 
 function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
   const templates = data.templates?.templates || [];
@@ -274,6 +274,10 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued }) {
           );
         })}
       </div>
+      <p className="mt-1.5 text-2xs text-muted">
+        <b>Never got a broadcast</b> on its own lists everyone no broadcast has reached yet (a failed or skipped send does not count).
+        Ticked with another audience, it narrows that audience — e.g. <i>Said Hi only</i> + <i>Never got a broadcast</i>.
+      </p>
 
       <Table className="mt-2" head={
         <tr>

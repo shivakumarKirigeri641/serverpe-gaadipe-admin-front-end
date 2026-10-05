@@ -33,9 +33,13 @@ const GROUPS = [
   },
   {
     // (user, 2026-10-05) The paid backup used when ULIP's VAHAN fails.
-    title: 'RC backup (IDSPay, paid)',
+    title: 'Vehicle data backups — eChallan.app (free) and IDSPay (paid)',
     keys: {
       rc_backup_paid_only: 'true = the backup is used ONLY for paying customers: a free check waits for ULIP (waiting list) and is offered the full report at once, whose lookup uses the backup. false = free checks use the backup too (₹3 each — at ~7 payers in 100 this loses money). Recommended: true.',
+      echallan_app_enabled: 'eChallan.app — the FREE second source, asked after ULIP and before IDSPay (RC and challans). true / false.',
+      echallan_app_timeout_ms: 'How long to wait for eChallan.app before moving on to IDSPay, in milliseconds (8000 = 8 s).',
+      echallan_app_credits: 'Free eChallan.app credits left, as their last answer said (updated by itself).',
+      echallan_app_low_credits: 'Ping me when eChallan.app credits fall to this many.',
       rc_backup_balance_paise: 'Your IDSPay balance, in paise (e.g. 50000 = ₹500). Enter it after each recharge; every call takes off ₹3 + GST. Blank = not tracked.',
       rc_backup_low_balance_paise: 'When the balance reaches this (5000 = ₹50), the backup goes back to paying customers only (rc_backup_paid_only = true) and you get a ping.',
       rc_backup_store_full: 'true = IDSPay’s answer is kept whole in your cache (owner name, chassis, engine, address); customers always see it masked. false = masked before saving.',

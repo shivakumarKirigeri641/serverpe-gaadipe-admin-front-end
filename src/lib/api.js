@@ -205,6 +205,7 @@ export const api = {
   healthServices: () => call('/health/services', { quiet: true }),
   alerts: (params) => call(`/alerts${qs(params)}`),
   ackAlert: (id) => call(`/alerts/${id}/ack`, { method: 'POST' }),
+  metaNews: () => call('/meta-news', { quiet: true }),
   resolveAlert: (id, note) => call(`/alerts/${id}/resolve`, { method: 'POST', body: { note } }),
   feed: (since) => call(`/feed${qs({ since })}`, { quiet: true }),
   badges: () => call('/badges', { quiet: true }),

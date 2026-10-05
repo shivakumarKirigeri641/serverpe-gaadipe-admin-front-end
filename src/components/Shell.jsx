@@ -1,3 +1,4 @@
+import MetaNews from './MetaNews.jsx';
 import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { ConnectionStatus, RefreshButton } from './HeaderStatus.jsx';
@@ -476,6 +477,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
         <main className="m-enter px-4 py-5 lg:px-6"><OutageBanner />{children}</main>
       </div>
       <Toasts />
+      <MetaNews />
       <IconTips />
       <CommandPalette nav={visibleNav} can={can} open={palette} onClose={() => setPalette(false)} />
     </div>

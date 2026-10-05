@@ -36,6 +36,9 @@ const GROUPS = [
     title: 'RC backup (IDSPay, paid)',
     keys: {
       rc_backup_paid_only: 'true = the backup is used ONLY for paying customers: a free check waits for ULIP (waiting list) and is offered the full report at once, whose lookup uses the backup. false = free checks use the backup too (₹3 each — at ~7 payers in 100 this loses money). Recommended: true.',
+      rc_backup_balance_paise: 'Your IDSPay balance, in paise (e.g. 50000 = ₹500). Enter it after each recharge; every call takes off ₹3 + GST. Blank = not tracked.',
+      rc_backup_low_balance_paise: 'When the balance reaches this (5000 = ₹50), the backup goes back to paying customers only (rc_backup_paid_only = true) and you get a ping.',
+      rc_backup_store_full: 'true = IDSPay’s answer is kept whole in your cache (owner name, chassis, engine, address); customers always see it masked. false = masked before saving.',
       rc_backup_daily_limit: 'Most backup calls in a day (IST). Past it, ULIP failures stand. Each call costs the price below.',
       rc_backup_cost_paise: 'What one backup call costs, in paise, before GST (300 = ₹3). Used for the Profit & loss.',
       pnl_ads_daily_paise: 'Profit & loss: GaadiPe ad spend counted for a day not entered on the Ad spend page, in paise (15000 = ₹150).',

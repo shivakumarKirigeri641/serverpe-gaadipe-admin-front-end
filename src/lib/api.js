@@ -335,6 +335,7 @@ export const api = {
   whyNotPaid: (params) => call(`/why-not-paid${qs(params)}`),
   // The Graphs section (2026-10-03).
   hotLeads: () => call('/hot-leads', { quiet: true }),
+  checksByCustomer: (params) => call(`/checks-by-customer${qs(params)}`, { quiet: true }),
   dataRequests: () => call('/data-requests'),
   giftCustomers: (params) => call(`/gifts/customers${qs(params)}`),
   grantGifts: (body) => call('/gifts/grant', { method: 'POST', body }),

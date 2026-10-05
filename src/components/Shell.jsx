@@ -70,6 +70,7 @@ const NAV = [
       { to: '/customer-intelligence', label: 'Customer intelligence', icon: UsersIcon, cap: 'customers.view' },
       { to: '/retention', label: 'Retention & repeat', icon: ChartIcon, cap: 'customers.view' },
       { to: '/hot-leads', label: 'Hot leads 🔥', icon: RupeeIcon, cap: 'dashboard.view', badge: 'hot_leads' },
+      { to: '/checks-by-customer', label: 'Checks per customer', icon: CarIcon, cap: 'dashboard.view' },
       // Feedback and testimonials (user, 2026-10-04: the page existed but was not in the menu).
       { to: '/feedback', label: 'Feedback & testimonials', icon: StarIcon },
     ],

@@ -7,6 +7,7 @@ import { count, rupees, ago } from '../lib/format';
 import Shell from '../components/Shell.jsx';
 import { Chip, Failed, Hint, SkeletonCards } from '../components/ui.jsx';
 import { TOOLTIP, AXIS } from './analytics/kit.jsx';
+import { when } from './BroadcastRoom.jsx';
 
 /**
  * HOME (user, 2026-09-23).
@@ -177,7 +178,12 @@ export default function Home() {
  */
 function WaLimit() {
   const [l, setL] = useState(null);
-  useEffect(() => { api.waLimit().then(setL).catch(() => {}); }, []);
+  // The broadcast room (user, 2026-10-06): how many fit now, and when more frees.
+  const [room, setRoom] = useState(null);
+  useEffect(() => {
+    api.waLimit().then(setL).catch(() => {});
+    api.broadcastRoom().then(setRoom).catch(() => {});
+  }, []);
   if (!l) return null;
   const pct = Math.min(100, Math.round((l.used / Math.max(1, l.limit)) * 100));
   const tone = pct >= 90 ? 'bg-wrong-500' : pct >= 70 ? 'bg-watch-500' : 'bg-good-500';
@@ -205,6 +211,12 @@ function WaLimit() {
         <span className="text-sm"><b className="text-ink">{count(l.used)}</b> <span className="text-muted">of {count(l.limit)} people · {count(l.remaining)} left</span></span>
         {q && <span className={`rounded-full px-2 py-0.5 text-2xs font-semibold ${q[1]}`}>Quality {q[0]}</span>}
         {m && <span className="text-2xs text-muted">Meta · {ago(m.checked_at)}</span>}
+        {room && (
+          <Link to="/broadcast" className="rounded-full bg-brand/10 px-2.5 py-0.5 text-2xs font-semibold text-brand hover:bg-brand/20">
+            📣 {count(room.suggest_now)} free to broadcast
+            {room.opens?.[0] ? ` · +${count(room.opens[0].n)} ${when(room.opens[0].at)}` : ''}
+          </Link>
+        )}
       </div>
     </Hint>
   );

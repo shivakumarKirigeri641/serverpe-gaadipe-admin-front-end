@@ -27,6 +27,7 @@ import { Banner, Chip, Empty, Failed, Modal, Spinner, Stat, Table } from '../com
 const VAR_MAX = 900;
 
 import { BatchSend, PlansSection } from './BroadcastPlans.jsx';
+import { CoverageLine, RoomCard, TierCard, useRoom } from './BroadcastRoom.jsx';
 
 export default function Broadcast({ tabs }) {
   const { can } = useSession();
@@ -39,6 +40,8 @@ export default function Broadcast({ tabs }) {
   // The broadcast just queued: its live progress opens straight away.
   const [live, setLive] = useState(null);
   const [plansKey, setPlansKey] = useState(0);
+  // The broadcast room (user, 2026-10-06): free now, when more frees, today's batch.
+  const [room, loadRoom] = useRoom();
 
   const load = useCallback(() => {
     api.broadcasts({ filter: filter.join(','), q: q || undefined }).then(setData).catch(setError);
@@ -62,10 +65,13 @@ export default function Broadcast({ tabs }) {
             </Banner>
           )}
 
+          <RoomCard room={room} canSend={canSend} onSent={() => { load(); loadRoom(); }} />
+          <TierCard />
+
           {canSend
-            ? <Compose data={data} filter={filter} setFilter={setFilter} q={q} setQ={setQ}
-                onQueued={(b) => { load(); if (b?.id) setLive(b); }}
-                onPlanned={() => { load(); setPlansKey((k) => k + 1); }} />
+            ? <Compose data={data} filter={filter} setFilter={setFilter} q={q} setQ={setQ} room={room}
+                onQueued={(b) => { load(); loadRoom(); if (b?.id) setLive(b); }}
+                onPlanned={() => { load(); loadRoom(); setPlansKey((k) => k + 1); }} />
             : <Banner tone="info" className="mt-3">Your account cannot send broadcasts.</Banner>}
 
           <PlansSection canSend={canSend} refreshKey={plansKey} />
@@ -83,7 +89,7 @@ export default function Broadcast({ tabs }) {
 const SEGMENT_SHORT = { hi_only: 'Said Hi only', checked: 'Checked, unpaid', lapsed: 'Lapsed', active: 'Active', never_broadcast: 'No broadcast yet' };
 const SEGMENT_TONE = { hi_only: 'watch', checked: 'info', lapsed: 'wrong', active: 'good', never_broadcast: 'info' };
 
-function Compose({ data, filter, setFilter, q, setQ, onQueued, onPlanned }) {
+function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }) {
   const templates = data.templates?.templates || [];
   const [name, setName] = useState('');
   const [lang, setLang] = useState('');
@@ -328,6 +334,8 @@ function Compose({ data, filter, setFilter, q, setQ, onQueued, onPlanned }) {
           {chosen.length > limit.remaining
             ? <>⚠️ <b>{count(chosen.length)}</b> chosen, but only <b>{count(limit.remaining)}</b> of the {count(limit.limit)}-person daily WhatsApp limit is left. The rest would fail — use <b>Send in batches</b>, choose fewer, or send later.</>
             : <>WhatsApp limit: {count(limit.used)} of {count(limit.limit)} used in the last 24 hours — this broadcast fits ({count(limit.remaining)} left). QuizPe shares the same limit.</>}
+          {/* When the ticked customers can all be reached (broadcast room, 2026-10-06). */}
+          {room && <div className="mt-1 text-2xs">For these {count(chosen.length)}: <CoverageLine room={room} n={chosen.length} /></div>}
         </Banner>
       )}
       <div className="mt-4 flex flex-wrap items-center gap-2">

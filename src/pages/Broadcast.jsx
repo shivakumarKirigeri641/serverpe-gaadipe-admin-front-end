@@ -121,12 +121,31 @@ function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }
 
   const rows = data.recipients?.rows || [];
   const fields = data.recipients?.fields || {};
-  const chosen = rows.filter((r) => picked.has(r.mobile));
+  // Ticked in the list, plus anyone Auto-select ticked that the search box hides.
+  const [auto, setAuto] = useState(null);
+  const chosen = useMemo(() => {
+    const listed = rows.filter((r) => picked.has(r.mobile));
+    const seen = new Set(listed.map((r) => r.mobile));
+    const hidden = (auto?.rows || []).filter((r) => picked.has(r.mobile) && !seen.has(r.mobile));
+    return [...listed, ...hidden];
+  }, [rows, picked, auto]);
   const toggle = (m) => setPicked((s) => { const n = new Set(s); n.has(m) ? n.delete(m) : n.add(m); return n; });
   // The Meta limit (user, 2026-10-01): never send past what is left in 24 hours.
   const [limit, setLimit] = useState(null);
   useEffect(() => { api.waLimit().then(setLimit).catch(() => {}); }, []);
   const allOn = rows.length > 0 && rows.every((r) => picked.has(r.mobile));
+  // Auto-select (user, 2026-10-06): what the broadcast room picked, within these audiences.
+  const [autoBusy, setAutoBusy] = useState(false);
+  const autoSelect = async () => {
+    setAutoBusy(true); setErr(null);
+    try {
+      const s = await api.broadcastRoomSuggest({ filter: filter.join(',') });
+      setPicked(new Set(s.rows.map((r) => r.mobile)));
+      setAuto(s); setPreview(null);
+      if (!s.rows.length) setErr('Nobody in these audiences fits right now — everyone was messaged recently, has an open chat, or was broadcast to in the last few days.');
+    } catch (e) { setErr(e.message); } finally { setAutoBusy(false); }
+  };
+  useEffect(() => { setAuto(null); }, [filter]);
 
   const body = () => ({
     template_name: name, language: lang, variables: vars,
@@ -285,6 +304,23 @@ function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }
             </button>
           );
         })}
+      </div>
+      {/* AUTO-SELECT (user, 2026-10-06): tick, within these audiences, the
+          customers who fit Meta's moving 24 hours right now — the broadcast
+          room's rules (src/admin/broadcastRoom.js). Preview and Send as usual. */}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button type="button" className="btn-quiet !py-1.5 text-2xs font-semibold" disabled={autoBusy || !room || room.suggest_now < 1}
+          onClick={autoSelect} title="Ticks the best customers in these audiences, as many as WhatsApp allows right now">
+          {autoBusy ? 'Picking…' : `⚡ Auto-select up to ${count(room?.suggest_now ?? 0)} that fit now`}
+        </button>
+        {auto && (
+          <span className="text-2xs text-body">
+            <b className="text-ink">{count(auto.size)}</b> ticked{auto.eligible > auto.size ? ` of ${count(auto.eligible)} who could get it` : ''} —
+            never had a broadcast first, then the most recently active. Left out: anyone messaged in the last 24 h or with an open chat,
+            broadcast to in the last {auto.gap_days} days, blocked, or failed twice. {count(room?.buffer ?? 0)} slots stay free for alerts.
+            {q ? ' (The search box hides some of them from the list below, but they are still ticked.)' : ''}
+          </span>
+        )}
       </div>
       <p className="mt-1.5 text-2xs text-muted">
         <b>Never got a broadcast</b> on its own lists everyone no broadcast has reached yet (a failed or skipped send does not count).

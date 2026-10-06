@@ -136,13 +136,14 @@ function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }
   const allOn = rows.length > 0 && rows.every((r) => picked.has(r.mobile));
   // Auto-select (user, 2026-10-06): what the broadcast room picked, within these audiences.
   const [autoBusy, setAutoBusy] = useState(false);
+  // Rest days: '' = the setting (7); fewer lets recently broadcast customers back in.
+  const [rest, setRest] = useState('');
   const autoSelect = async () => {
     setAutoBusy(true); setErr(null);
     try {
-      const s = await api.broadcastRoomSuggest({ filter: filter.join(',') });
+      const s = await api.broadcastRoomSuggest({ filter: filter.join(','), gap_days: rest });
       setPicked(new Set(s.rows.map((r) => r.mobile)));
       setAuto(s); setPreview(null);
-      if (!s.rows.length) setErr('Nobody in these audiences fits right now — everyone was messaged recently, has an open chat, or was broadcast to in the last few days.');
     } catch (e) { setErr(e.message); } finally { setAutoBusy(false); }
   };
   useEffect(() => { setAuto(null); }, [filter]);
@@ -313,15 +314,34 @@ function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }
           onClick={autoSelect} title="Ticks the best customers in these audiences, as many as WhatsApp allows right now">
           {autoBusy ? 'Picking…' : `⚡ Auto-select up to ${count(room?.suggest_now ?? 0)} that fit now`}
         </button>
-        {auto && (
-          <span className="text-2xs text-body">
-            <b className="text-ink">{count(auto.size)}</b> ticked{auto.eligible > auto.size ? ` of ${count(auto.eligible)} who could get it` : ''} —
-            never had a broadcast first, then the most recently active. Left out: anyone messaged in the last 24 h or with an open chat,
-            broadcast to in the last {auto.gap_days} days, blocked, or failed twice. {count(room?.buffer ?? 0)} slots stay free for alerts.
-            {q ? ' (The search box hides some of them from the list below, but they are still ticked.)' : ''}
-          </span>
-        )}
+        <label className="flex items-center gap-1 text-2xs text-muted" title="Customers broadcast to within these days are left out, so nobody gets messages too often">
+          Skip anyone broadcast to in the last
+          <select className="input !w-auto !py-1 text-2xs" value={rest} onChange={(e) => { setRest(e.target.value); setAuto(null); }}>
+            <option value="">{auto && rest === '' ? `${auto.gap_days} days (setting)` : 'days in the setting'}</option>
+            {[5, 3, 2, 1].map((d) => <option key={d} value={d}>{d} day{d === 1 ? '' : 's'}</option>)}
+            <option value="0">nobody (send again now)</option>
+          </select>
+        </label>
       </div>
+      {auto && (() => {
+        const LEFT = { rested: `broadcast to in the last ${auto.gap_days} day${auto.gap_days === 1 ? '' : 's'}`, recent: 'messaged in the last 24 h or waiting to send',
+          open_chat: 'chat open now (reply there instead)', failed: 'two broadcasts failed', blocked: 'blocked', admin: 'admin / internal' };
+        const out = Object.entries(auto.left_out || {}).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+        return (
+          <div className={`mt-2 rounded-lg px-3 py-2 text-2xs ${auto.size ? 'bg-good-50 text-body' : 'bg-watch-50 text-body'}`}>
+            <b className="text-ink">{count(auto.size)} ticked</b> of {count(auto.audience)} in these audiences
+            {auto.eligible > auto.size ? ` (${count(auto.eligible)} could get it; WhatsApp has room for ${count(auto.size)} now)` : ''}.
+            {' '}Never had a broadcast first, then the most recently active. {count(room?.buffer ?? 0)} slots stay free for alerts.
+            {out.length > 0 && (
+              <div className="mt-1">Left out: {out.map(([k, n], i) => <span key={k}>{i ? ' · ' : ''}<b className="text-ink">{count(n)}</b> {LEFT[k] || k}</span>)}</div>
+            )}
+            {!auto.size && auto.left_out?.rested > 0 && (
+              <div className="mt-1 font-semibold text-watch-700">Most were broadcast to recently — choose fewer days above (e.g. 2) and Auto-select again, if you really want to message them again.</div>
+            )}
+            {q ? <div className="mt-1">The search box hides some of them from the list below, but they are still ticked.</div> : null}
+          </div>
+        );
+      })()}
       <p className="mt-1.5 text-2xs text-muted">
         <b>Never got a broadcast</b> on its own lists everyone no broadcast has reached yet (a failed or skipped send does not count).
         Ticked with another audience, it narrows that audience — e.g. <i>Said Hi only</i> + <i>Never got a broadcast</i>.

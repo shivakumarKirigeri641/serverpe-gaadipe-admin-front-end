@@ -235,12 +235,13 @@ export function TierCard() {
         </div>
         <span className="text-2xs text-muted">
           Quality <b className={q[1]}>{q[0]}</b>
-          {t.business_verification ? ` · Business verification: ${t.business_verification}` : ''}
+          {t.verified_note ? ` · ${t.verified_note}` : t.business_verification ? ` · Business verification: ${t.business_verification}` : ''}
           {t.checked_at ? ` · from Meta ${dateTime(t.checked_at)}` : ''}
         </span>
       </div>
       {t.quality_note && <Banner tone="watch" className="mt-2">{t.quality_note}</Banner>}
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      {/* All of these together raise the limit (Meta support, 2026-10-06). */}
+      <div className={`mt-3 grid gap-3 ${(t.paths || []).length >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
         {(t.paths || []).map((p) => {
           const pct = p.need ? Math.min(100, Math.round((p.have / p.need) * 100)) : p.done ? 100 : 0;
           return (
@@ -255,7 +256,7 @@ export function TierCard() {
                 </div>
               ) : null}
               <p className="mt-1.5 text-2xs text-muted">
-                {p.per_day ? <>About <b className="text-ink">{count(p.per_day)} new people a day</b> for 7 days gets there. </> : null}
+                {p.per_day ? <>About <b className="text-ink">{count(p.per_day)} more different people a day</b> for the next 7 days gets there. </> : null}
                 {p.note}
               </p>
             </div>

@@ -52,6 +52,7 @@ const NAV = [
   {
     group: 'Graphs',
     items: [
+      { to: '/graphs/today', label: 'Today live', icon: PulseIcon, cap: 'dashboard.view' },
       { to: '/graphs/overview', label: 'Overview', icon: ChartIcon, cap: 'dashboard.view' },
       { to: '/graphs/funnel', label: 'Funnel', icon: ChartIcon, cap: 'dashboard.view' },
       { to: '/graphs/money', label: 'Money', icon: RupeeIcon, cap: 'dashboard.view' },

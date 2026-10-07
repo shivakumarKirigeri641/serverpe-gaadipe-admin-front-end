@@ -274,7 +274,8 @@ function LiveNow() {
       const out = await api.commandLive(since.current);
       setLive(out);
       if (out.events.length) {
-        setFeed((f) => [...f, ...out.events].slice(-60));
+        // Overlapping polls can return the same events: each is shown once.
+        setFeed((f) => { const seen = new Set(f.map((e) => e.id)); return [...f, ...out.events.filter((e) => !seen.has(e.id))].slice(-60); });
         since.current = out.last_id;
       }
     } catch { /* the next tick retries */ }

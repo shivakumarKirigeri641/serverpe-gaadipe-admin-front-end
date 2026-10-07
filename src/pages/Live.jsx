@@ -42,7 +42,8 @@ export default function Live() {
       if (out.messages.length) {
         // Newest last, capped: a screen left open all day must not grow until
         // the tab runs out of memory.
-        setStream((s) => [...s, ...out.messages].slice(-200));
+        // Overlapping polls can return the same messages: each is shown once.
+        setStream((s) => { const seen = new Set(s.map((m) => m.id)); return [...s, ...out.messages.filter((m) => !seen.has(m.id))].slice(-200); });
       }
     } catch (e) { setError(e); }
   }, []);

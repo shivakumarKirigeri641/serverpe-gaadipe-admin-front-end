@@ -23,7 +23,7 @@ export default function LiveActivity() {
     if (document.hidden) return;
     try {
       const out = await api.activityStream(cursor.current || undefined);
-      if (cursor.current && out.rows.length) { setFresh(new Set(out.rows.map((r) => r.id))); setRows((old) => [...out.rows, ...(old || [])].slice(0, 300)); }
+      if (cursor.current && out.rows.length) { setFresh(new Set(out.rows.map((r) => r.id))); setRows((old) => { const ids = new Set(out.rows.map((r) => r.id)); return [...out.rows, ...(old || []).filter((r) => !ids.has(r.id))].slice(0, 300); }); }
       else if (!cursor.current) setRows(out.rows);
       cursor.current = out.cursor;
     } catch { /* next tick */ }

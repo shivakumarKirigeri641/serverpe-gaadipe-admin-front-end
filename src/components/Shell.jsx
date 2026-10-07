@@ -193,6 +193,11 @@ const NAV = [
   },
 ];
 
+/* WHATSAPP IS RETIRED (user, 2026-10-07: "there is no more WhatsApp now"): its
+   screens leave the menu (the WhatsApp group, Live chats, the WhatsApp graphs).
+   They still open by address, for the history they hold. */
+const WHATSAPP_RETIRED = new Set(['/whatsapp', '/conversations', '/whatsapp/operations', '/campaigns', '/live', '/graphs/whatsapp']);
+
 /* Each group's icon in the tree. */
 const GROUP_ICON = {
   Dashboard: GridIcon, Graphs: ChartIcon, Customers: UsersIcon, Vehicles: CarIcon, WhatsApp: SendIcon, Reports: DocIcon, Payments: RupeeIcon,
@@ -286,7 +291,7 @@ export default function Shell({ title, subtitle, actions, tabs, children }) {
   const navigate = useNavigate();
   const [q, setQ] = useState('');
   const [hit, setHit] = useState(0);
-  const visibleNav = NAV.map((g) => ({ ...g, items: g.items.filter((i) => allowed(can, i.cap)) })).filter((g) => g.items.length);
+  const visibleNav = NAV.map((g) => ({ ...g, items: g.items.filter((i) => allowed(can, i.cap) && !WHATSAPP_RETIRED.has(i.to)) })).filter((g) => g.items.length);
   // Quick find: Ctrl+K / ⌘K anywhere, or the header button.
   const [palette, setPalette] = useState(false);
   useLayoutEffect(() => {

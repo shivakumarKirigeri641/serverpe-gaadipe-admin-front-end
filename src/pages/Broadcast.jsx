@@ -86,8 +86,8 @@ export default function Broadcast({ tabs }) {
 /* ───────────────────────────────────────────────────────── composing ── */
 
 /* The audience column: short enough to sit beside a name. */
-const SEGMENT_SHORT = { hi_only: 'Said Hi only', checked: 'Checked, unpaid', lapsed: 'Lapsed', active: 'Active', never_broadcast: 'No broadcast yet' };
-const SEGMENT_TONE = { hi_only: 'watch', checked: 'info', lapsed: 'wrong', active: 'good', never_broadcast: 'info' };
+const SEGMENT_SHORT = { offers: 'Opted in to offers', checked: 'Checked, unpaid', lapsed: 'Lapsed', active: 'Active', never_broadcast: 'No broadcast yet' };
+const SEGMENT_TONE = { offers: 'good', checked: 'info', lapsed: 'wrong', active: 'good', never_broadcast: 'info' };
 
 function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }) {
   const templates = data.templates?.templates || [];
@@ -306,24 +306,15 @@ function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }
           );
         })}
       </div>
-      {/* AUTO-SELECT (user, 2026-10-06): tick, within these audiences, the
-          customers who fit Meta's moving 24 hours right now — the broadcast
-          room's rules (src/admin/broadcastRoom.js). Preview and Send as usual. */}
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <button type="button" className="btn-quiet !py-1.5 text-2xs font-semibold" disabled={autoBusy || !room || room.suggest_now < 1}
-          onClick={autoSelect} title="Ticks the best customers in these audiences, as many as WhatsApp allows right now">
-          {autoBusy ? 'Picking…' : `⚡ Auto-select up to ${count(room?.suggest_now ?? 0)} that fit now`}
-        </button>
-        <label className="flex items-center gap-1 text-2xs text-muted" title="Customers broadcast to within these days are left out, so nobody gets messages too often">
-          Skip anyone broadcast to in the last
-          <select className="input !w-auto !py-1 text-2xs" value={rest} onChange={(e) => { setRest(e.target.value); setAuto(null); }}>
-            <option value="">{auto && rest === '' ? `${auto.gap_days} days (setting)` : 'days in the setting'}</option>
-            {[5, 3, 2, 1].map((d) => <option key={d} value={d}>{d} day{d === 1 ? '' : 's'}</option>)}
-            <option value="0">nobody (send again now)</option>
-          </select>
-        </label>
+      {/* MANUAL AND STRICT (user, 2026-10-09, after Meta's 6 Oct "sending spam"
+          disable): Auto-select and batch plans are switched off on the server.
+          Only people who agreed (and never said STOP) are listed at all. */}
+      <div className="mt-2 rounded-lg border border-watch-500/30 bg-watch-50 px-3 py-2 text-2xs text-body">
+        <b className="text-ink">Broadcast carefully.</b> Only customers who agreed to the Terms are listed (never “only said Hi”, never STOP).
+        A <b>MARKETING</b> template goes only to <b>Opted in to offers</b>, at most {count(25)} a day and once a week per person, and only while quality is High —
+        the server enforces this. Utility templates: only with a real reason for that customer (their alert, report or renewal).
       </div>
-      {auto && (() => {
+      {false && auto && (() => {
         const LEFT = { rested: `broadcast to in the last ${auto.gap_days} day${auto.gap_days === 1 ? '' : 's'}`, recent: 'messaged in the last 24 h or waiting to send',
           open_chat: 'chat open now (reply there instead)', failed: 'two broadcasts failed', blocked: 'blocked', admin: 'admin / internal' };
         const out = Object.entries(auto.left_out || {}).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
@@ -344,7 +335,7 @@ function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }
       })()}
       <p className="mt-1.5 text-2xs text-muted">
         <b>Never got a broadcast</b> on its own lists everyone no broadcast has reached yet (a failed or skipped send does not count).
-        Ticked with another audience, it narrows that audience — e.g. <i>Said Hi only</i> + <i>Never got a broadcast</i>.
+        Ticked with another audience, it narrows that audience — e.g. <i>Opted in to offers</i> + <i>Never got a broadcast</i>.
       </p>
 
       <Table className="mt-2" head={
@@ -402,11 +393,7 @@ function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }
           disabled={!preview?.ok || chosen.length === 0 || busy}>
           Send to {count(chosen.length)}
         </button>
-        <button className="btn-quiet" onClick={() => setBatching(true)}
-          disabled={!preview?.ok || chosen.length === 0 || busy}
-          title="Send in parts, each 24 hours apart, never over the WhatsApp limit">
-          Send in batches…
-        </button>
+        {/* "Send in batches" is off (2026-10-09): one manual choice at a time. */}
       </div>
 
       {preview && !preview.ok && <Banner tone="wrong" className="mt-3">{preview.message}</Banner>}

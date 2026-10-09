@@ -193,10 +193,11 @@ const NAV = [
   },
 ];
 
-/* WHATSAPP IS RETIRED (user, 2026-10-07: "there is no more WhatsApp now"): its
-   screens leave the menu (the WhatsApp group, Live chats, the WhatsApp graphs).
-   They still open by address, for the history they hold. */
-const WHATSAPP_RETIRED = new Set(['/whatsapp', '/conversations', '/whatsapp/operations', '/campaigns', '/live', '/graphs/whatsapp']);
+/* WhatsApp's screens left the menu on 2026-10-07 when Meta disabled the account,
+   and are back since 2026-10-09 when it was restored. To hide them again, list
+   their addresses here: '/whatsapp', '/conversations', '/whatsapp/operations',
+   '/campaigns', '/live', '/graphs/whatsapp'. */
+const WHATSAPP_RETIRED = new Set([]);
 
 /* Each group's icon in the tree. */
 const GROUP_ICON = {

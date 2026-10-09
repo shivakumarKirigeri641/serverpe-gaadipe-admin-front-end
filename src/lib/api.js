@@ -84,6 +84,9 @@ async function call(path, { method = 'GET', body, auth = true, timeoutMs = 25000
   if (body) headers['Content-Type'] = 'application/json';
   const token = getToken();
   if (auth && token) headers.Authorization = `Bearer ${token}`;
+  // This panel is WhatsApp only (user, 2026-10-09): the server shows just the
+  // people who agreed on WhatsApp. The web admin does not send it.
+  headers['X-View'] = 'whatsapp';
 
   let res; let data;
   const silent = quiet || background > 0;
@@ -96,6 +99,7 @@ async function call(path, { method = 'GET', body, auth = true, timeoutMs = 25000
       const outer = {};
       if (headers.Authorization) outer.Authorization = headers.Authorization;
       if (headers['X-Refresh']) outer['X-Refresh'] = headers['X-Refresh'];
+      outer['X-View'] = headers['X-View'];
       const out = await secureCall(P, { method, path, body, headers: outer, timeoutMs });
       res = { status: out.status, ok: out.ok };
       data = out.data || {};

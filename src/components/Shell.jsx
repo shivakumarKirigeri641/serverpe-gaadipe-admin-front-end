@@ -60,7 +60,7 @@ const NAV = [
       { to: '/graphs/vehicles', label: 'Vehicles', icon: CarIcon, cap: 'dashboard.view' },
       { to: '/graphs/whatsapp', label: 'WhatsApp', icon: SendIcon, cap: 'dashboard.view' },
       { to: '/graphs/services', label: 'Services & APIs', icon: PulseIcon, cap: 'dashboard.view' },
-      { to: '/analytics', label: 'Website analytics', icon: ChartIcon },
+      // Website analytics: in the web admin (user, 2026-10-09: this panel is WhatsApp only).
     ],
   },
   {
@@ -89,7 +89,7 @@ const NAV = [
       { to: '/vehicles/lists', label: 'Saved vehicles', icon: StarIcon, cap: 'vehicles.view',
         match: (p, s) => p === '/vehicles/lists' || (p === '/vehicles' && /[?&]list=/.test(s)) },
       ...[['paid', 'Paid reports', RupeeIcon], ['unpaid', 'Unpaid lookups', SearchIcon], ['whatsapp', 'WhatsApp vehicles', SendIcon],
-        ['web', 'Web vehicles', DoorIcon], ['blacklisted', 'Blacklisted vehicles', ShieldIcon], ['loan', 'Loan / hypothecation', KeyIcon]]
+        ['blacklisted', 'Blacklisted vehicles', ShieldIcon], ['loan', 'Loan / hypothecation', KeyIcon]]
         .map(([v, label, icon]) => ({ to: `/vehicles?view=${v}`, label, icon, cap: 'vehicles.view', match: view(v) })),
       { to: '/vehicles/insights', label: 'Patterns & signals', icon: ChartIcon, cap: 'vehicles.view' },
       { to: '/lookups', label: 'Vehicle lookups', icon: SearchIcon },
@@ -164,8 +164,7 @@ const NAV = [
       { to: '/owner-claims', label: 'Owner claims', icon: ShieldIcon, cap: 'dashboard.view' },
       { to: '/data-requests', label: 'Data requests', icon: ShieldIcon, cap: 'dashboard.view', badge: 'data_requests' },
       { to: '/security', label: 'Security', icon: ShieldIcon },
-      // Website logins: kept, but not where customers are while GaadiPe is WhatsApp-first.
-      { to: '/sign-ins', label: 'Website sign-ins', icon: DoorIcon },
+      // Website sign-ins: in the web admin (user, 2026-10-09: this panel is WhatsApp only).
     ],
   },
   {

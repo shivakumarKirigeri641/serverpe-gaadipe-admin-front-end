@@ -58,14 +58,14 @@ const HEAD = [
   ['Reports', 'Full reports they bought.'],
   ['Paid', 'Money they have paid in total. Hover for the number of payments, refunds and when they last paid.'],
   ['WhatsApp', 'Messages exchanged with the bot, in and out, and how long ago the last one was. A pulsing green dot = messaged in the last 15 minutes. Below: In window = wrote in the last 24 hours, so the bot can reply free; Quiet = not recently; STOP = asked not to be messaged.'],
-  ['Came from', 'Where they first came from: a WhatsApp ad, a website visit (and its source), or straight to the WhatsApp number. “Unfinished payment” = opened a payment and did not pay.'],
-  ['Last seen', 'The last time they did anything — a message, a check, a website visit.'],
+  ['Came from', 'Where they first came from: a WhatsApp ad, or straight to the WhatsApp number. “Unfinished payment” = opened a payment and did not pay.'],
+  ['Last seen', 'The last time they did anything on WhatsApp — a message or a check.'],
   ['State', 'Blocked, paused, monitoring alerts running (and until when), or an internal/test account.'],
-  ['Where', 'Their state, roughly. In order of trust: the state they gave at checkout; else from their website visits (internet address — on mobile data often the operator’s city); else the state their vehicle is registered in. No GPS is ever collected.'],
+  ['Where', 'Their state, roughly. In order of trust: the state they gave at checkout; else the state their vehicle is registered in. No GPS is ever collected.'],
 ];
 const SOURCE = {
   declared: ['given at checkout', 'The state they chose at checkout (it decides GST). The most reliable.'],
-  internet: ['from website visits', 'Looked up from the internet address of their website visits. On mobile data this is often the operator’s location, so treat it as a hint.'],
+  internet: ['approximate', 'Looked up from an internet address. On mobile data this is often the operator’s location, so treat it as a hint.'],
   vehicle: ['vehicle’s state', 'Nothing better is known: this is where their most-checked vehicle is registered. Many people check vehicles from other states, so it is only a guess.'],
 };
 
@@ -146,7 +146,7 @@ export default function Customers() {
                 : data.today.customers_yesterday_full != null
                   ? <>+{count(data.today.customers_today)} today vs +{count(data.today.customers_yesterday_full)} yesterday · <Delta now={data.today.customers_today} before={data.today.customers_yesterday_full} /></>
                   : 'all time', null,
-              q || filter !== 'all' ? 'Customers matching your search or filter.' : 'Everyone who has used GaadiPe — on WhatsApp or the website — except those who replied STOP. Below: new customers today against the whole of yesterday (IST).'],
+              q || filter !== 'all' ? 'Customers matching your search or filter.' : 'Everyone who agreed to the Terms on WhatsApp, except those who replied STOP. Below: new customers today against the whole of yesterday (IST).'],
             // Full reports and vehicle checks, all time with today (user, 2026-10-03).
             ...(data.today.reports_total != null ? [
               ['Full reports', data.today.reports_total,
@@ -159,7 +159,7 @@ export default function Customers() {
                   )}
                   +{count(data.today.checks_today)} today{data.today.checks_today_distinct != null ? ` (${count(data.today.checks_today_distinct)} distinct)` : ''} vs +{count(data.today.checks_yesterday_full)} yesterday · <Delta now={data.today.checks_today} before={data.today.checks_yesterday_full} />
                 </>, null,
-                `Every vehicle check customers made on WhatsApp and the website, all time — a repeat of the same vehicle included. Distinct: different vehicles. Repeated: the rest. ${data.today.repeats_since
+                `Every vehicle check customers made on WhatsApp, all time — a repeat of the same vehicle included. Distinct: different vehicles. Repeated: the rest. ${data.today.repeats_since
                   ? `Repeats are counted from ${date(data.today.repeats_since)}; earlier repeats were not recorded.`
                   : 'Repeats are counted from the first one recorded after this update went live; earlier repeats were not recorded.'} Below: today against the whole of yesterday (IST).`],
             ] : []),
@@ -244,7 +244,7 @@ export default function Customers() {
                       customer's detail, under Sign-ins & visits. */}
                   <td className="td tabular">
                     {r.messages ? (
-                      <Hint note={`${r.messages} WhatsApp message${r.messages === 1 ? '' : 's'}, in and out. Last one ${r.last_message_at ? dateTime(r.last_message_at) : '—'}.${r.sign_ins ? ` Also ${r.sign_ins} website sign-in${r.sign_ins === 1 ? '' : 's'}.` : ''}`}>
+                      <Hint note={`${r.messages} WhatsApp message${r.messages === 1 ? '' : 's'}, in and out. Last one ${r.last_message_at ? dateTime(r.last_message_at) : '—'}.`}>
                         <span className="inline-flex items-center gap-1.5">
                           {r.last_message_at && Date.now() - new Date(r.last_message_at) < 15 * 60 * 1000
                             && <span className="h-2 w-2 animate-pulse rounded-full bg-good-500" title="Messaged in the last 15 minutes" />}
@@ -272,7 +272,7 @@ export default function Customers() {
                     )}
                   </td>
                   <td className="td text-2xs">
-                    <Hint note="Where they first came from: a website visit's source, a WhatsApp ad, or straight to the WhatsApp number.">
+                    <Hint note="Where they first came from: a WhatsApp ad, or straight to the WhatsApp number.">
                       <span className="text-body">{String(r.first_source || '—').replace(/_/g, ' ')}</span>
                     </Hint>
                     {r.pay_failed && <div className="mt-0.5"><Chip tone="watch">Unfinished payment</Chip></div>}
@@ -346,7 +346,6 @@ function CustomerDetail({ id, onClose, onChanged }) {
     ['payments', 'Payments', data?.payments.length],
     ['documents', 'Documents', (data?.reports.length || 0) + (data?.invoices.length || 0)],
     ['chat', 'Conversation', data?.messages.length],
-    ['signins', 'Sign-ins & visits', data?.visits?.sign_ins],
     ['trail', 'Devices & consent', (data?.devices.length || 0) + (data?.consent.length || 0)],
   ];
 

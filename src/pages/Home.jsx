@@ -262,19 +262,19 @@ const FUNNEL_NOTE = {
 function LiveNow({ live }) {
   return (
     <Hint note={live.whatsapp_on
-      ? 'People in a WhatsApp conversation in the last half hour, and on the website in the last five minutes.'
-      : 'People on the website in the last five minutes. WhatsApp is switched off, so nobody can be in a chat.'}>
+      ? 'People in a WhatsApp conversation in the last half hour.'
+      : 'WhatsApp is switched off, so nobody can be in a chat.'}>
     <Link to="/live" className="lift flex items-center gap-3 rounded-lg border border-line bg-white px-3 py-1.5">
       <span className="relative flex h-2 w-2">
         <span className={`absolute inline-flex h-2 w-2 rounded-full ${
-          live.on_site || live.in_chat ? 'm-dot m-dot-live bg-good-500/60' : 'bg-line'}`} />
+          live.in_chat ? 'm-dot m-dot-live bg-good-500/60' : 'bg-line'}`} />
         <span className={`relative inline-flex h-2 w-2 rounded-full ${
-          live.on_site || live.in_chat ? 'bg-good-500' : 'bg-line'}`} />
+          live.in_chat ? 'bg-good-500' : 'bg-line'}`} />
       </span>
       <span className="text-2xs text-body">
         {live.whatsapp_on
-          ? <>{count(live.in_chat)} in chat · {count(live.on_site)} on site</>
-          : <>{count(live.on_site)} on site · <span className="text-muted">chat off</span></>}
+          ? <>{count(live.in_chat)} in chat</>
+          : <span className="text-muted">chat off</span>}
       </span>
     </Link>
     </Hint>

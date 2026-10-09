@@ -28,7 +28,7 @@ const TILES = {
   LD: [1, 7], AN: [5, 7],
 };
 const METRICS = [
-  ['lookups', 'Lookups'], ['reports', 'Reports'], ['payments', 'Payments'], ['revenue_paise', 'Revenue'], ['visitors', 'Website visitors'],
+  ['lookups', 'Lookups'], ['reports', 'Reports'], ['payments', 'Payments'], ['revenue_paise', 'Revenue'],
 ];
 const inr = (p) => `₹${(Number(p || 0) / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 const show = (m, v) => (m === 'revenue_paise' ? inr(v) : count(v || 0));
@@ -452,7 +452,6 @@ export default function Geo() {
             </div>
             <p className="mt-3 text-2xs text-muted">
               Darker = more {METRICS.find(([k]) => k === metric)[1].toLowerCase()}. Tap a state for its RTOs.
-              {data.visitors_unplaced ? ` ${count(data.visitors_unplaced)} visitors could not be placed in a state.` : ''}
               {by.BH ? ` Bharat-series (BH) plates: ${show(metric, by.BH[metric])}.` : ''}
             </p>
           </div>
@@ -481,7 +480,7 @@ export default function Geo() {
                 {!data.states.length ? <Empty>No activity in this period.</Empty> : (
                   <Leaderboard key={`st-${metric}-${key}`} rows={data.states} metric={metric}
                     label={(s) => s.name} code={(s) => s.key} hover={hover} onHover={setHover}
-                    fields={['visitors', 'lookups', 'reports', 'payments', 'revenue_paise']} onPick={(s) => setState(s.key)} pickHint="Tap for its RTOs" />
+                    fields={['lookups', 'reports', 'payments', 'revenue_paise']} onPick={(s) => setState(s.key)} pickHint="Tap for its RTOs" />
                 )}
               </>
             )}

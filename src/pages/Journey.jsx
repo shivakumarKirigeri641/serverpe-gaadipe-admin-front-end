@@ -19,7 +19,7 @@ import ReplyBox from '../components/ReplyBox.jsx';
 
 const FILTERS = [
   ['all', 'Everything'], ['steps', 'Steps only'], ['messages', 'Messages only'],
-  ['web', 'Website'], ['money', 'Payments & reports'], ['problems', 'Problems'],
+  ['money', 'Payments & reports'], ['problems', 'Problems'],
 ];
 const inr = (p) => `₹${(Number(p || 0) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
@@ -55,11 +55,11 @@ export default function Journey() {
     if (d.length === 10) setSp({ mobile: d });
   };
 
-  const items = useMemo(() => (data?.items || []).filter((i) => ({
+  // WhatsApp only (user, 2026-10-09): website moments are in the web admin.
+  const items = useMemo(() => (data?.items || []).filter((i) => i.channel !== 'web').filter((i) => ({
     all: true,
-    steps: i.kind === 'event' && i.channel !== 'web' && !/api/.test(i.name),
+    steps: i.kind === 'event' && !/api/.test(i.name),
     messages: i.kind === 'message',
-    web: i.channel === 'web',
     money: /payment|report/.test(i.name || ''),
     problems: i.status === 'failed',
   })[filter]), [data, filter]);
@@ -115,7 +115,6 @@ export default function Journey() {
                   )}
                   {p.email_state === 'none' && <span className="text-muted">(no email given)</span>}
                 </span>
-                <span>Browsers <b className="text-ink">{p.visitors.length || 'none linked'}</b></span>
               </div>
               {/* Lifetime (operations module, 2026-09-25). */}
               {p.searches != null && (
@@ -124,7 +123,6 @@ export default function Journey() {
                   <span>Days active <b className="text-ink">{count(p.days_active)}</b></span>
                   <span>Payment failures <b className={p.payment_failures ? 'text-wrong-700' : 'text-ink'}>{count(p.payment_failures)}</b></span>
                   <span>Last vehicle <b className="text-ink">{p.last_vehicle ? <Link className="text-brand-deep hover:underline" to={`/vehicles/${p.last_vehicle}`}>{p.last_vehicle}</Link> : '—'}</b></span>
-                  <span>Last channel <b className="text-ink">{p.last_channel === 'web' ? 'Website' : p.last_channel === 'whatsapp' ? 'WhatsApp' : '—'}</b></span>
                 </div>
               )}
             </div>

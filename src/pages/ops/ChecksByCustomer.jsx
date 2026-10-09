@@ -37,7 +37,7 @@ export default function ChecksByCustomer() {
   const t = d?.totals || {};
 
   return (
-    <Shell title="Checks per customer" subtitle="How many vehicles each customer checked, and how many times — WhatsApp and website, by day">
+    <Shell title="Checks per customer" subtitle="How many vehicles each customer checked on WhatsApp, and how many times, by day">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-lg border border-line p-0.5">
           {RANGES.map(([k, label]) => (

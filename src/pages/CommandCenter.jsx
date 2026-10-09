@@ -118,7 +118,7 @@ export default function CommandCenter() {
               <div className="flex items-center justify-between border-b border-line px-4 py-3">
                 <div>
                   <h2 className="text-sm font-semibold text-ink">The customer journey</h2>
-                  <p className="text-2xs text-muted">One person per stage · website counts browsers, the chat counts people · tap a stage to see who</p>
+                  <p className="text-2xs text-muted">Different customers per stage on WhatsApp · only people who agreed · tap a stage to see who</p>
                 </div>
               </div>
               <Funnel stages={data.funnel} compare={data.compare} onOpen={(s) => open(s.drill, s.label)} />
@@ -301,10 +301,9 @@ function LiveNow() {
           </div>
           <span className={`text-2xs ${ok ? 'text-good-700' : 'text-watch-700'}`}>{live?.status?.text || 'Checking…'}</span>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-6">
-          <Counter label="On the site" note="Browsers active on gaadipe.in in the last 5 minutes." v={c?.on_site} />
-          <Counter label="Chatting" note="People who sent a WhatsApp message in the last 15 minutes." v={c?.chatting} />
-          <Counter label="Lookups" note="Vehicle lookups in the last 15 minutes." v={c?.searches} />
+        <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-5">
+          <Counter label="Chatting" note="Customers (who agreed) who sent a WhatsApp message in the last 15 minutes." v={c?.chatting} />
+          <Counter label="Lookups" note="Vehicle checks on WhatsApp in the last 15 minutes." v={c?.searches} />
           <Counter label="Paying now" note="Payment links opened in the last 30 minutes, not yet paid." v={c?.paying_now} />
           <Counter label="Paid, last hour" note="Payments completed in the last 60 minutes." v={c?.paid_hour} />
           <Counter label="Errors, last hour" note="Records-API failures and reports that could not be delivered." v={c == null ? null : c.api_errors + c.delivery_errors} bad />
@@ -474,8 +473,8 @@ function MobileSummary({ data }) {
   const num = (v) => (v == null ? '—' : count(v));
   const cells = [
     ['Revenue', inr(k.revenue_paise?.value)], ['Payments', num(k.paid?.value)],
-    ['Reports', num(k.reports?.value)], ['Visitors', num(k.visitors?.value)],
-    ['WhatsApp', num(k.chatting?.value)], ['Net', inr(k.net_paise?.value)],
+    ['Reports', num(k.reports?.value)], ['New customers', num(k.agreed?.value)],
+    ['Active', num(k.chatting?.value)], ['Net', inr(k.net_paise?.value)],
   ];
   return (
     <div className="card mb-3 grid grid-cols-3 gap-2 p-3 md:hidden">

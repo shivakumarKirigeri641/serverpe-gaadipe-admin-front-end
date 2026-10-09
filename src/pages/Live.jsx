@@ -29,7 +29,7 @@ export default function Live() {
   const [openMobile, setOpenMobile] = useState(null);
   // "Can message now" (user, 2026-10-01): only people inside their 24-hour window.
   const [nowOnly, setNowOnly] = useState(false);
-  const [visitors, setVisitors] = useState(null);
+
   const [openVisit, setOpenVisit] = useState(null);
   const [paused, setPaused] = useState(false);
   const since = useRef(null);
@@ -53,17 +53,13 @@ export default function Live() {
     catch (e) { setError(e); }
   }, [q]);
 
-  const loadVisitors = useCallback(async () => {
-    try { setVisitors((await api.visitors(30)).rows); } catch { /* the next tick retries */ }
-  }, []);
-
-  useEffect(() => { loadRows(); loadVisitors(); }, [loadRows, loadVisitors]);
+  useEffect(() => { loadRows(); }, [loadRows]);
   useEffect(() => {
     poll();
     if (paused) return undefined;
-    const t = setInterval(() => { poll(); loadRows(); loadVisitors(); }, TICK_MS);
+    const t = setInterval(() => { poll(); loadRows(); }, TICK_MS);
     return () => clearInterval(t);
-  }, [poll, loadRows, loadVisitors, paused]);
+  }, [poll, loadRows, paused]);
 
   return (
     <Shell title="Live"
@@ -83,8 +79,7 @@ export default function Live() {
           {pulse && !pulse.whatsapp_on && (
             <Banner tone="watch" className="mb-3 rise">
               <b>The chat is switched off.</b> Conversations and the message stream below will stay empty —
-              that is WHATSAPP_ENABLED, not a fault. What is real right now is <b>On site</b>: people using
-              the website.
+              that is WHATSAPP_ENABLED, not a fault.
             </Banner>
           )}
 
@@ -98,7 +93,7 @@ export default function Live() {
                 ? 'People GaadiPe may still reply to freely. Outside this window only an approved template delivers.'
                 : 'The 24-hour window only exists once the chat is running.'} />
             <Tile label="Checks, last 15 min" value={count(pulse?.checks_15m ?? 0)}
-              note="Vehicle lookups in the last quarter of an hour, from the website and the chat both." />
+              note="Vehicle checks on WhatsApp in the last quarter of an hour." />
             <Tile label="Paying right now" value={count(pulse?.paying_now ?? 0)}
               note="Payment links opened in the last 30 minutes that have not completed yet. This is the number worth watching." />
           </div>
@@ -200,8 +195,7 @@ export default function Live() {
             </div>
           </div>
 
-          <h2 className="mt-8 text-2xs font-semibold uppercase tracking-wider text-muted">Website</h2>
-          <OnSite rows={visitors} onOpen={setOpenVisit} />
+          {/* The website's visitors live in the web admin (user, 2026-10-09: this panel is WhatsApp only). */}
           <CustomerActivity tick={pulse?.at} />
         </>
       )}

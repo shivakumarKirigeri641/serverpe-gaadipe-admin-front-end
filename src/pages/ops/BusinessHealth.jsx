@@ -75,7 +75,6 @@ function TodaySummary({ s }) {
       <div className="grid divide-y divide-line md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-5">
         <div className="p-4">
           <div className="mb-1 text-2xs font-semibold uppercase tracking-wider text-muted">Today</div>
-          {row('Visitors', num(t.visitors), '/journey')}
           {row('Vehicle searches', num(t.searches), '/lookups')}
           {row('WhatsApp chats', num(t.conversations), '/whatsapp')}
           {row('Reports', num(t.reports), '/documents')}

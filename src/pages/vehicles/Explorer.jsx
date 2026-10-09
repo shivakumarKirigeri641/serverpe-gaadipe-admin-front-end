@@ -41,7 +41,7 @@ const COLUMNS = [
   { key: 'reports', label: 'Reports', sort: 'reports', w: 90, num: true, note: "Full reports issued for it (paid)." },
   { key: 'paid', label: 'Purchased', sort: 'paid', w: 100, num: true, note: "Paid purchases for this vehicle." },
   { key: 'revenue', label: 'Revenue', sort: 'revenue', w: 100, num: true, note: "Money received for this vehicle, before refunds." },
-  { key: 'last_channel', label: 'Last channel', w: 110, note: "Where the latest check came from: WhatsApp or the website." },
+  { key: 'last_channel', label: 'Last channel', w: 110, note: "Where the latest check came from." },
   { key: 'payment_status', label: 'Payment', w: 100, note: "Its latest payment: Paid, Link sent (not paid yet), Failed, Refunded — or none." },
   { key: 'docs', label: 'Documents', sort: 'expired', w: 230, note: "Documents on the RC. Green = valid, amber = expiring soon, red = expired. Ins = insurance, PUC = pollution certificate." },
   { key: 'challans', label: 'Challans', sort: 'challans', w: 110, note: "Pending traffic challans found at the last check." },
@@ -61,14 +61,14 @@ const PREF_FILTERS = 'vehicles.filters';
 /* Sidebar views — the same screen with a preset. */
 export const VIEWS = {
   '': 'Vehicle Explorer', recent: 'Recent vehicles', paid: 'Paid reports', unpaid: 'Unpaid lookups',
-  whatsapp: 'WhatsApp vehicles', web: 'Website vehicles', expired: 'Expired documents',
+  whatsapp: 'WhatsApp vehicles', expired: 'Expired documents',
   challans: 'Challan vehicles', blacklisted: 'Blacklisted vehicles', loan: 'Loan / hypothecation',
 };
 
 /* Every filter the drawer offers, and its choices. */
 const DOC_CHOICES = [['', 'Any'], ['valid', 'Valid'], ['soon', 'Expiring soon'], ['expired', 'Expired'], ['na', 'Not available'], ['unknown', 'Unknown']];
 const SELECTS = [
-  ['channel', 'Channel', [['', 'Any'], ['whatsapp', 'WhatsApp'], ['web', 'Website']]],
+  ['channel', 'Channel', [['', 'Any'], ['whatsapp', 'WhatsApp']]],
   ['paid', 'Paid / unpaid', [['', 'Any'], ['yes', 'Paid'], ['no', 'Unpaid']]],
   ['report', 'Report', [['', 'Any'], ['yes', 'Generated'], ['no', 'Not generated']]],
   ['payment', 'Payment status', [['', 'Any'], ['paid', 'Paid'], ['pending', 'Pending'], ['failed', 'Failed'], ['none', 'No payment']]],
@@ -508,12 +508,11 @@ function StatsStrip({ s, onPick }) {
         {tile('30 days', s.d30, <>month: {count(s.compare.month.now)} vs {count(s.compare.month.before)} · <Delta now={s.compare.month.now} before={s.compare.month.before} /></>, null, 'Different vehicles checked in the last 30 days. Below: this month so far against last month up to the same day.')}
         {tile('Lookups today', s.lookups_today, 'every search, found or not', null, 'Every search since midnight, including the same vehicle searched again and numbers that were not found. More than “Today” when people repeat searches.')}
       </div>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         {tile('Repeat searches', s.repeat, 'looked up 2+ times · tap to list', () => onPick({ repeat: '1' }), 'Vehicles searched more than once — someone is interested. Tap to show only these.')}
         {tile('Paid', s.paid, 'at least one paid report · tap to list', () => onPick({ paid: 'yes' }), 'Vehicles with at least one paid full report. Tap to show only these.')}
         {tile('Unpaid', s.unpaid, 'looked up, never paid · tap to list', () => onPick({ paid: 'no' }), 'Checked but never bought — your follow-up list. Tap to show only these.')}
         {tile('WhatsApp', s.whatsapp, 'looked up on WhatsApp · tap to list', () => onPick({ channel: 'whatsapp' }), 'Vehicles checked through the WhatsApp bot at least once. Tap to show only these.')}
-        {tile('Website', s.web, 'looked up on the website · tap to list', () => onPick({ channel: 'web' }), 'Vehicles checked on gaadipe.in at least once. Tap to show only these.')}
       </div>
     </div>
   );

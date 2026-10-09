@@ -147,7 +147,7 @@ function Overview({ params, pkey }) {
       <div className={`tabular mt-1 text-xl font-semibold ${tone || 'text-ink'}`}>{v}</div></div></Hint>
   );
   const chart = d.series.map((s) => ({ name: s.key, Revenue: s.revenue_paise / 100, Costs: s.costs_paise / 100, Net: s.net_paise / 100, Margin: s.margin_pct }));
-  const GROUPS = [['by_source', 'Source'], ['by_campaign', 'Campaign'], ['by_channel', 'WhatsApp / website'], ['by_kind', 'Paid / free']];
+  const GROUPS = [['by_source', 'Source'], ['by_campaign', 'Campaign'], ['by_kind', 'Paid / free']];
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
@@ -234,7 +234,7 @@ function Transactions({ params, pkey }) {
       <div className="card mb-3 flex flex-wrap items-center gap-2 p-3">
         <input className="input !w-64 !py-1.5" value={f.q} onChange={put('q')} placeholder="Payment / order / invoice ID, vehicle, phone" />
         <select className="input !w-auto !py-1.5 text-sm" value={f.kind} onChange={put('kind')}><option value="">Paid and free</option><option value="paid">Paid</option><option value="free">Free reports</option></select>
-        <select className="input !w-auto !py-1.5 text-sm" value={f.channel} onChange={put('channel')}><option value="">Any channel</option><option value="whatsapp">WhatsApp</option><option value="website">Website</option></select>
+        <select className="input !w-auto !py-1.5 text-sm" value={f.channel} onChange={put('channel')}><option value="">Any channel</option><option value="whatsapp">WhatsApp</option></select>
         <select className="input !w-auto !py-1.5 text-sm" value={f.source} onChange={put('source')}><option value="">Any source</option>{(d?.sources || []).map((s) => <option key={s} value={s}>{s}</option>)}</select>
         <select className="input !w-auto !py-1.5 text-sm" value={f.fee} onChange={put('fee')}><option value="">Any fee</option><option value="estimated">Estimated fee only</option></select>
         <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={f.loss === '1'} onChange={(e) => setF((x) => ({ ...x, loss: e.target.checked ? '1' : '' }))} /> Loss-making</label>

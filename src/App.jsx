@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSession } from './lib/session';
 import SignIn from './pages/SignIn.jsx';
@@ -17,7 +16,7 @@ import Campaigns from './pages/Campaigns.jsx';
 import Customers from './pages/Customers.jsx';
 import Fleets from './pages/fleets/Fleets.jsx';
 import FleetDetail from './pages/fleets/FleetDetail.jsx';
-import SignIns from './pages/SignIns.jsx';
+// SignIns: web admin only (2026-10-09)
 import Security from './pages/Security.jsx';
 import Referrals from './pages/Referrals.jsx';
 import GpReferrals from './pages/GpReferrals.jsx';
@@ -68,7 +67,7 @@ import VehicleApiLogs from './pages/vehicles/ApiLogs.jsx';
    before Vite sees it, so no chunk was built and the browser asked for
    /assets/pages/Analytics.jsx, got index.html back, and the screen never
    opened. Only production was affected: development is not obfuscated. */
-import Analytics from './pages/Analytics.jsx';
+// Analytics: web admin only (2026-10-09)
 import Graphs from './pages/graphs/Graphs.jsx';
 import Finance from './pages/Finance.jsx';
 import Documents from './pages/Documents.jsx';
@@ -155,7 +154,8 @@ export default function App() {
       <Route path="/customers" element={<Customers />} />
       <Route path="/fleets" element={<Fleets />} />
       <Route path="/fleets/:id" element={<FleetDetail />} />
-      <Route path="/sign-ins" element={<SignIns />} />
+      {/* Website sign-ins and website analytics live in the web admin (user, 2026-10-09: WhatsApp only here). */}
+      <Route path="/sign-ins" element={<Navigate to="/" replace />} />
       <Route path="/security" element={<Security />} />
       <Route path="/referrals" element={<GpReferrals />} />
       {/* QuizPe is switched off; its history stays reachable for anyone holding a credit. */}
@@ -173,10 +173,7 @@ export default function App() {
       <Route path="/vehicles/:reg" element={<VehicleProfile />} />
       <Route path="/graphs" element={<Graphs />} />
       <Route path="/graphs/:page" element={<Graphs />} />
-      <Route path="/analytics" element={
-        <Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-muted">Loading charts…</div>}>
-          <Analytics />
-        </Suspense>} />
+      <Route path="/analytics" element={<Navigate to="/" replace />} />
       <Route path="/finance" element={<Finance />} />
       <Route path="/documents" element={<Documents />} />
       <Route path="/check" element={<Check />} />

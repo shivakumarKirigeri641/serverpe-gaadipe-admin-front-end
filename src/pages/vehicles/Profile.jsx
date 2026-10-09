@@ -114,10 +114,6 @@ export default function Profile() {
           <WhatsApp sessions={p.whatsapp} />
         </Section>
 
-        <Section id="website" title="Website history" badge={`${p.web.visitors.length} visitor${p.web.visitors.length === 1 ? '' : 's'}`} open={p.web.visitors.length > 0 || p.web.steps.length > 0}>
-          <Website w={p.web} />
-        </Section>
-
         <Section id="payments" title="Payment history" badge={`${p.counts.paid} paid · ${inr(p.counts.paid_paise)}`}>
           <Payments rows={p.payments} />
         </Section>

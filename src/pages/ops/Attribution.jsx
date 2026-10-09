@@ -30,7 +30,7 @@ export default function Attribution() {
     const out = await api.attributionPeople({ source: source || campaign, campaign: source ? campaign : undefined, model });
     setPeople((p) => ({ ...p, rows: out.rows }));
   };
-  const cols = ['Visitors', 'WhatsApp starts', 'Vehicle searches', 'Lookups', 'Payment attempts', 'Payments', 'Revenue', 'GST', 'API', 'Gateway', 'WhatsApp cost', 'Net', 'Conversion', ''];
+  const cols = ['WhatsApp starts', 'Vehicle searches', 'Lookups', 'Payment attempts', 'Payments', 'Revenue', 'GST', 'API', 'Gateway', 'WhatsApp cost', 'Net', 'Conversion', ''];
   return (
     <Shell title="Campaigns & attribution" subtitle={d ? `${d.range.label}${source ? ` · ${d.source_label}` : ''}` : ' '}
       actions={<>
@@ -45,7 +45,7 @@ export default function Attribution() {
             {d.rows.map((r) => (
               <tr key={r.key} className="cursor-pointer hover:bg-shell/60" onClick={() => (source ? openPeople(r.key) : set({ source: r.key }))}>
                 <td className="td font-semibold text-ink">{r.label}{r.family && <div className="text-2xs font-normal text-muted">{r.family}</div>}</td>
-                <td className="td tabular">{num(r.visitors)}</td><td className="td tabular">{num(r.wa_starts)}</td><td className="td tabular">{num(r.searches)}</td>
+                <td className="td tabular">{num(r.wa_starts)}</td><td className="td tabular">{num(r.searches)}</td>
                 <td className="td tabular">{num(r.lookups)}</td><td className="td tabular">{num(r.attempts)}</td><td className="td tabular">{num(r.payments)}</td>
                 <td className="td tabular">{rs(r.revenue_paise)}</td><td className="td tabular">{rs(r.gst_paise)}</td><td className="td tabular">{rs(r.api_cost_paise)}</td>
                 <td className="td tabular">{rs(r.gateway_paise)}</td><td className="td tabular">{rs(r.whatsapp_cost_paise)}</td>

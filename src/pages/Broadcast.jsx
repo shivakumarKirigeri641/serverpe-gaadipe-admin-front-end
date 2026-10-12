@@ -199,7 +199,7 @@ function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }
                  and to record Meta's decision about it. Sending an unapproved
                  one is refused by the server, which is where it belongs. */
               <option key={`${t.name}|${t.language}`} value={`${t.name}|${t.language}`}>
-                {t.name} · {t.language} {t.sendable ? '' : `· ${t.status}`}
+                {t.name} · {t.language} {t.sendable ? '' : `· ${t.status}`}{t.automated ? ' · automatic alert, not for broadcast' : ''}
               </option>
             ))}
           </select>

@@ -231,6 +231,8 @@ export const api = {
   customers: (params) => call(`/customers${qs(params)}`),
   customer: (id) => call(`/customers/${id}`),
   pauseCustomer: (id, paused) => call(`/customers/${id}/pause`, { method: 'POST', body: { paused } }),
+  // A vehicle's alerts the customer paused from WhatsApp, back on (2026-10-12).
+  resumeVehicleAlerts: (id, vehicleId) => call(`/customers/${id}/vehicles/${vehicleId}/resume-alerts`, { method: 'POST' }),
 
   conversations: (params) => call(`/live/conversations${qs(params)}`),
   thread: (mobile) => call(`/live/thread/${mobile}`),

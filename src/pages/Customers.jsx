@@ -399,7 +399,12 @@ function CustomerDetail({ id, onClose, onChanged }) {
                 <div className="space-y-2">
                   {data.vehicles.map((v) => (
                     <VehicleRow key={v.id} v={v} open={openVehicle === v.id}
-                      onToggle={() => setOpenVehicle(openVehicle === v.id ? null : v.id)} />
+                      onToggle={() => setOpenVehicle(openVehicle === v.id ? null : v.id)}
+                      onResumeAlerts={allowed(can, 'block') ? async () => {
+                        setBusy(true);
+                        try { await api.resumeVehicleAlerts(id, v.id); await load(); }
+                        catch (e) { setError(e); } finally { setBusy(false); }
+                      } : null} busy={busy} />
                   ))}
                 </div>
               ) : <Empty>No vehicles checked yet.</Empty>
@@ -513,7 +518,7 @@ function CustomerDetail({ id, onClose, onChanged }) {
 }
 
 /* A vehicle, opening into its full record — the accordion the panel is read by. */
-function VehicleRow({ v, open, onToggle }) {
+function VehicleRow({ v, open, onToggle, onResumeAlerts, busy }) {
   const docs = [
     ['Insurance', v.insurance_upto], ['PUC', v.pucc_upto], ['Fitness', v.fitness_upto],
     ['Road tax', v.tax_upto], ['Permit', v.permit_upto],
@@ -536,6 +541,7 @@ function VehicleRow({ v, open, onToggle }) {
         <div className="flex shrink-0 items-center gap-1.5">
           {v.blocked && <Chip tone="wrong">Blocked</Chip>}
           {v.watched && <Chip tone="good">Watched</Chip>}
+          {v.alerts_paused_until && <Chip tone="watch">Alerts paused</Chip>}
           {worst && (
             <Chip tone={worst.days < 0 ? 'wrong' : worst.days <= 30 ? 'watch' : 'info'}>
               {worst.label} {worst.days < 0 ? 'expired' : `in ${worst.days}d`}
@@ -556,7 +562,17 @@ function VehicleRow({ v, open, onToggle }) {
             <Pair label="Blacklist" value={v.blacklist_status || 'None recorded'} />
             <Pair label="Checked" value={`${count(v.check_count)} times · last ${ago(v.last_checked_at)}`} />
             <Pair label="Watched until" value={v.watched_until ? date(v.watched_until) : 'Not watched'} />
+            {/* The customer's own "Pause this alert" on the WhatsApp alert (2026-10-12). */}
+            {v.alerts_paused_until && (
+              <Pair label="Alerts paused" value={`Till ${date(v.alerts_paused_until)} · ${v.alerts_paused_what === 'all' ? 'all alerts' : v.alerts_paused_what}`} />
+            )}
           </div>
+          {v.alerts_paused_until && onResumeAlerts && (
+            <button className="btn-quiet mt-2 !py-1.5 text-2xs" disabled={busy}
+              onClick={() => { if (window.confirm(`Turn alerts for ${v.reg_no} back on? The customer paused them from WhatsApp.`)) onResumeAlerts(); }}>
+              Resume alerts
+            </button>
+          )}
 
           <div className="mt-3 flex flex-wrap gap-1.5">
             {docs.map(([label, d]) => {

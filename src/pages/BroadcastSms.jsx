@@ -29,7 +29,7 @@ function smsLength(text) {
   if (odd.length) return { unicode: true, length: s.length, limit: 70, odd: [...new Set(odd)].join(' ') };
   return { unicode: false, length: s.reduce((n, c) => n + (GSM_EXT.includes(c) ? 2 : 1), 0), limit: 160 };
 }
-const FILTERS = [['all', 'Everyone opted in'], ['not_recent', 'No promo SMS in 7 days'], ['paid', 'Paid customers'],
+const FILTERS = [['all', 'Everyone listed'], ['not_recent', 'No broadcast SMS in 7 days'], ['paid', 'Paid customers'],
                  ['never_paid', 'Never paid'], ['monitoring', 'Monitoring active']];
 
 export default function BroadcastSms() {
@@ -37,6 +37,10 @@ export default function BroadcastSms() {
   const canSend = allowed(can, 'settings');
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  /* TWO KINDS (user, 2026-10-13: "send all 158 — put that option"): a SERVICE notice
+     (DLT Service Implicit, a factual update) to everyone who agreed, or the PROMOTIONAL
+     template to those who opted in to offers. */
+  const [mode, setMode] = useState('service');
   const [filter, setFilter] = useState('all');
   const [q, setQ] = useState('');
   const [vals, setVals] = useState(['', '', '']);
@@ -45,11 +49,12 @@ export default function BroadcastSms() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
   const [page, setPage] = useState(1);
-  useEffect(() => { setPage(1); }, [filter, q]);
+  useEffect(() => { setPage(1); }, [filter, q, mode]);
+  useEffect(() => { setChosen(new Set()); setDone(null); setVals(['', '', '']); }, [mode]);
 
   const load = useCallback(async () => {
-    try { setError(null); setData(await api.smsBroadcast({ filter, q })); } catch (e) { setError(e); }
-  }, [filter, q]);
+    try { setError(null); setData(await api.smsBroadcast({ mode, filter, q })); } catch (e) { setError(e); }
+  }, [mode, filter, q]);
   useEffect(() => { load(); }, [load]);
   useAutoRefresh(load);
 
@@ -70,7 +75,7 @@ export default function BroadcastSms() {
   const send = async () => {
     setBusy(true);
     try {
-      const out = await api.smsBroadcastSend({ user_ids: [...chosen], vals: vals.slice(0, n) });
+      const out = await api.smsBroadcastSend({ mode, user_ids: [...chosen], vals: vals.slice(0, n) });
       setDone(out); setConfirm(false); setChosen(new Set()); await load();
     } catch (e) { setError(e); setConfirm(false); } finally { setBusy(false); }
   };
@@ -80,7 +85,14 @@ export default function BroadcastSms() {
   };
 
   return (
-    <Shell title="SMS broadcast" subtitle="Your approved DLT promotional template, to customers who opted in to offers and newsletters.">
+    <Shell title="SMS broadcast" subtitle="A service notice to everyone who agreed, or your promotional template to those who opted in to offers.">
+      {/* Which kind of SMS */}
+      <div className="mb-4 inline-flex rounded-lg border border-line bg-white p-0.5" role="group" aria-label="Kind of SMS">
+        {[['service', '📢 Service notice — everyone who agreed'], ['promo', '🎁 Promotional — opted-in only']].map(([k, l]) => (
+          <button key={k} type="button" onClick={() => setMode(k)}
+            className={`rounded-md px-3 py-1.5 text-sm ${mode === k ? 'bg-brand text-white font-semibold' : 'text-body hover:bg-shell'}`}>{l}</button>
+        ))}
+      </div>
       {error && <Failed error={error} onRetry={load} />}
       {!data && !error && <Spinner />}
       {data && (
@@ -88,8 +100,17 @@ export default function BroadcastSms() {
           {/* 1. The template */}
           <div className="card p-4">
             <div className="text-sm font-semibold text-ink">1 · The template</div>
+            <p className="mt-0.5 text-2xs text-muted">{mode === 'service'
+              ? 'A DLT "Service Implicit" template — a plain update about the service (like a new WhatsApp number), no offer or price. It may go to every customer who agreed, DND included.'
+              : 'Your DLT promotional template — offers and news. It goes only to customers who opted in to offers and newsletters, never to DND numbers.'}</p>
             {t.ready ? (
               <div className="mt-2 whitespace-pre-wrap rounded-lg bg-shell px-3 py-2 font-mono text-sm text-body">{t.text}</div>
+            ) : mode === 'service' ? (
+              <Banner tone="watch" className="mt-2">
+                Not set up yet. In <b>Settings</b>, fill in: <b>sms_tpl_service</b> (the DLT message id of your approved Service Implicit
+                template, from Fast2SMS) and <b>sms_tpl_service_text</b> (its wording exactly as approved, with any {'{#var#}'}).
+                {!t.id ? ' · message id missing' : ''}{!t.text ? ' · wording missing' : ''}{!t.sender ? ' · sender id missing on the server' : ''}
+              </Banner>
             ) : (
               <Banner tone="watch" className="mt-2">
                 Not set up yet. In <b>Settings</b>, fill in: <b>sms_tpl_promo</b> (the DLT message id from Fast2SMS),{' '}
@@ -106,8 +127,10 @@ export default function BroadcastSms() {
 
           {/* 2. The values */}
           <div className="card p-4">
-            <div className="text-sm font-semibold text-ink">2 · The {n} values</div>
-            <p className="mt-0.5 text-2xs text-muted">The same for everyone in this batch. DLT allows about {VAR_MAX} characters each.</p>
+            <div className="text-sm font-semibold text-ink">{n ? `2 · The ${n} value${n === 1 ? '' : 's'}` : '2 · The message'}</div>
+            <p className="mt-0.5 text-2xs text-muted">{n
+              ? `The same for everyone in this batch. DLT allows about ${VAR_MAX} characters each.`
+              : 'This template has no values to fill — everyone receives exactly the approved wording.'}</p>
             <div className="mt-2 grid gap-2 sm:grid-cols-3">
               {Array.from({ length: n }).map((_, i) => (
                 <label key={i} className="block text-2xs text-muted">Value {i + 1}
@@ -137,7 +160,16 @@ export default function BroadcastSms() {
           <div className="card p-4">
             <div className="flex flex-wrap items-center gap-2">
               <div className="text-sm font-semibold text-ink">3 · Who</div>
-              <span className="text-2xs text-muted">{data.people.opted} opted in of {data.people.agreed} customers who agreed — only they are listed</span>
+              <span className="text-2xs text-muted">{mode === 'service'
+                ? `All ${data.people.agreed} customers who agreed are listed`
+                : `${data.people.opted} opted in of ${data.people.agreed} customers who agreed — only they are listed`}</span>
+              {/* Everyone listed, on every page, in one tap (user, 2026-10-13: "send all 158 — put that option"). */}
+              {rows.length > 0 && (
+                <button type="button" className="btn-quiet !py-1 text-2xs" data-test="sms-select-all"
+                  onClick={() => setChosen(allTicked ? new Set() : new Set(rows.map((r) => r.id)))}>
+                  {allTicked ? 'Clear all' : `✓ Select all ${rows.length}`}
+                </button>
+              )}
               <select className="input !w-auto !py-1.5 ml-auto text-sm" value={filter} onChange={(e) => setFilter(e.target.value)}>
                 {FILTERS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
               </select>
@@ -149,7 +181,7 @@ export default function BroadcastSms() {
                   <th className="px-3 py-2"><input type="checkbox" checked={allTicked}
                     onChange={() => setChosen(allTicked ? new Set() : new Set(rows.map((r) => r.id)))} /></th>
                   <th className="px-3 py-2">Customer</th><th className="px-3 py-2">Mobile</th><th className="px-3 py-2">Vehicles</th>
-                  <th className="px-3 py-2">Paid</th><th className="px-3 py-2">Opted in</th><th className="px-3 py-2">Last promo SMS</th><th className="px-3 py-2">Last seen</th>
+                  <th className="px-3 py-2">Paid</th><th className="px-3 py-2">Opted in</th><th className="px-3 py-2">Last broadcast SMS</th><th className="px-3 py-2">Last seen</th>
                 </tr>)}>
                 {rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((r) => (
                   <tr key={r.id} className={`text-sm ${chosen.has(r.id) ? 'bg-brand/5' : ''}`} onClick={() => toggle(r.id)}>
@@ -158,13 +190,13 @@ export default function BroadcastSms() {
                     <td className="px-3 py-2 font-mono">{fmtMobile(r.mobile)}</td>
                     <td className="px-3 py-2">{r.vehicles}</td>
                     <td className="px-3 py-2">{r.paid ? <Chip tone="good">Paid</Chip> : '—'}</td>
-                    <td className="px-3 py-2 text-2xs text-muted">{dateTime(r.promo_consent_at)}</td>
+                    <td className="px-3 py-2 text-2xs text-muted">{r.opted ? dateTime(r.promo_consent_at) : <span className="text-muted">no</span>}</td>
                     <td className="px-3 py-2 text-2xs text-muted">{r.last_promo_at ? ago(r.last_promo_at) : 'never'}</td>
                     <td className="px-3 py-2 text-2xs text-muted">{r.last_seen_at ? ago(r.last_seen_at) : '—'}</td>
                   </tr>
                 ))}
               </Table>
-            ) : <Empty>Nobody here has opted in to offers and newsletters yet.</Empty>}
+            ) : <Empty>{mode === 'service' ? 'Nobody matches that.' : 'Nobody here has opted in to offers and newsletters yet.'}</Empty>}
             {/* A page at a time (2026-10-13); the header tick takes everyone who matches. */}
             <Pager page={page} total={rows.length} onPage={setPage} />
             {rows.length > PAGE_SIZE && <p className="mt-1 text-2xs text-muted">{rows.length} match · {chosen.size} ticked — the header tick takes all of them, not just this page.</p>}
@@ -207,7 +239,7 @@ export default function BroadcastSms() {
                    <button className="btn-primary" disabled={busy} onClick={send}>{busy ? 'Queuing…' : 'Yes, send'}</button></>}>
           <p className="text-sm text-body">Each of them receives:</p>
           <div className="mt-2 rounded-lg bg-shell px-3 py-2 text-sm text-ink">{preview}</div>
-          <p className="mt-2 text-2xs text-muted">Promotional route · header {t.sender} · only 10 am – 9 pm IST · each SMS is checked again for the opt-in before it goes · recorded in the audit trail.</p>
+          <p className="mt-2 text-2xs text-muted">{mode === 'service' ? 'Service Implicit · usual sender' : 'Promotional route · each SMS is checked again for the opt-in'} · header {t.sender} · only 10 am – 9 pm IST · recorded in the audit trail.</p>
         </Modal>
       )}
     </Shell>

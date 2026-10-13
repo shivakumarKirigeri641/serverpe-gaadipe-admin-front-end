@@ -18,6 +18,17 @@ import { Banner, Chip, Empty, Failed, Modal, Spinner, Table, Pager, PAGE_SIZE } 
  *   4. Send — queued, a few a minute, only 10 am – 9 pm IST; today's limit shown
  */
 const VAR_MAX = 30;
+
+/* ONE SMS (2026-10-13; the server checks the same, admin/smsBroadcast.js smsLength): 160
+   characters of the GSM alphabet, or 70 once any other character is in (₹, emoji, Hindi). */
+const GSM = '@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !"#¤%&\'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà';
+const GSM_EXT = '^{}\\[~]|€';
+function smsLength(text) {
+  const s = [...String(text || '')];
+  const odd = s.filter((c) => !GSM.includes(c) && !GSM_EXT.includes(c));
+  if (odd.length) return { unicode: true, length: s.length, limit: 70, odd: [...new Set(odd)].join(' ') };
+  return { unicode: false, length: s.reduce((n, c) => n + (GSM_EXT.includes(c) ? 2 : 1), 0), limit: 160 };
+}
 const FILTERS = [['all', 'Everyone opted in'], ['not_recent', 'No promo SMS in 7 days'], ['paid', 'Paid customers'],
                  ['never_paid', 'Never paid'], ['monitoring', 'Monitoring active']];
 
@@ -52,7 +63,9 @@ export default function BroadcastSms() {
   const rows = data?.people?.rows || [];
   const allTicked = rows.length > 0 && rows.every((r) => chosen.has(r.id));
   const toggle = (id) => setChosen((s) => { const x = new Set(s); if (x.has(id)) x.delete(id); else x.add(id); return x; });
-  const valsOk = vals.slice(0, n).every((v) => v.trim() && v.trim().length <= VAR_MAX);
+  const size = useMemo(() => smsLength(preview), [preview]);
+  const fits = !preview || size.length <= size.limit;
+  const valsOk = vals.slice(0, n).every((v) => v.trim() && v.trim().length <= VAR_MAX) && fits;
 
   const send = async () => {
     setBusy(true);
@@ -105,6 +118,19 @@ export default function BroadcastSms() {
               ))}
             </div>
             {preview && <div className="mt-3 rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink"><span className="text-2xs text-muted">Each customer reads: </span>{preview}</div>}
+            {preview && (
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-2xs">
+                <Chip tone={fits ? (size.length > size.limit - 10 ? 'watch' : 'good') : 'wrong'}>
+                  {size.length} / {size.limit} characters · {fits ? 'one SMS' : `${size.length - size.limit} too many`}
+                </Chip>
+                {size.unicode && (
+                  <span className={fits ? 'text-muted' : 'text-wrong-700'}>
+                    Special character{size.odd.length > 1 ? 's' : ''} <b>{size.odd}</b> make{size.odd.length > 1 ? '' : 's'} this a Unicode SMS — only 70 characters fit.
+                    Write <b>Rs</b> instead of <b>₹</b> to get 160.
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 3. The people */}

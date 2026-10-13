@@ -26,6 +26,8 @@ const SEGMENTS = [
   ['new', 'New (last 7 days)'], ['returning', 'Returning'], ['paid', 'Paid'], ['unpaid', 'Never paid'],
   ['wa_active', 'WhatsApp active (24 h)'], ['wa_inactive', 'WhatsApp quiet'],
   ['pay_failed', 'Payment not completed'], ['suspicious', 'Worth a look'],
+  // Who a promotional SMS may go to (2026-10-13); Export then gives only them.
+  ['offers', 'Opted in to offers'],
   // Left out of every other view and the total (user, 2026-09-30).
   ['stopped', 'Said STOP'],
   // Said STOP, then turned messages back on — START or Undo (user, 2026-10-02).
@@ -127,13 +129,16 @@ export default function Customers() {
             <option value="paying">Monitoring active</option>
             <option value="blocked">Blocked</option>
           </select>
-          <button className="btn-quiet !py-1.5 text-2xs" disabled={exporting} title="Every customer, as CSV (recorded in the audit trail)"
+          <button className="btn-quiet !py-1.5 text-2xs" disabled={exporting}
+            title={filter === 'offers'
+              ? 'Only customers who opted in to offers — the list for a promotional SMS (recorded in the audit trail)'
+              : 'Every customer who agreed, as CSV (recorded in the audit trail)'}
             onClick={async () => {
               setExporting(true);
-              try { const { blob, filename } = await api.exportCsv('customers', {}); saveBlob(blob, filename); }
+              try { const { blob, filename } = await api.exportCsv('customers', filter === 'offers' ? { offers: 1 } : {}); saveBlob(blob, filename); }
               catch (e) { alert(e.message || 'Export failed.'); }
               setExporting(false);
-            }}>{exporting ? 'Exporting…' : 'Export CSV'}</button>
+            }}>{exporting ? 'Exporting…' : filter === 'offers' ? 'Export opted-in CSV' : 'Export CSV'}</button>
         </div>
       }>
 

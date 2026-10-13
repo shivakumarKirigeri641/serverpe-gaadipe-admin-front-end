@@ -4,7 +4,7 @@ import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, Respons
 import { api } from '../../lib/api';
 import { count } from '../../lib/format';
 import { Failed, Skeleton } from '../../components/ui.jsx';
-import { SERIES, STATUS, AXIS, GRID, inr, Stats } from './kit.jsx';
+import { SERIES, STATUS, AXIS, GRID, inr, Stats, Drill } from './kit.jsx';
 
 /*
  * TODAY, LIVE (user, 2026-10-06: "today's timeline — customers, vehicle checks
@@ -35,6 +35,7 @@ export default function TodayLive() {
   const [error, setError] = useState(null);
   const [hidden, setHidden] = useState(() => new Set());
   const [tick, setTick] = useState(60);
+  const [openRow, setOpenRow] = useState(null);     // the bucket clicked: everyone in it
   const want = useRef(win);
 
   const load = useCallback(() => {
@@ -100,7 +101,9 @@ export default function TodayLive() {
             </div>
             <div className="mt-3" style={{ width: '100%', height: 340 }}>
               <ResponsiveContainer>
-                <ComposedChart data={data.series} margin={{ top: 8, right: 12, left: -12, bottom: 0 }} barCategoryGap={data.series.length > 60 ? 1 : 3}>
+                <ComposedChart data={data.series} margin={{ top: 8, right: 12, left: -12, bottom: 0 }} barCategoryGap={data.series.length > 60 ? 1 : 3}
+                  style={{ cursor: 'pointer' }}
+                  onClick={(e) => { const r = e?.activePayload?.[0]?.payload; if (r?.who?.length) setOpenRow(r); }}>
                   <CartesianGrid {...GRID} />
                   {/* Every minute labelled in the 60-minute view (user, 2026-10-13: "1 min steps instead of
                       4 mins") — turned upright so sixty fit; the longer views keep room between labels. */}
@@ -121,7 +124,9 @@ export default function TodayLive() {
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
+            <p className="mt-1 text-2xs text-muted">Hover a {data.bucket_minutes === 1 ? 'minute' : 'bar'} to see who · click it for everyone in it.</p>
           </section>
+          {openRow && <WhoList row={openRow} minutes={data.bucket_minutes} onClose={() => setOpenRow(null)} />}
 
           <section className="card cv-rise mt-4 p-5">
             <h2 className="text-sm font-semibold text-ink">Latest moments</h2>
@@ -170,6 +175,48 @@ function LiveTip({ active, payload, label }) {
         </div>
       ))}
       {row.revenue_paise > 0 && <div className="mt-1 border-t border-line pt-1 text-body">Revenue <b className="float-right pl-4 text-ink">{inr(row.revenue_paise)}</b></div>}
+      {/* WHO (user, 2026-10-13: "I also want to see who said hi — if several, how?"): the
+          first five here; a click on the bar lists everyone in that minute. */}
+      {row.who?.length > 0 && (
+        <div className="mt-1.5 max-w-xs border-t border-line pt-1">
+          {row.who.slice(0, 5).map((p, i) => (
+            <div key={i} className="truncate text-body">
+              <b className="text-ink">{p.name || p.masked || 'Someone'}</b> {p.what}{p.reg_no ? ` · ${p.reg_no}` : ''}{p.paise != null ? ` · ${inr(p.paise)}` : ''}
+            </div>
+          ))}
+          {(row.who.length > 5 || row.who_more) && (
+            <div className="mt-0.5 font-semibold text-brand">+{row.who.length - 5 + (row.who_more || 0)} more — click the bar</div>
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+/** Everyone in one bucket, after a click on it. */
+function WhoList({ row, minutes, onClose }) {
+  return (
+    <Drill title={`Who — ${time(row.t)}${minutes > 1 ? ` (${minutes} minutes)` : ''}`}
+      subtitle={`${row.who.length + (row.who_more || 0)} moment${row.who.length === 1 ? '' : 's'}`} onClose={onClose}>
+      <ul className="divide-y divide-line/60">
+        {row.who.map((p, i) => {
+          const [icon] = Object.values(STEP).find(([, v]) => p.what.startsWith(v.split(' ')[0])) || ['•'];
+          return (
+            <li key={i} className="flex items-center gap-3 py-1.5 text-sm">
+              <span className="w-16 shrink-0 tabular text-2xs text-muted">{time(p.at)}</span>
+              <span aria-hidden="true">{icon}</span>
+              <span className="min-w-0 flex-1 truncate text-body">
+                <b className="text-ink">{p.name || p.masked || 'Someone'}</b> {p.what}
+                {p.reg_no ? <> <span className="font-semibold text-ink">{p.reg_no}</span></> : null}
+                {p.paise != null ? <> <b className="text-ink">{inr(p.paise)}</b></> : null}
+                {p.masked && p.name ? <span className="ml-1 text-2xs text-muted">{p.masked}</span> : null}
+              </span>
+              {p.mobile && <Link className="shrink-0 text-2xs text-brand hover:underline" to={`/journey?mobile=${p.mobile}`}>Journey →</Link>}
+            </li>
+          );
+        })}
+      </ul>
+      {row.who_more ? <p className="mt-2 text-2xs text-muted">…and {row.who_more} more in this bucket.</p> : null}
+    </Drill>
   );
 }

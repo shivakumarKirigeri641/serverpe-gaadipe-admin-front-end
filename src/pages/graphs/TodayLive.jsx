@@ -102,7 +102,12 @@ export default function TodayLive() {
               <ResponsiveContainer>
                 <ComposedChart data={data.series} margin={{ top: 8, right: 12, left: -12, bottom: 0 }} barCategoryGap={data.series.length > 60 ? 1 : 3}>
                   <CartesianGrid {...GRID} />
-                  <XAxis dataKey="t" tickFormatter={time} tick={AXIS} tickLine={false} axisLine={false} minTickGap={36} />
+                  {/* Every minute labelled in the 60-minute view (user, 2026-10-13: "1 min steps instead of
+                      4 mins") — turned upright so sixty fit; the longer views keep room between labels. */}
+                  {data.bucket_minutes === 1
+                    ? <XAxis dataKey="t" tickFormatter={(v) => time(v).replace(/\s?[ap]m$/, '')} tick={{ ...AXIS, fontSize: 10 }}
+                        tickLine={false} axisLine={false} interval={0} angle={-90} textAnchor="end" height={44} dy={4} />
+                    : <XAxis dataKey="t" tickFormatter={time} tick={AXIS} tickLine={false} axisLine={false} minTickGap={36} />}
                   <YAxis allowDecimals={false} tick={AXIS} tickLine={false} axisLine={false} />
                   <Tooltip content={<LiveTip />} cursor={{ fill: '#f3f7f6' }} />
                   {KEYS.filter(([, , , kind]) => kind === 'bar').map(([k, label, colour]) => (

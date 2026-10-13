@@ -3,7 +3,7 @@ import { api } from '../lib/api';
 import { useSession, allowed } from '../lib/session';
 import { mobile as fmtMobile, dateTime, count } from '../lib/format';
 import Shell from '../components/Shell.jsx';
-import { Banner, Chip, Empty, Failed, Modal, Spinner, Stat, Table } from '../components/ui.jsx';
+import { Banner, Chip, Empty, Failed, Modal, Spinner, Stat, Table, Pager, PAGE_SIZE } from '../components/ui.jsx';
 
 /**
  * BROADCAST (user, 2026-09-23).
@@ -121,6 +121,9 @@ function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }
 
   const rows = data.recipients?.rows || [];
   const fields = data.recipients?.fields || {};
+  // The page of the list (2026-10-13); back to the first when the audience or the search changes.
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [filter, q]);
   // Ticked in the list, plus anyone Auto-select ticked that the search box hides.
   const [auto, setAuto] = useState(null);
   const chosen = useMemo(() => {
@@ -346,7 +349,9 @@ function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }
           </th>
           {['Customer', 'Audience', 'Last vehicle', 'Last active', ''].map((h) => <th key={h} className="th">{h}</th>)}
         </tr>}>
-        {rows.map((r) => (
+        {/* A page at a time (user, 2026-10-13: "the list goes big, scrolling — use pagination").
+            The header tick still takes everyone who matches, on every page. */}
+        {rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((r) => (
           <tr key={r.id} className={r.blocked ? 'opacity-50' : ''}>
             <td className="td">
               <input type="checkbox" checked={picked.has(r.mobile)} disabled={r.blocked}
@@ -372,6 +377,10 @@ function Compose({ data, filter, setFilter, q, setQ, room, onQueued, onPlanned }
           </tr>
         ))}
       </Table>
+      <Pager page={page} total={rows.length} onPage={setPage} />
+      {rows.length > PAGE_SIZE && (
+        <p className="mt-1 text-2xs text-muted">{count(rows.length)} match · {count(picked.size)} ticked — the tick in the header takes all {count(rows.length)}, not just this page.</p>
+      )}
       {rows.length === 0 && <Empty>Nobody matches that.</Empty>}
 
       {err && <Banner tone="wrong" className="mt-3">{err}</Banner>}

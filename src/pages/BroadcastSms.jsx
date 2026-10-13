@@ -4,7 +4,7 @@ import { useSession, allowed } from '../lib/session';
 import { useAutoRefresh } from '../lib/useAutoRefresh';
 import { mobile as fmtMobile, dateTime, ago } from '../lib/format';
 import Shell from '../components/Shell.jsx';
-import { Banner, Chip, Empty, Failed, Modal, Spinner, Table } from '../components/ui.jsx';
+import { Banner, Chip, Empty, Failed, Modal, Spinner, Table, Pager, PAGE_SIZE } from '../components/ui.jsx';
 
 /**
  * SMS BROADCAST (user, 2026-10-13: "select the people and send them the 3-variable DLT
@@ -33,6 +33,8 @@ export default function BroadcastSms() {
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [filter, q]);
 
   const load = useCallback(async () => {
     try { setError(null); setData(await api.smsBroadcast({ filter, q })); } catch (e) { setError(e); }
@@ -123,7 +125,7 @@ export default function BroadcastSms() {
                   <th className="px-3 py-2">Customer</th><th className="px-3 py-2">Mobile</th><th className="px-3 py-2">Vehicles</th>
                   <th className="px-3 py-2">Paid</th><th className="px-3 py-2">Opted in</th><th className="px-3 py-2">Last promo SMS</th><th className="px-3 py-2">Last seen</th>
                 </tr>)}>
-                {rows.map((r) => (
+                {rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((r) => (
                   <tr key={r.id} className={`text-sm ${chosen.has(r.id) ? 'bg-brand/5' : ''}`} onClick={() => toggle(r.id)}>
                     <td className="px-3 py-2"><input type="checkbox" checked={chosen.has(r.id)} onChange={() => toggle(r.id)} onClick={(e) => e.stopPropagation()} /></td>
                     <td className="px-3 py-2">{r.name || '—'} {r.is_internal && <Chip tone="brand">you</Chip>}</td>
@@ -137,6 +139,9 @@ export default function BroadcastSms() {
                 ))}
               </Table>
             ) : <Empty>Nobody here has opted in to offers and newsletters yet.</Empty>}
+            {/* A page at a time (2026-10-13); the header tick takes everyone who matches. */}
+            <Pager page={page} total={rows.length} onPage={setPage} />
+            {rows.length > PAGE_SIZE && <p className="mt-1 text-2xs text-muted">{rows.length} match · {chosen.size} ticked — the header tick takes all of them, not just this page.</p>}
           </div>
 
           {/* 4. Send */}

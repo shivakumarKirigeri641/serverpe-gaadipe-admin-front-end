@@ -402,12 +402,30 @@ function CustomerDetail({ id, onClose, onChanged }) {
             {tab === 'vehicles' && (
               data.vehicles.length ? (
                 <div className="space-y-2">
+                  {/* Remove from their list, as they would (2026-10-13; vehicle/remove.js). */}
+                  {allowed(can, 'block') && data.vehicles.some((v) => !v.hidden_at) && (
+                    <div className="flex justify-end">
+                      <button className="btn-quiet !py-1.5 text-2xs" disabled={busy} onClick={async () => {
+                        const left = data.vehicles.filter((v) => !v.hidden_at).length;
+                        if (!window.confirm(`Remove all ${left} vehicle${left === 1 ? '' : 's'} from this customer's My vehicles? Their alerts stop; reports and invoices stay; anyone can check the numbers again.`)) return;
+                        setBusy(true);
+                        try { await api.removeCustomerVehiclesAll(id); await load(); }
+                        catch (e) { setError(e); } finally { setBusy(false); }
+                      }}>🗑 Remove all from their list</button>
+                    </div>
+                  )}
                   {data.vehicles.map((v) => (
                     <VehicleRow key={v.id} v={v} open={openVehicle === v.id}
                       onToggle={() => setOpenVehicle(openVehicle === v.id ? null : v.id)}
                       onResumeAlerts={allowed(can, 'block') ? async () => {
                         setBusy(true);
                         try { await api.resumeVehicleAlerts(id, v.id); await load(); }
+                        catch (e) { setError(e); } finally { setBusy(false); }
+                      } : null}
+                      onRemove={allowed(can, 'block') && !v.hidden_at ? async () => {
+                        if (!window.confirm(`Remove ${v.reg_no} from this customer's My vehicles? Its alerts stop; its report and invoice stay; anyone can check it again.`)) return;
+                        setBusy(true);
+                        try { await api.removeCustomerVehicle(id, v.id); await load(); }
                         catch (e) { setError(e); } finally { setBusy(false); }
                       } : null} busy={busy} />
                   ))}
@@ -523,7 +541,7 @@ function CustomerDetail({ id, onClose, onChanged }) {
 }
 
 /* A vehicle, opening into its full record — the accordion the panel is read by. */
-function VehicleRow({ v, open, onToggle, onResumeAlerts, busy }) {
+function VehicleRow({ v, open, onToggle, onResumeAlerts, onRemove, busy }) {
   const docs = [
     ['Insurance', v.insurance_upto], ['PUC', v.pucc_upto], ['Fitness', v.fitness_upto],
     ['Road tax', v.tax_upto], ['Permit', v.permit_upto],
@@ -547,6 +565,7 @@ function VehicleRow({ v, open, onToggle, onResumeAlerts, busy }) {
           {v.blocked && <Chip tone="wrong">Blocked</Chip>}
           {v.watched && <Chip tone="good">Watched</Chip>}
           {v.alerts_paused_until && <Chip tone="watch">Alerts paused</Chip>}
+          {v.hidden_at && <Chip tone="info">Removed from list</Chip>}
           {worst && (
             <Chip tone={worst.days < 0 ? 'wrong' : worst.days <= 30 ? 'watch' : 'info'}>
               {worst.label} {worst.days < 0 ? 'expired' : `in ${worst.days}d`}
@@ -578,6 +597,10 @@ function VehicleRow({ v, open, onToggle, onResumeAlerts, busy }) {
               Resume alerts
             </button>
           )}
+          {onRemove && (
+            <button className="btn-quiet mt-2 ml-2 !py-1.5 text-2xs" disabled={busy} onClick={onRemove}>🗑 Remove from their list</button>
+          )}
+          {v.hidden_at && <p className="mt-2 text-2xs text-muted">Removed from their list {date(v.hidden_at)} — alerts stopped; checking it again brings it back.</p>}
 
           <div className="mt-3 flex flex-wrap gap-1.5">
             {docs.map(([label, d]) => {

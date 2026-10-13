@@ -106,6 +106,14 @@ const NAV = [
     ],
   },
   {
+    // Sending to many at once (user, 2026-10-13: "broadcast SMS navbar").
+    group: 'Broadcast',
+    items: [
+      { to: '/broadcast', label: 'WhatsApp broadcast', end: true, icon: SendIcon },
+      { to: '/broadcast/sms', label: 'SMS broadcast (promotional)', icon: SendIcon },
+    ],
+  },
+  {
     group: 'Reports',
     items: [
       { to: '/documents', label: 'Reports', icon: DocIcon },

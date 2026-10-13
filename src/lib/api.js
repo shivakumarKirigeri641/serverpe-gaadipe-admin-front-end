@@ -233,6 +233,13 @@ export const api = {
   pauseCustomer: (id, paused) => call(`/customers/${id}/pause`, { method: 'POST', body: { paused } }),
   // A vehicle's alerts the customer paused from WhatsApp, back on (2026-10-12).
   resumeVehicleAlerts: (id, vehicleId) => call(`/customers/${id}/vehicles/${vehicleId}/resume-alerts`, { method: 'POST' }),
+  // Remove from a customer's My vehicles, as they would (2026-10-13).
+  removeCustomerVehicle: (id, vehicleId) => call(`/customers/${id}/vehicles/${vehicleId}/remove`, { method: 'POST' }),
+  removeCustomerVehiclesAll: (id) => call(`/customers/${id}/vehicles/remove-all`, { method: 'POST' }),
+  // SMS broadcast — the promotional DLT template, opted-in customers (2026-10-13).
+  smsBroadcast: (params) => call(`/sms-broadcast${qs(params)}`),
+  smsBroadcastSend: (body) => call('/sms-broadcast/send', { method: 'POST', body }),
+  smsBroadcastCancel: (batch) => call('/sms-broadcast/cancel', { method: 'POST', body: { batch } }),
 
   conversations: (params) => call(`/live/conversations${qs(params)}`),
   thread: (mobile) => call(`/live/thread/${mobile}`),

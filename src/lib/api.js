@@ -374,7 +374,9 @@ export const api = {
   graphDrill: (page, params) => call(`/graphs/${page}/drill${qs(params)}`, { quiet: true }),
   waLimit: () => call('/whatsapp/limit', { quiet: true }),
   broadcastCosts: () => call('/whatsapp/broadcast-costs'),
-  waReply: (mobile, text) => call('/whatsapp/reply', { method: 'POST', body: { mobile, text } }),
+  waReply: (mobile, text, buttons = []) => call('/whatsapp/reply', { method: 'POST', body: { mobile, text, buttons } }),
+  // The buttons a reply may carry, and what each does (2026-10-13).
+  waReplyButtons: () => call('/whatsapp/reply-buttons', { quiet: true }),
   checkSaved: (regNo) => call(`/check/${encodeURIComponent(regNo)}/saved`),
 
   blocks: (params) => call(`/blocks${qs(params)}`),

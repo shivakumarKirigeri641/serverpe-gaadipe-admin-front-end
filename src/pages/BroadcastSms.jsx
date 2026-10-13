@@ -71,6 +71,14 @@ export default function BroadcastSms() {
   const size = useMemo(() => smsLength(preview), [preview]);
   const fits = !preview || size.length <= size.limit;
   const valsOk = vals.slice(0, n).every((v) => v.trim() && v.trim().length <= VAR_MAX) && fits;
+  // The first thing stopping Send, said plainly — null when it may go.
+  const blocked = !data ? 'loading' : !canSend ? 'your admin role needs the "settings" permission'
+    : !t?.ready ? `the ${mode === 'service' ? 'service' : 'promotional'} template is not set up in Settings (${!t?.id ? `sms_tpl_${mode} — the DLT message id` : !t?.text ? `sms_tpl_${mode}_text — the approved wording` : mode === 'promo' ? 'sms_promo_sender_id — your 6-digit promotional header' : 'the sender id on the server'})`
+    : vals.slice(0, n).some((v) => !v.trim()) ? `fill in all ${n} value${n === 1 ? '' : 's'}`
+    : vals.slice(0, n).some((v) => v.trim().length > VAR_MAX) ? `a value is longer than ${VAR_MAX} characters`
+    : !fits ? `the message is ${size.length} characters — one SMS holds ${size.limit}`
+    : !chosen.size ? 'tick at least one customer (or "Select all")'
+    : !data.left ? "today's limit is used up (Settings sms_promo_per_day)" : null;
 
   const send = async () => {
     setBusy(true);
@@ -206,8 +214,10 @@ export default function BroadcastSms() {
           <div className="card flex flex-wrap items-center gap-3 p-4">
             <div className="text-sm text-ink"><b>{chosen.size}</b> chosen · {data.left} left today</div>
             {done && <Banner tone="good" className="flex-1">Queued <b>{done.queued}</b> — sending {new Date(done.send_at) > new Date() ? `from ${dateTime(done.send_at)}` : 'now, a few a minute'}.{done.not_opted ? ` ${done.not_opted} left out (not opted in).` : ''}{done.over_cap ? ` ${done.over_cap} over today's limit.` : ''}</Banner>}
-            <button className="btn-primary ml-auto" disabled={!canSend || !t.ready || !chosen.size || !valsOk || !data.left}
+            <button className="btn-primary ml-auto" disabled={Boolean(blocked)}
               onClick={() => setConfirm(true)}>Send SMS to {chosen.size}</button>
+            {/* Why Send is off, in words (user, 2026-10-13: "Send SMS button still disabled"). */}
+            {blocked && <p className="w-full text-right text-2xs text-wrong-700" data-test="sms-why-off">Send is off: {blocked}</p>}
           </div>
 
           {/* Batches */}

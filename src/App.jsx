@@ -25,6 +25,7 @@ import ReportAccess from './pages/ReportAccess.jsx';
 import CustomerEmails from './pages/CustomerEmails.jsx';
 import Broadcast from './pages/Broadcast.jsx';
 import BroadcastSms from './pages/BroadcastSms.jsx';
+import WaReplies from './pages/WaReplies.jsx';
 import FreeReports from './pages/FreeReports.jsx';
 import Live from './pages/Live.jsx';
 import VehicleExplorer from './pages/vehicles/Explorer.jsx';
@@ -166,6 +167,7 @@ export default function App() {
       <Route path="/broadcast" element={<Broadcast />} />
       {/* SMS broadcast — the promotional DLT template (2026-10-13). */}
       <Route path="/broadcast/sms" element={<BroadcastSms />} />
+      <Route path="/whatsapp/replies" element={<WaReplies />} />
       <Route path="/tickets" element={<Tickets />} />
       <Route path="/free-reports" element={<FreeReports />} />
       {/* The Vehicles module (user, 2026-09-25). */}

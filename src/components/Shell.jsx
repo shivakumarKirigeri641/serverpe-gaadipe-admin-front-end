@@ -101,6 +101,7 @@ const NAV = [
     items: [
       { to: '/whatsapp', label: 'WhatsApp Command Center', end: true, icon: SendIcon, badge: 'whatsapp' },
       { to: '/conversations', label: 'Conversations', icon: LifebuoyIcon },
+      { to: '/whatsapp/replies', label: 'Replies & taps', icon: LifebuoyIcon },
       { to: '/whatsapp/operations', label: 'Message analytics & cost', icon: RupeeIcon, cap: 'dashboard.view' },
       { to: '/campaigns', label: 'Campaigns', icon: SendIcon },
     ],

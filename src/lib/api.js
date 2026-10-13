@@ -238,6 +238,8 @@ export const api = {
   removeCustomerVehiclesAll: (id) => call(`/customers/${id}/vehicles/remove-all`, { method: 'POST' }),
   // SMS broadcast — the promotional DLT template, opted-in customers (2026-10-13).
   smsBroadcast: (params) => call(`/sms-broadcast${qs(params)}`),
+  // WhatsApp replies & taps (2026-10-13).
+  waReplies: (params) => call(`/whatsapp/replies${qs(params)}`),
   smsBroadcastSend: (body) => call('/sms-broadcast/send', { method: 'POST', body }),
   smsBroadcastCancel: (batch) => call('/sms-broadcast/cancel', { method: 'POST', body: { batch } }),
 

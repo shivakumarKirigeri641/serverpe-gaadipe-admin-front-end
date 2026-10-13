@@ -502,11 +502,13 @@ function Sent({ rows, onChange, canSend }) {
  * time — so each number walks Waiting → Sent → Delivered → Read, or stops red
  * with the reason. Closing it does not stop anything; sending carries on.
  */
-const STEPS = ['Waiting', 'Sent', 'Delivered', 'Read'];
+// …and Replied (user, 2026-10-13: "track replies — when they tap reply"): their answer, tap or typed.
+const STEPS = ['Waiting', 'Sent', 'Delivered', 'Read', 'Replied'];
 function stageOf(t) {
   if (t.status === 'failed' || t.delivery === 'failed') return { step: -1, tone: 'wrong', word: 'Failed', why: t.delivery_error || t.error };
   if (t.status === 'skipped') return { step: -1, tone: 'info', word: 'Skipped', why: t.error };
   if (t.status === 'pending') return { step: 0, tone: 'watch', word: 'Waiting' };
+  if (t.replied_at) return { step: 4, tone: 'brand', word: 'Replied' };
   if (t.delivery === 'read') return { step: 3, tone: 'good', word: 'Read' };
   if (t.delivery === 'delivered') return { step: 2, tone: 'good', word: 'Delivered' };
   return { step: 1, tone: 'good', word: 'Sent' };
@@ -524,7 +526,8 @@ function Targets({ broadcast, onClose, canSend, onChange }) {
   const waiting = n((s) => s.step === 0);
   const failed = n((s) => s.word === 'Failed');
   const skipped = n((s) => s.word === 'Skipped');
-  const read = n((s) => s.step === 3);
+  const read = n((s) => s.step >= 3);
+  const replied = n((s) => s.step === 4);
   const delivered = n((s) => s.step >= 2);
   const sent = n((s) => s.step >= 1);
   const done = rows.length - waiting;
@@ -553,6 +556,7 @@ function Targets({ broadcast, onClose, canSend, onChange }) {
             <Chip tone="good">{count(sent)} sent</Chip>
             <Chip tone="good">{count(delivered)} delivered</Chip>
             <Chip tone="good">{count(read)} read</Chip>
+            <Chip tone="brand">{count(replied)} replied</Chip>
             {failed > 0 && <Chip tone="wrong">{count(failed)} failed</Chip>}
             {skipped > 0 && <Chip tone="info">{count(skipped)} skipped</Chip>}
             {canSend && waiting > 0 && (
@@ -585,7 +589,8 @@ function Targets({ broadcast, onClose, canSend, onChange }) {
                   <div className="w-44 text-right">
                     <Chip tone={s.tone}>{s.word}</Chip>
                     {s.why && <div className="mt-0.5 text-2xs text-muted">{SKIP_WHY[s.why] || s.why}</div>}
-                    {!s.why && (t.delivery_at || t.sent_at) && <div className="mt-0.5 text-2xs text-muted">{dateTime(t.delivery_at || t.sent_at)}</div>}
+                    {t.replied_at && <div className="mt-0.5 truncate text-2xs font-semibold text-ink" title={t.reply_text}>“{t.reply_text}”</div>}
+                    {!s.why && (t.replied_at || t.delivery_at || t.sent_at) && <div className="mt-0.5 text-2xs text-muted">{dateTime(t.replied_at || t.delivery_at || t.sent_at)}</div>}
                   </div>
                 </div>
               );

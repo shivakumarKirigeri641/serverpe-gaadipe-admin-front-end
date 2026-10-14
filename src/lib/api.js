@@ -377,6 +377,9 @@ export const api = {
   waReply: (mobile, text, buttons = []) => call('/whatsapp/reply', { method: 'POST', body: { mobile, text, buttons } }),
   // The buttons a reply may carry, and what each does (2026-10-13).
   waReplyButtons: () => call('/whatsapp/reply-buttons', { quiet: true }),
+  waReplyMany: (mobiles, text, buttons = []) => call('/whatsapp/reply-many', { method: 'POST', body: { mobiles, text, buttons } }),
+  waReplyManyStatus: (id) => call(`/whatsapp/reply-many/${id}`, { quiet: true }),
+  waReplyManyStop: (id) => call(`/whatsapp/reply-many/${id}/stop`, { method: 'POST' }),
   checkSaved: (regNo) => call(`/check/${encodeURIComponent(regNo)}/saved`),
 
   blocks: (params) => call(`/blocks${qs(params)}`),

@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 import { useAutoRefresh } from '../../lib/useAutoRefresh';
 import Shell from '../../components/Shell.jsx';
 import ReplyBox from '../../components/ReplyBox.jsx';
+import ReplyMany from '../../components/ReplyMany.jsx';
 import { Failed, Skeleton } from '../../components/ui.jsx';
 import { ago, plate, rupees } from '../../lib/format';
 
@@ -71,6 +72,18 @@ export default function HotLeads() {
   const shown = d ? d.leads.filter((l) => inTab(l) && matches(l, needle)) : [];
   const inTabTotal = d ? d.leads.filter(inTab).length : 0;
 
+  /* TICK MANY, ONE MESSAGE (user, 2026-10-14). Kept across tabs and refreshes; someone
+     who drops off the list (window closed) drops out of the selection too. */
+  const [ticked, setTicked] = useState(() => new Set());
+  const toggle = (m) => setTicked((s) => { const x = new Set(s); if (x.has(m)) x.delete(m); else x.add(m); return x; });
+  const chosen = d ? d.leads.filter((l) => ticked.has(l.mobile)) : [];
+  const allShownTicked = shown.length > 0 && shown.every((l) => ticked.has(l.mobile));
+  const tickShown = () => setTicked((s) => {
+    const x = new Set(s);
+    if (allShownTicked) shown.forEach((l) => x.delete(l.mobile)); else shown.forEach((l) => x.add(l.mobile));
+    return x;
+  });
+
   return (
     <Shell title="Hot leads" subtitle="People whose WhatsApp window is open and who have not paid yet — a reply is free">
       {d && (
@@ -86,6 +99,7 @@ export default function HotLeads() {
             placeholder="Search name, number, vehicle, message" aria-label="Search leads" />
         </div>
       )}
+      {d && <ReplyMany people={chosen} onClear={() => setTicked(new Set())} onDone={load} />}
       {error && !d ? <Failed error={error} onRetry={load} /> : !d ? <Skeleton rows={6} /> : !shown.length ? (
         <div className="card p-8 text-center text-sm text-muted">
           {q && inTabTotal ? <>Nobody in this tab matches “{q}”. <button type="button" className="text-brand hover:underline" onClick={() => setQ('')}>Clear search</button></>
@@ -93,17 +107,26 @@ export default function HotLeads() {
         </div>
       ) : (
         <>
-          <p className="mb-3 text-sm text-body">
-            {TABS.find(([k]) => k === tab)[2]} Newest first. Replies are written by you; nothing is sent automatically.
-            {q ? ` Showing ${shown.length} of ${inTabTotal} matching “${q}”.` : ''}
-          </p>
+          <div className="mb-3 flex flex-wrap items-center gap-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-ink">
+              <input type="checkbox" className="h-4 w-4 accent-brand" checked={allShownTicked} onChange={tickShown} data-test="tick-all" />
+              {allShownTicked ? 'Untick all' : `Select all ${shown.length}`}{q ? ' shown' : ''}
+            </label>
+            {chosen.length > 0 && <span className="text-2xs text-muted">{chosen.length} ticked</span>}
+            <p className="w-full text-sm text-body sm:w-auto sm:flex-1">
+              {TABS.find(([k]) => k === tab)[2]} Newest first. Replies are written by you; nothing is sent automatically.
+              {q ? ` Showing ${shown.length} of ${inTabTotal} matching “${q}”.` : ''}
+            </p>
+          </div>
           <div className="grid gap-3 lg:grid-cols-2">
             {shown
               // Newest first, by when they reached this stage.
               .sort((a, b) => new Date(b.at || b.last_inbound_at) - new Date(a.at || a.last_inbound_at))
               .map((l) => (
-              <article key={l.mobile} className="card p-4">
+              <article key={l.mobile} className={`card p-4 ${ticked.has(l.mobile) ? 'ring-2 ring-brand/60' : ''}`}>
                 <div className="flex flex-wrap items-baseline gap-2">
+                  <input type="checkbox" className="h-4 w-4 self-center accent-brand" checked={ticked.has(l.mobile)}
+                    onChange={() => toggle(l.mobile)} aria-label={`Select ${l.name || 'this person'}`} />
                   <b className="text-ink">{l.name || 'Unknown'}</b>
                   {tab === 'everyone' && STAGE[l.stage] && (
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STAGE[l.stage][1]}`}>{STAGE[l.stage][0]}</span>

@@ -383,6 +383,11 @@ export const api = {
   waReplyMany: (mobiles, text, buttons = []) => call('/whatsapp/reply-many', { method: 'POST', body: { mobiles, text, buttons } }),
   waReplyManyStatus: (id) => call(`/whatsapp/reply-many/${id}`, { quiet: true }),
   waReplyManyStop: (id) => call(`/whatsapp/reply-many/${id}/stop`, { method: 'POST' }),
+  // The monitoring update now, to chosen paid customers (2026-10-15).
+  monitoringCustomers: () => call('/monitoring/customers'),
+  monitoringSend: (userIds) => call('/monitoring/send', { method: 'POST', body: { user_ids: userIds } }),
+  monitoringSendStatus: (id) => call(`/monitoring/send/${id}`, { quiet: true }),
+  monitoringSendStop: (id) => call(`/monitoring/send/${id}/stop`, { method: 'POST' }),
   checkSaved: (regNo) => call(`/check/${encodeURIComponent(regNo)}/saved`),
 
   blocks: (params) => call(`/blocks${qs(params)}`),

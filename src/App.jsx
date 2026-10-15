@@ -78,6 +78,7 @@ import Blocks from './pages/Blocks.jsx';
 import OwnerClaims from './pages/ops/OwnerClaims.jsx';
 import OwnerPhotos from './pages/ops/OwnerPhotos.jsx';
 import HotLeads from './pages/ops/HotLeads.jsx';
+import MonitoringSend from './pages/ops/MonitoringSend.jsx';
 import ChecksByCustomer from './pages/ops/ChecksByCustomer.jsx';
 import AdReturn from './pages/ops/AdReturn.jsx';
 import DataRequests from './pages/ops/DataRequests.jsx';
@@ -186,6 +187,7 @@ export default function App() {
       <Route path="/owner-claims" element={<OwnerClaims />} />
       <Route path="/owner-photos" element={<OwnerPhotos />} />
       <Route path="/hot-leads" element={<HotLeads />} />
+      <Route path="/monitoring-updates" element={<MonitoringSend />} />
       <Route path="/checks-by-customer" element={<ChecksByCustomer />} />
       <Route path="/ad-return" element={<AdReturn />} />
       <Route path="/data-requests" element={<DataRequests />} />

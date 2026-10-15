@@ -86,7 +86,8 @@ function TodaySummary({ s }) {
           {row('GST', rs(t.gst), '/finance')}
           {row('Gateway cost', rs(t.gateway_cost), '/profitability?range=today')}
           {row('API cost', rs(t.api_cost), '/api-monitor')}
-          {row('Messaging cost', rs(t.whatsapp_cost), '/whatsapp')}
+          {/* The server sends messaging_cost (whatsapp_cost was its old name, 2026-10-15). */}
+          {row('Messaging cost', rs(t.messaging_cost ?? t.whatsapp_cost), '/whatsapp')}
           <div className="mt-1 border-t border-line pt-1">{row('Net contribution', rs(t.net), '/profitability?range=today')}</div>
         </div>
         <div className="p-4">

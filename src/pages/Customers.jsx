@@ -28,11 +28,38 @@ const SEGMENTS = [
   ['pay_failed', 'Payment not completed'], ['suspicious', 'Worth a look'],
   // Who a promotional SMS may go to (2026-10-13); Export then gives only them.
   ['offers', 'Opted in to offers'],
+  // The email backup for alerts (2026-10-15).
+  ['email_confirmed', 'Email confirmed'], ['email_pending', 'Email given, not confirmed'],
   // Left out of every other view and the total (user, 2026-09-30).
   ['stopped', 'Said STOP'],
   // Said STOP, then turned messages back on — START or Undo (user, 2026-10-02).
   ['came_back', 'Came back after STOP'],
 ];
+/*
+ * EMAIL, AS A BADGE BESIDE THE NAME (user, 2026-10-15: "can I see who confirmed the mail —
+ * some badge or ribbon type"). Confirmed: a green ribbon with a tick — alerts also reach their
+ * inbox if WhatsApp stops. Given but not confirmed: a quiet amber one. No email: nothing.
+ */
+function EmailBadge({ status, at }) {
+  if (status === 'confirmed') {
+    return (
+      <span title={`Email confirmed${at ? ` ${dateTime(at)}` : ''} — alerts also go to their inbox`}
+        className="relative ml-1.5 inline-flex items-center gap-1 rounded-l-full rounded-r-sm bg-gradient-to-r from-good-500 to-good-700 py-[1px] pl-1.5 pr-2 align-middle text-[10px] font-bold text-white shadow-sm after:absolute after:-right-1 after:top-0 after:h-full after:w-2 after:bg-good-700 after:[clip-path:polygon(0_0,100%_0,40%_50%,100%_100%,0_100%)]">
+        <span aria-hidden="true">✉</span>✓ Email
+      </span>
+    );
+  }
+  if (status === 'pending') {
+    return (
+      <span title="Gave an email but has not tapped the confirmation link yet — nothing is sent to it until they do"
+        className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-watch-50 px-1.5 py-[1px] align-middle text-[10px] font-semibold text-watch-700 ring-1 ring-watch-500/30">
+        <span aria-hidden="true">✉</span>Not confirmed
+      </span>
+    );
+  }
+  return null;
+}
+
 /* Joined today (this browser's date): a light tint on the row (user, 2026-09-26). */
 const isToday = (t) => Boolean(t) && new Date(t).toDateString() === new Date().toDateString();
 
@@ -223,6 +250,7 @@ export default function Customers() {
                     <div className="font-semibold text-ink">
                       {r.name || 'Unknown'}
                       {isToday(r.created_at) && <span className="ml-1.5 rounded bg-good-50 px-1 align-middle text-[10px] font-semibold text-good-700 ring-1 ring-good-500/30" title={`Joined ${dateTime(r.created_at)}`}>New today</span>}
+                      <EmailBadge status={r.email_status} at={r.email_verified_at} />
                     </div>
                     <div className="tabular text-2xs text-muted">
                       {fmtMobile(r.mobile)}

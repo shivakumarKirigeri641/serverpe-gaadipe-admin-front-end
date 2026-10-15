@@ -20,7 +20,11 @@ const TABS = [
   ['messaged', '💬 Just messaged', 'Wrote to GaadiPe, no vehicle checked yet.'],
   // Everyone (user, 2026-10-06): every open chat in one list — checked, said hi, opened payment, or just paid.
   ['everyone', '👥 Everyone', 'Every open chat — checked a vehicle, said hi, opened payment, or paid in the last two days.'],
+  // Paid customers (user, 2026-10-15): anyone who has ever paid, with their 24-hour window open.
+  ['paidcust', '💰 Paid customers', 'Customers who have paid before (any time), whose 24-hour window is open — a reply is free.'],
 ];
+/* Who is in a tab. Paid customers is worked out here: it cuts across the stages. */
+const IN_TAB = (tab, l) => (tab === 'everyone' ? true : tab === 'paidcust' ? (Number(l.paid_before) > 0 || l.stage === 'paid') : l.stage === tab);
 const STAGE = {
   checkout: ['🔥 Opened payment', 'bg-wrong-50 text-wrong-700'],
   checked: ['🌡 Checked', 'bg-watch-50 text-watch-700'],
@@ -67,7 +71,8 @@ export default function HotLeads() {
     setPicked(true);
   }, [d, picked]);
 
-  const inTab = (l) => tab === 'everyone' || l.stage === tab;
+  const inTab = (l) => IN_TAB(tab, l);
+  const countOf = (k) => (k === 'paidcust' ? (d?.leads || []).filter((l) => IN_TAB('paidcust', l)).length : d?.counts?.[k] || 0);
   const needle = norm(q);
   const shown = d ? d.leads.filter((l) => inTab(l) && matches(l, needle)) : [];
   const inTabTotal = d ? d.leads.filter(inTab).length : 0;
@@ -91,7 +96,7 @@ export default function HotLeads() {
           {TABS.map(([k, label]) => (
             <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
               className={`-mb-px border-b-2 px-3 py-2 text-sm font-semibold ${tab === k ? 'border-brand text-ink' : 'border-transparent text-muted hover:text-ink'}`}>
-              {label} <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] ${tab === k ? 'bg-brand text-white' : 'bg-shell text-body'}`}>{d.counts?.[k] || 0}</span>
+              {label} <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] ${tab === k ? 'bg-brand text-white' : 'bg-shell text-body'}`}>{countOf(k)}</span>
             </button>
           ))}
           {/* Search in every tab (user, 2026-10-06): name, number, vehicle or what they wrote. */}
@@ -128,7 +133,7 @@ export default function HotLeads() {
                   <input type="checkbox" className="h-4 w-4 self-center accent-brand" checked={ticked.has(l.mobile)}
                     onChange={() => toggle(l.mobile)} aria-label={`Select ${l.name || 'this person'}`} />
                   <b className="text-ink">{l.name || 'Unknown'}</b>
-                  {tab === 'everyone' && STAGE[l.stage] && (
+                  {(tab === 'everyone' || tab === 'paidcust') && STAGE[l.stage] && (
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${STAGE[l.stage][1]}`}>{STAGE[l.stage][0]}</span>
                   )}
                   <span className="tabular text-2xs text-muted">••••••{String(l.mobile).slice(-4)}</span>

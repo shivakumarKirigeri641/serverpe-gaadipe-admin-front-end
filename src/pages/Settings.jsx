@@ -259,7 +259,7 @@ export default function Settings() {
                 checkout page together.
               </p>
             </div>
-            <Table head={<tr><th className="th">Plan</th><th className="th">Price</th><th className="th">Discount</th><th className="th">Days</th><th className="th">Active</th><th className="th"></th></tr>}>
+            <Table head={<tr><th className="th">Plan</th><th className="th">Price</th><th className="th">Renewal</th><th className="th">Discount</th><th className="th">Days</th><th className="th">Active</th><th className="th"></th></tr>}>
               {data.plans.map((p) => <PlanRow key={p.code} plan={p} onSaved={load} />)}
             </Table>
           </div>
@@ -348,6 +348,9 @@ function PlanRow({ plan, onSaved }) {
         is_active: edit.is_active,
         // Typed in rupees (₹4), kept in paise (2026-10-03).
         discount_paise: Math.round(Number(edit.discount_rupees || 0) * 100),
+        // Only sent for a plan that has a renewal price (2026-10-14).
+        ...(plan.renewal_paise != null && String(edit.renewal_rupees ?? '').trim() !== ''
+          ? { renewal_paise: Math.round(Number(edit.renewal_rupees) * 100) } : {}),
       });
       setEdit(null); onSaved();
     } catch (e) { window.alert(e.message); } finally { setBusy(false); }
@@ -366,6 +369,22 @@ function PlanRow({ plan, onSaved }) {
         ) : (
           <Hint note={`${plan.price_paise} paise, GST inclusive`}>
             <span className="font-semibold">{rupees(plan.price_paise)}</span>
+          </Hint>
+        )}
+      </td>
+      {/* THE RENEWAL PRICE (user, 2026-10-14: "is the ₹11 renewal configurable in admin?"):
+          what a vehicle already paid for costs again, within report_renewal_window_days.
+          Only plans that have one (the full report); typed in rupees, GST inclusive. */}
+      <td className="td tabular">
+        {plan.renewal_paise == null ? <span className="text-muted">—</span> : edit ? (
+          <span className="flex items-center gap-1">
+            <span className="text-muted">₹</span>
+            <input className="input !w-20 !py-1.5" inputMode="decimal" value={edit.renewal_rupees}
+              onChange={(e) => setEdit({ ...edit, renewal_rupees: e.target.value })} aria-label="Renewal price in rupees" />
+          </span>
+        ) : (
+          <Hint note={`${plan.renewal_paise} paise, GST inclusive — to renew a vehicle already bought, within the renewal window (Settings: report_renewal_window_days; 0 = any time).`}>
+            <span className="font-semibold">{rupees(plan.renewal_paise)}</span>
           </Hint>
         )}
       </td>
@@ -409,7 +428,8 @@ function PlanRow({ plan, onSaved }) {
           </div>
         ) : (
           <button className="btn-quiet !px-2.5 !py-1 text-2xs"
-            onClick={() => setEdit({ price_paise: plan.price_paise, duration_days: plan.duration_days, is_active: plan.is_active, discount_rupees: String(Number(plan.discount_paise || 0) / 100) })}>
+            onClick={() => setEdit({ price_paise: plan.price_paise, duration_days: plan.duration_days, is_active: plan.is_active, discount_rupees: String(Number(plan.discount_paise || 0) / 100),
+              renewal_rupees: plan.renewal_paise == null ? '' : String(Number(plan.renewal_paise) / 100) })}>
             Edit
           </button>
         )}

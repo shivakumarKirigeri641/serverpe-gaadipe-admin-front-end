@@ -343,7 +343,8 @@ function PlanRow({ plan, onSaved }) {
     setBusy(true);
     try {
       await api.savePlan(plan.code, {
-        price_paise: Number(edit.price_paise),
+        // Typed in rupees like the renewal and the discount (2026-10-15: "I see 1900 instead of 19").
+        price_paise: Math.round(Number(edit.price_rupees) * 100),
         duration_days: Number(edit.duration_days),
         is_active: edit.is_active,
         // Typed in rupees (₹4), kept in paise (2026-10-03).
@@ -364,8 +365,11 @@ function PlanRow({ plan, onSaved }) {
       </td>
       <td className="td tabular">
         {edit ? (
-          <input className="input !w-28 !py-1.5" value={edit.price_paise}
-            onChange={(e) => setEdit({ ...edit, price_paise: e.target.value })} />
+          <span className="flex items-center gap-1">
+            <span className="text-muted">₹</span>
+            <input className="input !w-24 !py-1.5" inputMode="decimal" value={edit.price_rupees}
+              onChange={(e) => setEdit({ ...edit, price_rupees: e.target.value })} aria-label="Price in rupees" />
+          </span>
         ) : (
           <Hint note={`${plan.price_paise} paise, GST inclusive`}>
             <span className="font-semibold">{rupees(plan.price_paise)}</span>
@@ -397,7 +401,7 @@ function PlanRow({ plan, onSaved }) {
             <input className="input !w-20 !py-1.5" inputMode="decimal" value={edit.discount_rupees}
               onChange={(e) => setEdit({ ...edit, discount_rupees: e.target.value })} aria-label="Discount in rupees" />
             <span className="whitespace-nowrap text-2xs text-muted">
-              → pays {rupees(Math.max(0, Number(edit.price_paise) - Math.round(Number(edit.discount_rupees || 0) * 100)))}
+              → pays {rupees(Math.max(0, Math.round(Number(edit.price_rupees || 0) * 100) - Math.round(Number(edit.discount_rupees || 0) * 100)))}
             </span>
           </span>
         ) : Number(plan.discount_paise) > 0 ? (
@@ -428,7 +432,7 @@ function PlanRow({ plan, onSaved }) {
           </div>
         ) : (
           <button className="btn-quiet !px-2.5 !py-1 text-2xs"
-            onClick={() => setEdit({ price_paise: plan.price_paise, duration_days: plan.duration_days, is_active: plan.is_active, discount_rupees: String(Number(plan.discount_paise || 0) / 100),
+            onClick={() => setEdit({ price_rupees: String(Number(plan.price_paise || 0) / 100), duration_days: plan.duration_days, is_active: plan.is_active, discount_rupees: String(Number(plan.discount_paise || 0) / 100),
               renewal_rupees: plan.renewal_paise == null ? '' : String(Number(plan.renewal_paise) / 100) })}>
             Edit
           </button>

@@ -13,6 +13,7 @@ import {
 } from './common.jsx';
 import { TagDialog, NoteDialog, ListDialog, AssignDialog, Confirm, ExportDialog } from './actions.jsx';
 import { useRowChanges } from '../../lib/motion.jsx';
+import { NumberPlate, BoardTag, PLATES, BOARD_ORDER } from './plate.jsx';
 
 /**
  * VEHICLE EXPLORER (user, 2026-09-25) — every vehicle GaadiPe has seen, one
@@ -28,7 +29,8 @@ const SIZE = 50;
 
 /* The columns. `sort` is what the server sorts by; `w` the starting width. */
 const COLUMNS = [
-  { key: 'reg_no', label: 'Vehicle number', sort: 'reg_no', w: 150, fixed: true, note: "The registration number. Tap it to open everything about this vehicle." },
+  { key: 'reg_no', label: 'Vehicle number', sort: 'reg_no', w: 160, fixed: true, note: "The registration number, on its own board colour. Tap it to open everything about this vehicle." },
+  { key: 'plate', label: 'Number plate', w: 175, note: "The board's colour, from the RC's class, category, fuel and permit: white = private, yellow = commercial, green = electric, black = self-drive rental, red = temporary. “Unknown” = the RC has not been fetched." },
   { key: 'maker', label: 'Manufacturer', sort: 'maker', w: 170, note: "Manufacturer, from the Government RC record." },
   { key: 'model', label: 'Model', sort: 'model', w: 190, note: "Model, from the Government RC record." },
   { key: 'variant', label: 'Variant', w: 110, note: 'The records API does not return a variant.' },
@@ -68,6 +70,7 @@ export const VIEWS = {
 /* Every filter the drawer offers, and its choices. */
 const DOC_CHOICES = [['', 'Any'], ['valid', 'Valid'], ['soon', 'Expiring soon'], ['expired', 'Expired'], ['na', 'Not available'], ['unknown', 'Unknown']];
 const SELECTS = [
+  ['plate', 'Number plate', [['', 'Any'], ...BOARD_ORDER.map((k) => [k, k === 'unknown' ? 'Unknown' : `${PLATES[k].label} · ${k === 'green' ? 'Electric' : PLATES[k].kind}`])]],
   ['channel', 'Channel', [['', 'Any'], ['whatsapp', 'WhatsApp']]],
   ['paid', 'Paid / unpaid', [['', 'Any'], ['yes', 'Paid'], ['no', 'Unpaid']]],
   ['report', 'Report', [['', 'Any'], ['yes', 'Generated'], ['no', 'Not generated']]],
@@ -142,7 +145,9 @@ export default function Explorer() {
     api.pref(PREF_COLUMNS).then(({ value }) => {
       if (value?.order) {
         const known = COLUMNS.map((c) => c.key);
-        const order = [...value.order.filter((k) => known.includes(k)), ...known.filter((k) => !value.order.includes(k))];
+        // A column added since the layout was saved goes beside the one it follows, not at the end.
+        const order = value.order.filter((k) => known.includes(k));
+        known.forEach((k, i) => { if (!order.includes(k)) order.splice(i ? order.indexOf(known[i - 1]) + 1 : 0, 0, k); });
         setLayout({ order, hidden: (value.hidden || []).filter((k) => known.includes(k)), widths: value.widths || {} });
       }
     }).catch(() => {});
@@ -220,6 +225,7 @@ export default function Explorer() {
           </div>
         </Hint>
       )}
+      {stats?.boards && <Boards b={stats.boards} on={params.plate} onPick={(k) => set({ plate: params.plate === k ? '' : k })} />}
 
       {/* ───────────────────────── search ── */}
       <div className="card mb-3 p-3">
@@ -373,7 +379,12 @@ export default function Explorer() {
 
 function Cell({ c, r }) {
   switch (c.key) {
-    case 'reg_no': return <Link to={`/vehicles/${r.reg_no}`} className="font-mono text-sm font-semibold text-brand-deep hover:underline">{r.display}</Link>;
+    case 'reg_no': return (
+      <Link to={`/vehicles/${r.reg_no}`} className="inline-block transition hover:-translate-y-px hover:brightness-95" title="Open this vehicle">
+        <NumberPlate reg={r.display} plate={r.plate} />
+      </Link>
+    );
+    case 'plate': return <BoardTag plate={r.plate} />;
     case 'variant': return NA;
     // The office beside the code (user, 2026-10-01).
     case 'rto': return (
@@ -513,6 +524,41 @@ function StatsStrip({ s, onPick }) {
         {tile('Paid', s.paid, 'at least one paid report · tap to list', () => onPick({ paid: 'yes' }), 'Vehicles with at least one paid full report. Tap to show only these.')}
         {tile('Unpaid', s.unpaid, 'looked up, never paid · tap to list', () => onPick({ paid: 'no' }), 'Checked but never bought — your follow-up list. Tap to show only these.')}
         {tile('WhatsApp', s.whatsapp, 'looked up on WhatsApp · tap to list', () => onPick({ channel: 'whatsapp' }), 'Vehicles checked through the WhatsApp bot at least once. Tap to show only these.')}
+      </div>
+    </div>
+  );
+}
+
+/* Vehicles by number-plate colour (2026-10-15) — tap one to list only those, again to clear. */
+function Boards({ b, on, onPick }) {
+  const n = (k) => (k === 'green' ? (b.green || 0) + (b.green_yellow || 0) : b[k] || 0);
+  const total = BOARD_ORDER.reduce((a, k) => a + n(k), 0) || 1;
+  const shown = BOARD_ORDER.filter((k) => n(k) > 0 || k === on);
+  if (!shown.length) return null;
+  return (
+    <div className="card mb-3 px-3 py-2.5">
+      <div className="mb-2 flex items-center justify-between text-2xs">
+        <span className="font-semibold uppercase tracking-wider text-muted">Number plates</span>
+        <span className="text-muted">from the RC · tap to list</span>
+      </div>
+      {/* The share of each board, as one bar. */}
+      <div className="mb-2.5 flex h-2 overflow-hidden rounded-full bg-shell">
+        {shown.map((k) => <span key={k} style={{ width: `${(n(k) / total) * 100}%`, background: PLATES[k].dashed ? '#c9d6d3' : PLATES[k].bg, boxShadow: k === 'white' ? 'inset 0 0 0 1px #c9d6d3' : undefined }} />)}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {shown.map((k) => {
+          const p = PLATES[k];
+          return (
+            <button key={k} type="button" onClick={() => onPick(k)} title={p.note}
+              className={`lift group inline-flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left ${on === k ? 'border-brand bg-brand/5 ring-2 ring-brand/30' : 'border-line bg-white hover:shadow-pop'}`}>
+              <span className="grid h-7 w-11 place-items-center rounded-md font-mono text-[10px] font-black" style={{ background: p.bg, color: p.fg, border: `1.5px ${p.dashed ? 'dashed' : 'solid'} ${p.ring}` }}>KA</span>
+              <span className="leading-tight">
+                <span className="tabular block text-sm font-semibold text-ink">{count(n(k))} <span className="text-2xs font-normal text-muted">· {Math.round((n(k) / total) * 100)}%</span></span>
+                <span className="block text-2xs text-muted">{k === 'unknown' ? 'Unknown' : `${p.label.replace(' board', '')} · ${k === 'green' ? 'Electric' : p.kind}`}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

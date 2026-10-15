@@ -12,6 +12,8 @@ import {
   NA, show, inr, ms, day, DOC_STATE, DOC_NOTE, docWords, PAY_TONE, PAY_WORD, CHANNEL, TAG_WORD, Section, useVehicleMeta, copy, linkTo,
 } from './common.jsx';
 import { TagDialog, NoteDialog, ListDialog, AssignDialog, Confirm } from './actions.jsx';
+import { NumberPlate, BoardTag, plateOf } from './plate.jsx';
+import FastagHistory from './fastag.jsx';
 
 /**
  * ONE VEHICLE, WHOLE (user, 2026-09-25).
@@ -100,11 +102,12 @@ export default function Profile() {
           <Loan l={p.loan} />
         </Section>
 
-        {p.fastag && (
-          <Section id="fastag" title="FASTag" badge={p.fastag.has_active_tag ? 'active tag' : 'no active tag'} open={false}>
-            <Fastag f={p.fastag} />
-          </Section>
-        )}
+        {/* FASTag with its toll history (2026-10-15), open when there is a history to read. */}
+        <Section id="fastag" title="FASTag & toll history"
+          badge={!p.fastag ? 'not fetched' : `${p.fastag.has_active_tag ? 'active tag' : 'no active tag'}${Array.isArray(p.fastag.crossings) ? ` · ${p.fastag.crossings.length} toll crossing${p.fastag.crossings.length === 1 ? '' : 's'}` : ''}`}
+          open={Boolean(p.fastag?.crossings?.length)}>
+          <FastagHistory f={p.fastag} plate={p.vehicle.plate} />
+        </Section>
 
         <Section id="customers" title="Customers who looked it up" badge={count(p.customers.length)}>
           <Customers p={p} may={may} reg={v.reg_no} />
@@ -163,18 +166,41 @@ export default function Profile() {
 
 /* ───────────────────────────── header ── */
 
-function StatusChip({ label, tone, note }) {
-  return <Chip tone={tone} note={note}>{label}</Chip>;
+/*
+ * THE HEADER, RICHER (user, 2026-10-15: "modernise that to give a rich look and feel"): the
+ * number on its own board colour, what the vehicle is, the numbers that matter, and one tile
+ * per check — each tile's colour is its state, its note the rule behind it.
+ */
+const TILE = {
+  good: 'border-good-500/30 bg-gradient-to-b from-good-50 to-white text-good-700',
+  watch: 'border-watch-500/40 bg-gradient-to-b from-watch-50 to-white text-watch-700',
+  wrong: 'border-wrong-500/30 bg-gradient-to-b from-wrong-50 to-white text-wrong-700',
+  info: 'border-line bg-gradient-to-b from-shell to-white text-body',
+};
+function StatusTile({ icon, label, value, tone, note }) {
+  return (
+    <Hint note={note}>
+      <div className={`h-full rounded-xl border px-3 py-2 ${TILE[tone] || TILE.info}`}>
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider opacity-80"><span aria-hidden="true">{icon}</span>{label}</div>
+        <div className="mt-0.5 truncate text-sm font-bold">{value}</div>
+      </div>
+    </Hint>
+  );
 }
 
 function Header({ p, may, open }) {
   const v = p.vehicle; const o = p.overall;
-  const doc = (key, label) => {
+  const board = plateOf(v.plate);
+  const doc = (key, label, icon) => {
     const d = p.documents.find((x) => x.key === key);
+    if (!d) return null;
     const [word, tone] = DOC_STATE[d.state];
-    return <StatusChip label={`${label} · ${word}`} tone={tone} note={`${docWords(d)}${DOC_NOTE[d.state] ? `. ${DOC_NOTE[d.state]}` : ''}`} />;
+    return <StatusTile key={key} icon={icon} label={label} value={word} tone={tone} note={`${docWords(d)}${DOC_NOTE[d.state] ? `. ${DOC_NOTE[d.state]}` : ''}`} />;
   };
   const rcTone = !o.rc_status ? 'info' : /active/i.test(o.rc_status) && !/expired|ntbt|suspend/i.test(o.rc_status) ? 'good' : 'watch';
+  const pills = [v.fuel, v.vehicle_class, v.category, v.age_years != null ? `${v.age_years} years old` : null].filter(Boolean);
+  const kpis = [['Lookups', count(p.counts.lookups)], ['Customers', count(p.counts.customers)], ['Reports', count(p.counts.reports)],
+    ['Paid', count(p.counts.paid)], ['Revenue', inr(p.counts.paid_paise, 0)]];
   /* The summary is a list of facts, each with its rule — no invented score. */
   const facts = [
     o.expired.length && `${o.expired.join(', ')} expired`,
@@ -185,48 +211,67 @@ function Header({ p, may, open }) {
   ].filter(Boolean);
   return (
     <div className="card overflow-hidden">
-      <div className="flex flex-wrap items-start gap-4 border-b border-line px-5 py-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 font-mono text-2xl font-bold tracking-wide text-ink">{v.display}<CopyButton value={v.reg_no} label="Copy vehicle number" /></div>
-          <div className="mt-0.5 text-sm text-body">
-            {[v.maker, v.model, v.fuel, v.vehicle_class].filter(Boolean).join(' · ') || 'Vehicle details not returned yet'}
-            <span className="text-muted"> · Variant: not returned by the records API</span>
+      <div className="relative overflow-hidden border-b border-line bg-gradient-to-br from-white via-white to-shell px-5 py-5">
+        {/* A soft wash of the board's own colour behind the plate. */}
+        <div className="pointer-events-none absolute -left-16 -top-24 h-64 w-64 rounded-full opacity-25 blur-3xl" style={{ background: v.plate === 'white' || !v.plate ? '#0f766e' : board.bg }} />
+        <div className="relative flex flex-wrap items-start gap-5">
+          <div className="flex flex-col items-start gap-2">
+            <div className="flex items-center gap-1.5"><NumberPlate reg={v.display} plate={v.plate} size="lg" /><CopyButton value={v.reg_no} label="Copy vehicle number" /></div>
+            <BoardTag plate={v.plate} />
           </div>
-          <div className="mt-1 text-2xs text-muted">
-            {/* The plate's RTO with its office; the record's own "registered at" can
-                differ when a vehicle has moved (user, 2026-10-01). */}
-            {v.state} · RTO {v.rto}{v.rto_name ? ` (${v.rto_name})` : ''}
-            {v.registered_at ? ` · Now registered at ${v.registered_at}` : ''}{v.age_years != null ? ` · ${v.age_years} years old` : ''}
-            {' · '}First seen {dateTime(v.first_seen)} · Last updated {v.last_updated ? ago(v.last_updated) : 'never'}
-            {p.admin.assigned_name ? ` · Assigned to ${p.admin.assigned_name}` : ''}
+          <div className="min-w-0 flex-1">
+            <div className="text-lg font-semibold leading-snug text-ink">{[v.maker, v.model].filter(Boolean).join(' · ') || 'Vehicle details not returned yet'}</div>
+            {pills.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {pills.map((x) => <span key={x} className="rounded-full border border-line bg-white/80 px-2.5 py-0.5 text-2xs font-medium text-body">{x}</span>)}
+              </div>
+            )}
+            <div className="mt-2 text-2xs text-muted">
+              {/* The plate's RTO with its office; the record's own "registered at" can
+                  differ when a vehicle has moved (user, 2026-10-01). */}
+              📍 {v.state} · RTO {v.rto}{v.rto_name ? ` (${v.rto_name})` : ''}
+              {v.registered_at ? ` · Now registered at ${v.registered_at}` : ''}
+              {' · '}First seen {dateTime(v.first_seen)} · Last updated {v.last_updated ? ago(v.last_updated) : 'never'}
+              {p.admin.assigned_name ? ` · Assigned to ${p.admin.assigned_name}` : ''}
+            </div>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
           <button className="btn-quiet !py-1.5 text-2xs" onClick={async () => { if (await copy(linkTo(v.reg_no))) snack('Link copied — it opens only for a signed-in admin'); }}>Copy link</button>
           {may('vehicles.notes') && <button className="btn-quiet !py-1.5 text-2xs" onClick={() => open('note')}>Add note</button>}
           {may('vehicles.tags') && <button className="btn-quiet !py-1.5 text-2xs" onClick={() => open('tag')}>Tags</button>}
           {may('vehicles.tags') && <button className="btn-quiet !py-1.5 text-2xs" onClick={() => open('list')}>Add to list</button>}
           {may('vehicles.tags') && <button className="btn-quiet !py-1.5 text-2xs" onClick={() => open('assign')}>Assign</button>}
           {may('vehicles.tags') && <button className="btn-quiet !py-1.5 text-2xs" onClick={() => open('archive')}>{p.admin.archived_at ? 'Restore' : 'Archive'}</button>}
+          </div>
+        </div>
+        <div className="relative mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
+          {kpis.map(([l, x]) => (
+            <div key={l} className="rounded-xl border border-line bg-white/80 px-3 py-2 backdrop-blur">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted">{l}</div>
+              <div className="tabular text-lg font-semibold text-ink">{x}</div>
+            </div>
+          ))}
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-1.5 px-5 py-3">
-        <StatusChip label={o.rc_status ? `RC · ${o.rc_status}` : 'RC · Unknown'} tone={rcTone} note="The registration status the records API returned." />
-        {doc('insurance', 'Insurance')}{doc('puc', 'PUC')}{doc('tax', 'Tax')}{doc('permit', 'Permit')}
-        <StatusChip label={o.challans_pending == null ? 'Challan · Not checked' : o.challans_pending ? `Challan · ${o.challans_pending} pending` : 'Challan · None pending'}
+      <div className="grid grid-cols-2 gap-2 px-5 py-3 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-9">
+        <StatusTile icon="🪪" label="RC" value={o.rc_status || 'Unknown'} tone={rcTone} note="The registration status the records API returned." />
+        {doc('insurance', 'Insurance', '🛡️')}{doc('puc', 'PUC', '💨')}{doc('tax', 'Road tax', '🧾')}{doc('fitness', 'Fitness', '🔧')}{doc('permit', 'Permit', '📜')}
+        <StatusTile icon="🚨" label="Challans" value={o.challans_pending == null ? 'Not checked' : o.challans_pending ? `${o.challans_pending} pending` : 'None pending'}
           tone={o.challans_pending == null ? 'info' : o.challans_pending ? 'wrong' : 'good'} />
-        <StatusChip label={o.blacklisted == null ? 'Blacklist · Unknown' : o.blacklisted ? 'Blacklist · Flagged' : 'Blacklist · Not flagged'}
+        <StatusTile icon="⛔" label="Blacklist" value={o.blacklisted == null ? 'Unknown' : o.blacklisted ? 'Flagged' : 'Not flagged'}
           tone={o.blacklisted == null ? 'info' : o.blacklisted ? 'wrong' : 'good'} />
-        <StatusChip label={o.financier == null ? 'Loan · Unknown' : o.financier ? 'Loan · Financier on RC' : 'Loan · None recorded'}
+        <StatusTile icon="🏦" label="Loan" value={o.financier == null ? 'Unknown' : o.financier ? 'Financier on RC' : 'None recorded'}
           tone={o.financier ? 'watch' : 'info'} note="“None recorded” means the RC names no financier — not proof that there is no loan." />
-        {p.admin.archived_at && <Chip>Archived</Chip>}
-        {p.tags.map((t) => <Chip key={t.tag} tone="brand">{TAG_WORD(t.tag)}</Chip>)}
       </div>
-      <div className={`border-t border-line px-5 py-2.5 text-sm ${facts.length ? 'bg-watch-50/60 text-watch-700' : 'bg-shell/60 text-body'}`}>
-        {facts.length ? facts.join(' · ') : 'Nothing flagged in what the records API returned.'}
-        <span className="ml-2 text-2xs text-muted">
-          {count(p.counts.lookups)} lookups · {count(p.counts.customers)} customers · {count(p.counts.reports)} reports · {count(p.counts.paid)} paid ({inr(p.counts.paid_paise)})
-        </span>
+      {(p.admin.archived_at || p.tags.length > 0) && (
+        <div className="flex flex-wrap items-center gap-1.5 px-5 pb-3">
+          {p.admin.archived_at && <Chip>Archived</Chip>}
+          {p.tags.map((t) => <Chip key={t.tag} tone="brand">{TAG_WORD(t.tag)}</Chip>)}
+        </div>
+      )}
+      <div className={`flex items-center gap-2 border-t px-5 py-2.5 text-sm ${facts.length ? 'border-watch-500/30 bg-gradient-to-r from-watch-50 to-white text-watch-700' : 'border-good-500/20 bg-gradient-to-r from-good-50 to-white text-good-700'}`}>
+        <span aria-hidden="true">{facts.length ? '⚠️' : '✅'}</span>
+        <span className="font-medium">{facts.length ? facts.join(' · ') : 'Nothing flagged in what the records API returned.'}</span>
       </div>
     </div>
   );
@@ -245,16 +290,21 @@ function Freshness({ p, may, reg, onDone }) {
       throw e;
     }
   };
-  const NAMES = { rc: 'Vehicle record', challan: 'Challans', fastag: 'FASTag' };
+  const NAMES = { rc: '🪪 Vehicle record', challan: '🚨 Challans', fastag: '🛣️ FASTag' };
+  // Green while the stored answer is still within its reuse time, grey once it has lapsed or never came.
+  const fresh = (d) => d.expires_at && new Date(d.expires_at) > new Date();
   return (
-    <div className="card flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 text-2xs text-body">
+    <div className="card flex flex-wrap items-center gap-2 px-3 py-2 text-2xs text-body">
       {f.datasets.map((d) => (
         <Hint key={d.dataset} note={d.fetched_at ? `Fetched ${dateTime(d.fetched_at)}${d.expires_at ? ` · reused until ${dateTime(d.expires_at)}` : ''}${d.source ? ` · ${d.source}` : ''}` : 'Never fetched'}>
-          <span><b className="text-ink">{NAMES[d.dataset]}:</b> {d.fetched_at ? `updated ${ago(d.fetched_at)}` : 'never fetched'}{d.cached ? ' · cached' : ''}</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-shell/60 px-2.5 py-1">
+            <span className={`h-1.5 w-1.5 rounded-full ${!d.fetched_at ? 'bg-line' : fresh(d) ? 'bg-good-500' : 'bg-watch-500'}`} />
+            <b className="text-ink">{NAMES[d.dataset]}</b> {d.fetched_at ? ago(d.fetched_at) : 'never fetched'}
+          </span>
         </Hint>
       ))}
-      <span><b className="text-ink">Last API lookup:</b> {f.last_lookup ? ago(f.last_lookup) : 'never'}</span>
-      <span><b className="text-ink">Last success:</b> {f.last_success ? ago(f.last_success) : 'never'}</span>
+      <span className="px-1"><b className="text-ink">Last API lookup</b> {f.last_lookup ? ago(f.last_lookup) : 'never'}</span>
+      <span className="px-1"><b className="text-ink">Last success</b> {f.last_success ? ago(f.last_success) : 'never'}</span>
       {may('vehicles.refresh') && (
         <button className="btn-quiet ml-auto !py-1 text-2xs" onClick={() => setConfirm({})}>Refresh vehicle data</button>
       )}
@@ -423,19 +473,6 @@ function Loan({ l }) {
         ))}
       </dl>
     </div>
-  );
-}
-
-function Fastag({ f }) {
-  const t = f.active_tag;
-  return (
-    <dl className="grid gap-x-6 gap-y-1.5 p-4 text-sm sm:grid-cols-3">
-      {[['Active tag', f.has_active_tag ? 'Yes' : 'No'], ['Tags on record', f.tag_count], ['Bank', t?.bank_id], ['Tag status', t?.status],
-        ['Issued', t?.issue_date], ['Vehicle class (tag)', t?.vehicle_class], ['Last plaza', f.last_seen_plaza], ['Last seen', f.last_seen_at],
-        ['Checked', f.checked_at && dateTime(f.checked_at)]].map(([k, x]) => (
-        <div key={k} className="flex justify-between gap-2 border-b border-line/60 pb-1"><dt className="text-2xs text-muted">{k}</dt><dd className="text-right">{show(x)}</dd></div>
-      ))}
-    </dl>
   );
 }
 

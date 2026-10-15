@@ -23,12 +23,17 @@ const KIND = {
   service: { icon: '📢', word: 'Service notice', who: 'everyone who agreed', tone: 'brand' },
   promo: { icon: '🎁', word: 'Promotional', who: 'opted-in only, 10 am – 9 pm', tone: 'watch' },
 };
-/* What each value fills, read from the words just before its {#var#}: "…valid till {#var#}" → "after “valid till”". */
+/* A value's slot as DLT writes it: {#var#} or typed — {#alphanumeric#}, {#urlott#}, {#numeric#} … (2026-10-15). */
+const SLOT = /\{#[a-z_]+#\}/gi;
+const KIND_WORD = { urlott: 'a web link, e.g. https://gaadipe.in', url: 'a web link', numeric: 'digits only', alphanumeric: 'letters and digits', cbn: 'a phone number', email: 'an email' };
+/* What each value fills, read from the words just before its slot: "…Reason: {#alphanumeric#}" → "after “Reason:” · letters and digits". */
 const varHints = (text) => {
-  const parts = String(text || '').split(/\{#var#\}/i);
-  return parts.slice(0, -1).map((p) => {
+  const s = String(text || '');
+  const slots = s.match(SLOT) || [];
+  return s.split(SLOT).slice(0, -1).map((p, i) => {
     const w = p.replace(/\s+/g, ' ').trim().split(' ').slice(-3).join(' ');
-    return w ? `after “${w}”` : 'at the start';
+    const kind = KIND_WORD[slots[i].slice(2, -2).toLowerCase()];
+    return `${w ? `after “${w}”` : 'at the start'}${kind ? ` · ${kind}` : ''}`;
   });
 };
 
@@ -66,6 +71,11 @@ export default function BroadcastSms() {
   const mode = data?.mode || 'service';
   useEffect(() => { setPage(1); }, [filter, q, mode]);
   useEffect(() => { setDone(null); setVals(['', '', '', '', '']); }, [tplKey]);
+  /* A web-link slot ({#urlott#}) starts as the site's address — one value fewer to type (2026-10-15). */
+  useEffect(() => {
+    const slots = String(data?.template?.text || '').match(SLOT) || [];
+    setVals((v) => v.map((x, i) => (!x && /url/i.test(slots[i] || '') ? 'https://gaadipe.in' : x)));
+  }, [data?.template?.key, tplKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setChosen(new Set()); }, [mode]);
 
   const load = useCallback(async () => {
@@ -80,7 +90,7 @@ export default function BroadcastSms() {
   const preview = useMemo(() => {
     if (!t?.text) return '';
     let i = 0;
-    return t.text.replace(/\{#var#\}/gi, () => (vals[i++]?.trim() || `[value ${i}]`));
+    return t.text.replace(SLOT, () => (vals[i++]?.trim() || `[value ${i}]`));
   }, [t, vals]);
   const rows = data?.people?.rows || [];
   const allTicked = rows.length > 0 && rows.every((r) => chosen.has(r.id));
@@ -184,7 +194,7 @@ export default function BroadcastSms() {
                 </label>
               ))}
             </div>
-            {preview && <div className="mt-3 rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink"><span className="text-2xs text-muted">Each customer reads: </span>{preview}</div>}
+            {preview && <div className="mt-3 whitespace-pre-wrap rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink"><span className="text-2xs text-muted">Each customer reads: </span>{preview}</div>}
             {preview && (
               <div className="mt-2 flex flex-wrap items-center gap-2 text-2xs">
                 <Chip tone={fits ? (size.length > size.limit - 10 ? 'watch' : 'good') : 'wrong'}>
@@ -304,7 +314,7 @@ function TemplateDialog({ value, onClose, onSaved }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const put = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
-  const vars = (f.body.match(/\{#var#\}/gi) || []).length;
+  const vars = (f.body.match(SLOT) || []).length;
   const save = async () => {
     setBusy(true); setErr(null);
     try { const out = await api.smsTemplateSave(f); onSaved(out.template); } catch (e) { setErr(e.message); } finally { setBusy(false); }
@@ -326,7 +336,7 @@ function TemplateDialog({ value, onClose, onSaved }) {
           <Field label="Header / sender id — optional"><input className="input font-mono uppercase" value={f.sender} maxLength={6} onChange={put('sender')}
             placeholder={f.kind === 'promo' ? 'Settings header' : 'usual header'} /></Field>
         </div>
-        <Field label="Approved wording — {#var#} where each value goes">
+        <Field label="Approved wording — exactly as DLT shows it, with its {#…#} slots">
           <textarea className="input min-h-[110px] font-mono text-sm" value={f.body} maxLength={500} onChange={put('body')}
             placeholder="Dear customer, GaadiPe is back on WhatsApp at {#var#}. Update email at {#var#} - GaadiPe" />
         </Field>

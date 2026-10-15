@@ -242,6 +242,9 @@ export const api = {
   waReplies: (params) => call(`/whatsapp/replies${qs(params)}`),
   smsBroadcastSend: (body) => call('/sms-broadcast/send', { method: 'POST', body }),
   smsBroadcastCancel: (batch) => call('/sms-broadcast/cancel', { method: 'POST', body: { batch } }),
+  // The approved templates to choose from (2026-10-15).
+  smsTemplateSave: (body) => call('/sms-broadcast/templates', { method: 'POST', body }),
+  smsTemplateRemove: (key) => call(`/sms-broadcast/templates/${encodeURIComponent(key)}/remove`, { method: 'POST' }),
 
   conversations: (params) => call(`/live/conversations${qs(params)}`),
   thread: (mobile) => call(`/live/thread/${mobile}`),

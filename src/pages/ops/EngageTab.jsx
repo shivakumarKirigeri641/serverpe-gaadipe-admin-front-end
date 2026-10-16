@@ -44,12 +44,12 @@ function Row({ r, kind, ticked, onTick, outside }) {
 /* Name, number, vehicle or email — lower case, spaces ignored. */
 const norm = (s) => String(s || '').toLowerCase().replace(/\s+/g, '');
 
-function Part({ title, note, rows: all, kind, outside, onReload }) {
+function Part({ title, note, rows: everyone, kind, outside, onReload }) {
   const [ticked, setTicked] = useState(() => new Set());
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState('');
   const needle = norm(q);
-  const rows = needle ? all.filter((r) => [r.name, r.mobile, r.reg_no, r.email].some((v) => norm(v).includes(needle))) : all;
+  const rows = needle ? everyone.filter((r) => [r.name, r.mobile, r.reg_no, r.email].some((v) => norm(v).includes(needle))) : everyone;
   const can = rows.filter((r) => !outside || r.can_email);
   const toggle = (id) => setTicked((s) => { const x = new Set(s); if (x.has(id)) x.delete(id); else x.add(id); return x; });
   const all = can.length > 0 && can.every((r) => ticked.has(r.user_id));
@@ -72,7 +72,7 @@ function Part({ title, note, rows: all, kind, outside, onReload }) {
     <section className="card p-4">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
-        <span className="rounded-full bg-shell px-2 py-0.5 text-[10px] font-semibold text-body">{needle ? `${rows.length} of ${all.length}` : all.length}</span>
+        <span className="rounded-full bg-shell px-2 py-0.5 text-[10px] font-semibold text-body">{needle ? `${rows.length} of ${everyone.length}` : everyone.length}</span>
         <input className="input !w-56 !py-1 text-2xs" type="search" value={q} onChange={(e) => setQ(e.target.value)}
           placeholder="Search name, number, vehicle, email" aria-label="Search this list" />
         {can.length > 0 && (

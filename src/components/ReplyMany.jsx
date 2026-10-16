@@ -15,9 +15,11 @@ const loadCatalog = () => (catalog ||= api.waReplyButtons().then((r) => r.button
 
 const TONE = { sent: 'text-good-700', skipped: 'text-watch-700', failed: 'text-wrong-700', 'not sent': 'text-muted', waiting: 'text-muted' };
 
-export default function ReplyMany({ people, onClear, onDone }) {
-  const [text, setText] = useState('');
-  const [buttons, setButtons] = useState(['', '', '']);
+/* presetText / presetButtons (2026-10-16): Hot leads' email and feedback tabs start the box
+   with the message and buttons that fit — still editable before sending. */
+export default function ReplyMany({ people, onClear, onDone, presetText = '', presetButtons = null }) {
+  const [text, setText] = useState(presetText);
+  const [buttons, setButtons] = useState(presetButtons ? [...presetButtons, '', '', ''].slice(0, 3) : ['', '', '']);
   const [list, setList] = useState([]);
   const [job, setJob] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -68,7 +70,7 @@ export default function ReplyMany({ people, onClear, onDone }) {
           {!job.done && <span className="text-muted">{left} to go · about {Math.ceil((left * job.gap_seconds) / 60)} min</span>}
           <span className="ml-auto flex gap-2">
             {running && !job.stopped && <button type="button" className="btn-quiet !py-1.5 text-2xs" onClick={stop}>■ Stop</button>}
-            {job.done && <button type="button" className="btn-primary !py-1.5 text-2xs" onClick={() => { setJob(null); setText(''); setButtons(['', '', '']); onClear(); }}>New message</button>}
+            {job.done && <button type="button" className="btn-primary !py-1.5 text-2xs" onClick={() => { setJob(null); setText(presetText); setButtons(presetButtons ? [...presetButtons, '', '', ''].slice(0, 3) : ['', '', '']); onClear(); }}>New message</button>}
           </span>
         </div>
         <ul className="mt-3 grid gap-x-4 gap-y-1 text-2xs sm:grid-cols-2 lg:grid-cols-3">

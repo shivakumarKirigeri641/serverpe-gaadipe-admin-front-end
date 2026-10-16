@@ -354,6 +354,10 @@ export const api = {
   whyNotPaid: (params) => call(`/why-not-paid${qs(params)}`),
   // The Graphs section (2026-10-03).
   hotLeads: () => call('/hot-leads', { quiet: true }),
+  // Hot leads: email not confirmed / feedback from paid customers (2026-10-16).
+  engage: () => call('/engage', { quiet: true }),
+  engageConfirmEmail: (userIds) => call('/engage/confirm-email', { method: 'POST', body: { user_ids: userIds } }),
+  engageFeedbackEmail: (userIds) => call('/engage/feedback-email', { method: 'POST', body: { user_ids: userIds } }),
   checksByCustomer: (params) => call(`/checks-by-customer${qs(params)}`, { quiet: true }),
   dataRequests: () => call('/data-requests'),
   giftCustomers: (params) => call(`/gifts/customers${qs(params)}`),

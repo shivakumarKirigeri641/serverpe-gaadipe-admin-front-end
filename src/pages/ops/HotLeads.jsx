@@ -5,6 +5,7 @@ import { useAutoRefresh } from '../../lib/useAutoRefresh';
 import Shell from '../../components/Shell.jsx';
 import ReplyBox from '../../components/ReplyBox.jsx';
 import ReplyMany from '../../components/ReplyMany.jsx';
+import EngageTab from './EngageTab.jsx';
 import { Failed, Skeleton } from '../../components/ui.jsx';
 import { ago, plate, rupees } from '../../lib/format';
 
@@ -22,7 +23,11 @@ const TABS = [
   ['everyone', '👥 Everyone', 'Every open chat — checked a vehicle, said hi, opened payment, or paid in the last two days.'],
   // Paid customers (user, 2026-10-15): anyone who has ever paid, with their 24-hour window open.
   ['paidcust', '💰 Paid customers', 'Customers who have paid before (any time), whose 24-hour window is open — a reply is free.'],
+  // Two more (user, 2026-10-16), each inside and outside the 24-hour window (EngageTab.jsx).
+  ['email', '📧 Email not confirmed', 'Customers with no confirmed email — a backup for alerts if WhatsApp stops.'],
+  ['feedback', '⭐ Feedback (paid)', 'Paid customers who have never given feedback.'],
 ];
+const ENGAGE = ['email', 'feedback'];
 /* Who is in a tab. Paid customers is worked out here: it cuts across the stages. */
 const IN_TAB = (tab, l) => (tab === 'everyone' ? true : tab === 'paidcust' ? (Number(l.paid_before) > 0 || l.stage === 'paid') : l.stage === tab);
 const STAGE = {
@@ -59,7 +64,11 @@ export default function HotLeads() {
   const [q, setQ] = useState('');
   const [d, setD] = useState(null);
   const [error, setError] = useState(null);
-  const load = useCallback(() => api.hotLeads().then((x) => { setD(x); setError(null); }).catch(setError), []);
+  const [eng, setEng] = useState(null);
+  const load = useCallback(() => {
+    api.engage().then(setEng).catch(() => {});
+    return api.hotLeads().then((x) => { setD(x); setError(null); }).catch(setError);
+  }, []);
   useEffect(() => { load(); }, [load]);
   useAutoRefresh(load);
   // Open on the warmest tab that has someone in it, once.
@@ -72,7 +81,8 @@ export default function HotLeads() {
   }, [d, picked]);
 
   const inTab = (l) => IN_TAB(tab, l);
-  const countOf = (k) => (k === 'paidcust' ? (d?.leads || []).filter((l) => IN_TAB('paidcust', l)).length : d?.counts?.[k] || 0);
+  const countOf = (k) => (ENGAGE.includes(k) ? (eng?.[k] ? eng[k].inside.length + eng[k].outside.length : 0)
+    : k === 'paidcust' ? (d?.leads || []).filter((l) => IN_TAB('paidcust', l)).length : d?.counts?.[k] || 0);
   const needle = norm(q);
   const shown = d ? d.leads.filter((l) => inTab(l) && matches(l, needle)) : [];
   const inTabTotal = d ? d.leads.filter(inTab).length : 0;
@@ -104,6 +114,9 @@ export default function HotLeads() {
             placeholder="Search name, number, vehicle, message" aria-label="Search leads" />
         </div>
       )}
+      {ENGAGE.includes(tab) ? (
+        eng ? <EngageTab kind={tab} data={eng} onReload={load} /> : <Skeleton rows={6} />
+      ) : <>
       {d && <ReplyMany people={chosen} onClear={() => setTicked(new Set())} onDone={load} />}
       {error && !d ? <Failed error={error} onRetry={load} /> : !d ? <Skeleton rows={6} /> : !shown.length ? (
         <div className="card p-8 text-center text-sm text-muted">
@@ -159,6 +172,7 @@ export default function HotLeads() {
           </div>
         </>
       )}
+      </>}
     </Shell>
   );
 }

@@ -41,9 +41,15 @@ function Row({ r, kind, ticked, onTick, outside }) {
   );
 }
 
-function Part({ title, note, rows, kind, outside, onReload }) {
+/* Name, number, vehicle or email — lower case, spaces ignored. */
+const norm = (s) => String(s || '').toLowerCase().replace(/\s+/g, '');
+
+function Part({ title, note, rows: all, kind, outside, onReload }) {
   const [ticked, setTicked] = useState(() => new Set());
   const [busy, setBusy] = useState(false);
+  const [q, setQ] = useState('');
+  const needle = norm(q);
+  const rows = needle ? all.filter((r) => [r.name, r.mobile, r.reg_no, r.email].some((v) => norm(v).includes(needle))) : all;
   const can = rows.filter((r) => !outside || r.can_email);
   const toggle = (id) => setTicked((s) => { const x = new Set(s); if (x.has(id)) x.delete(id); else x.add(id); return x; });
   const all = can.length > 0 && can.every((r) => ticked.has(r.user_id));
@@ -66,7 +72,9 @@ function Part({ title, note, rows, kind, outside, onReload }) {
     <section className="card p-4">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
-        <span className="rounded-full bg-shell px-2 py-0.5 text-[10px] font-semibold text-body">{rows.length}</span>
+        <span className="rounded-full bg-shell px-2 py-0.5 text-[10px] font-semibold text-body">{needle ? `${rows.length} of ${all.length}` : all.length}</span>
+        <input className="input !w-56 !py-1 text-2xs" type="search" value={q} onChange={(e) => setQ(e.target.value)}
+          placeholder="Search name, number, vehicle, email" aria-label="Search this list" />
         {can.length > 0 && (
           <label className="ml-2 flex cursor-pointer items-center gap-1.5 text-2xs font-semibold text-ink">
             <input type="checkbox" className="h-4 w-4 accent-brand" checked={all}
@@ -87,28 +95,45 @@ function Part({ title, note, rows, kind, outside, onReload }) {
             onClear={() => setTicked(new Set())} onDone={onReload} />
         </div>
       )}
+      {/* THE LIST SCROLLS IN ITS OWN BOX (user, 2026-10-16: "too much scrolling"): the page stays
+          put, and select-all, search and send stay in view above it. */}
       {rows.length ? (
-        <ul className="mt-3 space-y-1.5">
+        <ul className="mt-3 max-h-[55vh] space-y-1.5 overflow-y-auto pr-1">
           {rows.map((r) => <Row key={r.user_id} r={r} kind={kind} outside={outside} ticked={ticked.has(r.user_id)} onTick={() => toggle(r.user_id)} />)}
         </ul>
-      ) : <p className="mt-3 text-sm text-muted">Nobody here right now.</p>}
+      ) : <p className="mt-3 text-sm text-muted">{needle ? `Nobody matches “${q}”.` : 'Nobody here right now.'}</p>}
     </section>
   );
 }
 
 export default function EngageTab({ kind, data, onReload }) {
   const d = data?.[kind];
+  // One part at a time (2026-10-16: less scrolling): inside or outside the 24-hour window.
+  const [side, setSide] = useState(null);
   if (!d) return null;
+  const pick = side || (d.inside.length || !d.outside.length ? 'inside' : 'outside');
+  const SIDES = [['inside', '💬 Inside 24 hours', d.inside.length], ['outside', '✉ Outside 24 hours', d.outside.length]];
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
-      <Part kind={kind} rows={d.inside} onReload={onReload} title="💬 Inside 24 hours — free WhatsApp reply"
+    <div>
+      <div className="mb-3 inline-flex rounded-lg border border-line bg-white p-0.5" role="tablist" aria-label="Inside or outside the 24-hour window">
+        {SIDES.map(([k, label, n]) => (
+          <button key={k} type="button" role="tab" aria-selected={pick === k} onClick={() => setSide(k)}
+            className={`rounded-md px-3 py-1.5 text-sm ${pick === k ? 'bg-brand font-semibold text-white' : 'text-body hover:bg-shell'}`}>
+            {label} <span className={`ml-1 rounded-full px-1.5 text-[10px] ${pick === k ? 'bg-white/25' : 'bg-shell'}`}>{n}</span>
+          </button>
+        ))}
+      </div>
+      {pick === 'inside' ? (
+      <Part key={`${kind}-in`} kind={kind} rows={d.inside} onReload={onReload} title="💬 Inside 24 hours — free WhatsApp reply"
         note={kind === 'email'
           ? 'They wrote in the last 24 hours. Tick and send: a free message with the “Email for alerts” button (they type their email, then a 4-digit code).'
           : 'Paid customers who never gave feedback and wrote in the last 24 hours. A free message with the 😊 / 🙂 / 😞 buttons — one tap saves their rating.'} />
-      <Part kind={kind} rows={d.outside} onReload={onReload} outside title="✉ Outside 24 hours — by email"
+      ) : (
+      <Part key={`${kind}-out`} kind={kind} rows={d.outside} onReload={onReload} outside title="✉ Outside 24 hours — by email"
         note={kind === 'email'
           ? 'No WhatsApp template is used. Those who gave an address get the confirmation link again (at most every 3 days); those with no address can only be asked when they next write.'
           : 'No WhatsApp template is used. Those with a confirmed email get a one-tap rating email (at most every 14 days); the rest can only be asked when they next write.'} />
+      )}
     </div>
   );
 }

@@ -84,7 +84,9 @@ const NAV = [
     items: [
       { to: '/vehicles', label: 'Vehicle Explorer', icon: CarIcon, cap: 'vehicles.view', badge: 'vehicles',
         match: (p, s) => (p === '/vehicles' && !/[?&](view|list)=/.test(s))
-          || (/^\/vehicles\/[^/]+$/.test(p) && !/^\/vehicles\/(lists|insights|api-logs)$/.test(p)) },
+          || (/^\/vehicles\/[^/]+$/.test(p) && !/^\/vehicles\/(lists|insights|api-logs|catalogue)$/.test(p)) },
+      // Every vehicle, every RC detail — the owner only (2026-10-25).
+      { to: '/vehicles/catalogue', label: 'Vehicle catalogue', icon: BookIcon, cap: 'vehicles.catalogue' },
       { to: '/vehicles?view=recent', label: 'Recent vehicles', icon: PulseIcon, cap: 'vehicles.view', match: view('recent') },
       { to: '/vehicles?view=expired', label: 'Expired documents', icon: DocIcon, cap: 'vehicles.view', match: view('expired') },
       { to: '/vehicles?view=challans', label: 'Challans', icon: BookIcon, cap: 'vehicles.view', match: view('challans') },

@@ -63,6 +63,7 @@ import VehicleProfile from './pages/vehicles/Profile.jsx';
 import VehicleLists from './pages/vehicles/Lists.jsx';
 import VehicleInsights from './pages/vehicles/Insights.jsx';
 import VehicleApiLogs from './pages/vehicles/ApiLogs.jsx';
+import VehicleCatalogue from './pages/vehicles/Catalogue.jsx';
 /* Imported like every other screen, NOT lazily (user, 2026-09-25). It used to
    be lazy(() => import('./pages/Analytics.jsx')) to keep the charts out of the
    first download — but the production obfuscator encodes that path string
@@ -176,6 +177,7 @@ export default function App() {
       <Route path="/vehicles/lists" element={<VehicleLists />} />
       <Route path="/vehicles/insights" element={<VehicleInsights />} />
       <Route path="/vehicles/api-logs" element={<VehicleApiLogs />} />
+      <Route path="/vehicles/catalogue" element={<VehicleCatalogue />} />
       <Route path="/vehicles/:reg" element={<VehicleProfile />} />
       <Route path="/graphs" element={<Graphs />} />
       <Route path="/graphs/:page" element={<Graphs />} />

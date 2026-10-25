@@ -260,6 +260,7 @@ export const api = {
   vehicles: (params) => call(`/vehicles${qs(params)}`),
   vehicle: (regNo) => call(`/vehicles/${encodeURIComponent(regNo)}`),
   vehicleStats: () => call('/vehicles/stats', { quiet: true }),
+  vehicleCatalogue: () => call('/vehicles/catalogue', { timeoutMs: 60000 }),
   vehicleQuick: (q) => call(`/vehicles/quick${qs({ q })}`, { quiet: true }),
   vehicleMeta: () => call('/vehicles/meta', { quiet: true }),
   vehicleReveal: (regNo, body) => call(`/vehicles/${encodeURIComponent(regNo)}/reveal`, { method: 'POST', body }),

@@ -40,6 +40,21 @@ const SEGMENTS = [
  * some badge or ribbon type"). Confirmed: a green ribbon with a tick — alerts also reach their
  * inbox if WhatsApp stops. Given but not confirmed: a quiet amber one. No email: nothing.
  */
+/* WHERE THEY AGREED (user, 2026-10-25: "include web customers, but distinguish them"). */
+const AGREED_ON = {
+  whatsapp: ['WhatsApp', 'Agreed to the Terms on WhatsApp', 'bg-good-50 text-good-700 ring-good-500/30'],
+  web: ['Website', 'Agreed on gaadipe.in — never on WhatsApp', 'bg-watch-50 text-watch-700 ring-watch-500/30'],
+  both: ['WhatsApp + Website', 'Agreed on WhatsApp and on gaadipe.in', 'bg-shell text-ink ring-line'],
+};
+function AgreedOn({ on }) {
+  const a = AGREED_ON[on];
+  if (!a) return null;
+  return <span title={a[1]} className={`ml-1.5 rounded-full px-1.5 py-[1px] align-middle text-[10px] font-semibold ring-1 ${a[2]}`}>{a[0]}</span>;
+}
+const channelSplit = (b) => [
+  `WhatsApp ${count(b.whatsapp)}`, `website ${count(b.web)}`, b.both ? `both ${count(b.both)}` : null,
+].filter(Boolean).join(' · ');
+
 function EmailBadge({ status, at }) {
   if (status === 'confirmed') {
     return (
@@ -137,7 +152,7 @@ export default function Customers() {
 
   return (
     <Shell title="Customers"
-      subtitle={data ? `${count(data.total)} in total${data.today ? ` · ${count(data.today.joined)} new today` : ''}` : ' '}
+      subtitle={data ? `${count(data.total)} in total${data.by_channel ? ` · ${channelSplit(data.by_channel)}` : ''}${data.today ? ` · ${count(data.today.joined)} new today` : ''}` : ' '}
       actions={
         <div className="flex items-center gap-2">
           <input className="input !w-56 !py-1.5 text-sm" placeholder="Number, name or plate"
@@ -178,7 +193,7 @@ export default function Customers() {
                 : data.today.customers_yesterday_full != null
                   ? <>+{count(data.today.customers_today)} today vs +{count(data.today.customers_yesterday_full)} yesterday · <Delta now={data.today.customers_today} before={data.today.customers_yesterday_full} /></>
                   : 'all time', null,
-              q || filter !== 'all' ? 'Customers matching your search or filter.' : 'Everyone who agreed to the Terms on WhatsApp, except those who replied STOP. Below: new customers today against the whole of yesterday (IST).'],
+              q || filter !== 'all' ? 'Customers matching your search or filter.' : `Everyone who agreed to the Terms — on WhatsApp or the website — except those who replied STOP${data.by_channel ? ` (${channelSplit(data.by_channel)})` : ''}. Each row says where they agreed. Below: new customers today against the whole of yesterday (IST).`],
             // Full reports and vehicle checks, all time with today (user, 2026-10-03).
             ...(data.today.reports_total != null ? [
               ['Full reports', data.today.reports_total,
@@ -251,6 +266,7 @@ export default function Customers() {
                       {r.name || 'Unknown'}
                       {isToday(r.created_at) && <span className="ml-1.5 rounded bg-good-50 px-1 align-middle text-[10px] font-semibold text-good-700 ring-1 ring-good-500/30" title={`Joined ${dateTime(r.created_at)}`}>New today</span>}
                       <EmailBadge status={r.email_status} at={r.email_verified_at} />
+                      <AgreedOn on={r.agreed_on} />
                     </div>
                     <div className="tabular text-2xs text-muted">
                       {fmtMobile(r.mobile)}

@@ -364,7 +364,7 @@ function PlanRow({ plan, onSaved }) {
         ...(plan.renewal_paise != null && String(edit.renewal_rupees ?? '').trim() !== ''
           ? { renewal_paise: Math.round(Number(edit.renewal_rupees) * 100) } : {}),
         // A check pack's number of checks (2026-10-26, migration 215).
-        ...(plan.kind === 'checks' ? { check_credits: Number(edit.check_credits) } : {}),
+        ...(plan.kind === 'checks' || plan.kind === 'report' ? { check_credits: Number(edit.check_credits) } : {}),
       });
       setEdit(null); onSaved();
     } catch (e) { window.alert(e.message); } finally { setBusy(false); }
@@ -384,6 +384,17 @@ function PlanRow({ plan, onSaved }) {
         ) : (
           <div className="mt-0.5 text-2xs font-semibold text-brand-deep">
             {plan.check_credits || 5} checks · {rupees(Math.round((plan.price_paise - (plan.discount_paise || 0)) / (plan.check_credits || 5)))} a check
+          </div>
+        ))}
+        {/* A report's bonus checks (2026-10-29, migration 222): ₹11 none, ₹19 five. */}
+        {plan.kind === 'report' && (edit ? (
+          <label className="mt-1 flex items-center gap-1 text-2xs text-muted">Bonus checks
+            <input className="input !w-16 !py-1" inputMode="numeric" value={edit.check_credits}
+              onChange={(e) => setEdit({ ...edit, check_credits: e.target.value })} aria-label="Checks added with this report" />
+          </label>
+        ) : plan.check_credits != null && (
+          <div className="mt-0.5 text-2xs font-semibold text-brand-deep">
+            {Number(plan.check_credits) > 0 ? `+${plan.check_credits} checks with it` : 'no bonus checks'}
           </div>
         ))}
       </td>
@@ -458,7 +469,7 @@ function PlanRow({ plan, onSaved }) {
           <button className="btn-quiet !px-2.5 !py-1 text-2xs"
             onClick={() => setEdit({ price_rupees: String(Number(plan.price_paise || 0) / 100), duration_days: plan.duration_days, is_active: plan.is_active, discount_rupees: String(Number(plan.discount_paise || 0) / 100),
               renewal_rupees: plan.renewal_paise == null ? '' : String(Number(plan.renewal_paise) / 100),
-              check_credits: String(plan.check_credits || 5) })}>
+              check_credits: String(plan.check_credits ?? 5) })}>
             Edit
           </button>
         )}

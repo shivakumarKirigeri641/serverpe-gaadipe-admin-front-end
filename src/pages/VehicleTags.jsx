@@ -100,6 +100,7 @@ function TagsTab({ setNote }) {
   const [q, setQ] = useState('');
   const [picked, setPicked] = useState(new Set());
   const [copies, setCopies] = useState(2);
+  const [size, setSize] = useState('small');
   const [make, setMake] = useState({ mobile: '', regs: '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
@@ -112,7 +113,7 @@ function TagsTab({ setNote }) {
   const pick = (code) => setPicked((s) => { const n = new Set(s); if (n.has(code)) n.delete(code); else n.add(code); return n; });
   const sheet = async (codes) => {
     setBusy(true);
-    try { const { blob, filename } = await api.tagSheet(codes, copies); saveBlob(blob, filename); openBlob(blob); }
+    try { const { blob, filename } = await api.tagSheet(codes, copies, size); saveBlob(blob, filename); openBlob(blob); }
     catch (e) { setNote(e.message); } finally { setBusy(false); }
   };
   const create = async () => {
@@ -146,6 +147,8 @@ function TagsTab({ setNote }) {
           <Field label="Search"><input className="input" value={q} placeholder="Vehicle, tag code or mobile" onChange={(e) => setQ(e.target.value)} /></Field>
           <Field label="Copies of each"><select className="input" value={copies} onChange={(e) => setCopies(Number(e.target.value))}>
             {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}</select></Field>
+          <Field label="Size"><select className="input" value={size} onChange={(e) => setSize(e.target.value)}>
+            <option value="small">Small — 9 a sheet (~6 × 9 cm)</option><option value="large">Large — 4 a sheet (~10 × 14 cm)</option></select></Field>
           <button type="button" className="btn-primary" disabled={busy || !picked.size} onClick={() => sheet([...picked])}>
             🖨️ Print sheet ({picked.size})</button>
         </div>

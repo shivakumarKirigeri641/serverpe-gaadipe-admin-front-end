@@ -249,7 +249,7 @@ export const api = {
   tagCreate: (body) => call('/tags/create', { method: 'POST', body }),
   tagActive: (code, on) => call(`/tags/${encodeURIComponent(code)}/active`, { method: 'POST', body: { on } }),
   tagUnblock: (id) => call(`/tags/blocks/${encodeURIComponent(id)}/remove`, { method: 'POST' }),
-  tagSheet: (codes, copies = 2) => pdf(`/tags/sheet?codes=${encodeURIComponent(codes.join(','))}&copies=${copies}`),
+  tagSheet: (codes, copies = 2, size = 'small') => pdf(`/tags/sheet?codes=${encodeURIComponent(codes.join(','))}&copies=${copies}&size=${size}`),
   // SMS broadcast — the promotional DLT template, opted-in customers (2026-10-13).
   smsBroadcast: (params) => call(`/sms-broadcast${qs(params)}`),
   // WhatsApp replies & taps (2026-10-13).

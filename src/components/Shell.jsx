@@ -108,9 +108,19 @@ const NAV = [
       { to: '/whatsapp/replies', label: 'Replies & taps', icon: LifebuoyIcon },
       { to: '/whatsapp/operations', label: 'Message analytics & cost', icon: RupeeIcon, cap: 'dashboard.view' },
       { to: '/campaigns', label: 'Campaigns', icon: SendIcon },
-      // GaadiPe Tag (2026-10-29): owner-to-owner contact by vehicle QR; sticker orders to post.
-      { to: '/tags', label: 'Vehicle tags', icon: KeyIcon },
     ],
+  },
+  {
+    // GaadiPe Tag (user, 2026-10-29: "a separate section, full working & monitoring"): owner-to-owner contact by
+    // vehicle QR — every tag, every relayed message, blocks and reports, stickers to post, the switch and prices.
+    group: 'GaadiPe Tag',
+    items: [
+      ['overview', 'Tag overview', ChartIcon], ['tags', 'Tags & print sheets', KeyIcon], ['messages', 'Relayed messages', SendIcon],
+      ['blocks', 'Blocks & reports', ShieldIcon], ['stickers', 'Sticker orders', GiftIcon], ['settings', 'Tag settings', KeyIcon],
+    ].map(([t, label, icon]) => ({
+      to: t === 'overview' ? '/tags' : `/tags?tab=${t}`, label, icon,
+      match: (p, s) => p === '/tags' && (new URLSearchParams(s).get('tab') || 'overview') === t,
+    })),
   },
   {
     // Sending to many at once (user, 2026-10-13: "broadcast SMS navbar").

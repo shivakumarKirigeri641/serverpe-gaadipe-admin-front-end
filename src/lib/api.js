@@ -239,6 +239,13 @@ export const api = {
   // GaadiPe Tag (2026-10-29): tags, relayed messages, sticker orders to post.
   tags: () => call('/tags'),
   tagDispatch: (id, body) => call(`/tags/orders/${encodeURIComponent(id)}/dispatch`, { method: 'POST', body }),
+  tagsList: (q) => call(`/tags/list${qs({ q })}`),
+  tagMessages: () => call('/tags/messages'),
+  tagBlocks: () => call('/tags/blocks'),
+  tagCreate: (body) => call('/tags/create', { method: 'POST', body }),
+  tagActive: (code, on) => call(`/tags/${encodeURIComponent(code)}/active`, { method: 'POST', body: { on } }),
+  tagUnblock: (id) => call(`/tags/blocks/${encodeURIComponent(id)}/remove`, { method: 'POST' }),
+  tagSheet: (codes, copies = 2) => pdf(`/tags/sheet?codes=${encodeURIComponent(codes.join(','))}&copies=${copies}`),
   // SMS broadcast — the promotional DLT template, opted-in customers (2026-10-13).
   smsBroadcast: (params) => call(`/sms-broadcast${qs(params)}`),
   // WhatsApp replies & taps (2026-10-13).

@@ -236,6 +236,9 @@ export const api = {
   // Remove from a customer's My vehicles, as they would (2026-10-13).
   removeCustomerVehicle: (id, vehicleId) => call(`/customers/${id}/vehicles/${vehicleId}/remove`, { method: 'POST' }),
   removeCustomerVehiclesAll: (id) => call(`/customers/${id}/vehicles/remove-all`, { method: 'POST' }),
+  // GaadiPe Tag (2026-10-29): tags, relayed messages, sticker orders to post.
+  tags: () => call('/tags'),
+  tagDispatch: (id, body) => call(`/tags/orders/${encodeURIComponent(id)}/dispatch`, { method: 'POST', body }),
   // SMS broadcast — the promotional DLT template, opted-in customers (2026-10-13).
   smsBroadcast: (params) => call(`/sms-broadcast${qs(params)}`),
   // WhatsApp replies & taps (2026-10-13).

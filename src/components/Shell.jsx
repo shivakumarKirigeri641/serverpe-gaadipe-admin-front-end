@@ -108,6 +108,8 @@ const NAV = [
       { to: '/whatsapp/replies', label: 'Replies & taps', icon: LifebuoyIcon },
       { to: '/whatsapp/operations', label: 'Message analytics & cost', icon: RupeeIcon, cap: 'dashboard.view' },
       { to: '/campaigns', label: 'Campaigns', icon: SendIcon },
+      // GaadiPe Tag (2026-10-29): owner-to-owner contact by vehicle QR; sticker orders to post.
+      { to: '/tags', label: 'Vehicle tags', icon: KeyIcon },
     ],
   },
   {

@@ -239,6 +239,10 @@ export const api = {
   // GaadiPe Tag (2026-10-29): tags, relayed messages, sticker orders to post.
   tags: () => call('/tags'),
   tagDispatch: (id, body) => call(`/tags/orders/${encodeURIComponent(id)}/dispatch`, { method: 'POST', body }),
+  tagBook: (id) => call(`/tags/orders/${encodeURIComponent(id)}/book`, { method: 'POST' }),
+  tagLabel: (id) => call(`/tags/orders/${encodeURIComponent(id)}/label`),
+  tagPickup: () => call('/tags/pickup', { method: 'POST' }),
+  tagTracking: () => call('/tags/tracking', { method: 'POST' }),
   tagsList: (q) => call(`/tags/list${qs({ q })}`),
   tagMessages: () => call('/tags/messages'),
   tagBlocks: () => call('/tags/blocks'),

@@ -233,10 +233,27 @@ function BlocksTab({ setNote }) {
   );
 }
 
+/*
+ * STICKER ORDERS (2026-10-29: "I need to call the API, not manual booking"). Each order is ONE vehicle's tag, its own QR:
+ *   🖨️ Print stickers   that order's QR, as many copies as were bought, on A4 sticker paper
+ *   📦 Book             Delhivery creates the shipment; the waybill becomes the tracking number; the owner is told
+ *   🏷️ Label            the Delhivery shipping label PDF, to stick on the envelope
+ *   🚚 Request pickup   one pickup for every booked parcel · 🔄 Refresh tracking (also every 3 hours on its own)
+ *   Mark posted         by hand, when sent some other way (India Post, a courier counter)
+ */
 function StickersTab({ data, reload, setNote }) {
   const [ship, setShip] = useState(null);
   const [form, setForm] = useState({ courier: '', tracking: '' });
   const [busy, setBusy] = useState(false);
+  const dv = data.delhivery || {};
+  const run = async (fn, ok) => {
+    setBusy(true);
+    try { const out = await fn(); setNote(ok(out)); await reload(); } catch (e) { setNote(e.message); } finally { setBusy(false); }
+  };
+  const print = (o) => run(async () => { const { blob, filename } = await api.tagSheet([o.code], o.quantity || 2); saveBlob(blob, filename); openBlob(blob); return {}; },
+    () => `Print sheet for #${o.id} (${o.quantity || 2} stickers) downloaded — print on A4 sticker paper at Actual size.`);
+  const book = (o) => run(() => api.tagBook(o.id), (out) => `Booked with Delhivery — waybill ${out.waybill}${out.told ? '; the owner has been told.' : '.'}`);
+  const label = (o) => run(async () => { const out = await api.tagLabel(o.id); window.open(out.url, '_blank'); return out; }, () => 'Label opened in a new tab.');
   const dispatch = async () => {
     setBusy(true);
     try {
@@ -247,10 +264,19 @@ function StickersTab({ data, reload, setNote }) {
   };
   return (
     <div className="card p-4">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {dv.configured
+          ? <Chip tone={dv.mode === 'live' ? 'good' : 'watch'}>Delhivery · {dv.mode} · pickup {dv.pickup}</Chip>
+          : <Chip tone="wrong">Delhivery not set up — DELHIVERY_APITOKEN in .env</Chip>}
+        <button type="button" className="btn-ghost text-xs" disabled={busy || !dv.configured}
+          onClick={() => run(() => api.tagPickup(), (out) => `Pickup requested for ${out.date} — ${out.count} parcel(s).`)}>🚚 Request pickup</button>
+        <button type="button" className="btn-ghost text-xs" disabled={busy || !dv.configured}
+          onClick={() => run(() => api.tagTracking(), (out) => `Tracking checked: ${out.updated} updated, ${out.delivered} delivered.`)}>🔄 Refresh tracking</button>
+      </div>
       {!data.orders.length ? <Empty>No sticker orders yet.</Empty> : (
-        <Table head={<Head cols={['Order', 'Vehicle', 'Ship to', 'Amount', 'Status', 'Courier · tracking', '']} />}>
+        <Table head={<Head cols={['Order', 'Vehicle', 'Ship to', 'Amount', 'Status', 'Shipment', '']} />}>
           {data.orders.map((o) => {
-            const [word, tone] = STATUS[o.status] || [o.status, 'info'];
+            const [word, tone] = o.status === 'delivered' ? ['Delivered', 'good'] : (STATUS[o.status] || [o.status, 'info']);
             return (
               <tr key={o.id} className="border-b border-line/60 align-top text-sm">
                 <td className={th}>#{o.id}<div className="text-2xs text-muted">{ago(o.paid_at || o.created_at)}</div></td>
@@ -259,10 +285,18 @@ function StickersTab({ data, reload, setNote }) {
                 <td className={th}>{rupees(o.amount_paise)} {o.test === 'true' && <Chip tone="watch">TEST</Chip>}
                   <div className="text-2xs text-muted">{o.quantity || 2} sticker{(o.quantity || 2) === 1 ? '' : 's'}</div></td>
                 <td className={th}><Chip tone={tone}>{word}</Chip></td>
-                <td className={th}>{o.courier ? `${o.courier} · ${o.tracking}` : '—'}{o.dispatched_at && <div className="text-2xs text-muted">{dateTime(o.dispatched_at)}</div>}</td>
-                <td className={th}>{(o.status === 'paid' || o.status === 'dispatched') && (
-                  <button type="button" className="btn-ghost text-xs" onClick={() => { setShip(o); setForm({ courier: o.courier || '', tracking: o.tracking || '' }); }}>
-                    {o.status === 'paid' ? 'Mark posted' : 'Edit tracking'}</button>)}</td>
+                <td className={th}>{o.courier ? `${o.courier} · ${o.tracking}` : '—'}
+                  {o.ship_status && <div className="text-2xs text-muted">{o.ship_status}{o.ship_status_at ? ` · ${ago(o.ship_status_at)}` : ''}</div>}
+                  {o.pickup_id && <div className="text-2xs text-muted">pickup {o.pickup_id}</div>}
+                  {o.ship_error && <div className="text-2xs text-wrong-700">{o.ship_error}</div>}</td>
+                <td className={`${th} whitespace-nowrap`}>
+                  {o.status !== 'created' && o.status !== 'cancelled' && <button type="button" className="btn-ghost text-xs" disabled={busy} onClick={() => print(o)}>🖨️ Print stickers</button>}
+                  {o.status === 'paid' && dv.configured && <button type="button" className="btn-ghost text-xs" disabled={busy} onClick={() => book(o)}>📦 Book</button>}
+                  {o.waybill && <button type="button" className="btn-ghost text-xs" disabled={busy} onClick={() => label(o)}>🏷️ Label</button>}
+                  {(o.status === 'paid' || o.status === 'dispatched') && (
+                    <button type="button" className="btn-ghost text-xs" onClick={() => { setShip(o); setForm({ courier: o.courier || '', tracking: o.tracking || '' }); }}>
+                      {o.status === 'paid' ? 'Mark posted' : 'Edit tracking'}</button>)}
+                </td>
               </tr>
             );
           })}

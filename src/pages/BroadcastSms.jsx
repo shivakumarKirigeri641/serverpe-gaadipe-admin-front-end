@@ -48,7 +48,8 @@ function smsLength(text) {
   return { unicode: false, length: s.reduce((n, c) => n + (GSM_EXT.includes(c) ? 2 : 1), 0), limit: 160 };
 }
 const FILTERS = [['all', 'Everyone listed'], ['not_recent', 'No broadcast SMS in 7 days'], ['paid', 'Paid customers'],
-                 ['never_paid', 'Never paid'], ['monitoring', 'Monitoring active']];
+                 ['never_paid', 'Never paid'], ['monitoring', 'Monitoring active'],
+                 ['before_wa', 'Joined before 23 Oct · no SMS in 7 days']];
 
 export default function BroadcastSms() {
   const { can } = useSession();

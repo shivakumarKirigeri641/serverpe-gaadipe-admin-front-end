@@ -256,7 +256,8 @@ function StickersTab({ data, reload, setNote }) {
                 <td className={th}>#{o.id}<div className="text-2xs text-muted">{ago(o.paid_at || o.created_at)}</div></td>
                 <td className={`${th} font-mono`}>{o.reg_no}<div className="text-2xs text-muted">Tag {o.code} · {fmtMobile(o.mobile)}</div></td>
                 <td className={`${th} max-w-xs whitespace-pre-wrap`}>{o.ship_address || o.ship_name || '—'}<div className="text-2xs text-muted">PIN {o.pincode} · {o.zone}</div></td>
-                <td className={th}>{rupees(o.amount_paise)} {o.test === 'true' && <Chip tone="watch">TEST</Chip>}</td>
+                <td className={th}>{rupees(o.amount_paise)} {o.test === 'true' && <Chip tone="watch">TEST</Chip>}
+                  <div className="text-2xs text-muted">{o.quantity || 2} sticker{(o.quantity || 2) === 1 ? '' : 's'}</div></td>
                 <td className={th}><Chip tone={tone}>{word}</Chip></td>
                 <td className={th}>{o.courier ? `${o.courier} · ${o.tracking}` : '—'}{o.dispatched_at && <div className="text-2xs text-muted">{dateTime(o.dispatched_at)}</div>}</td>
                 <td className={th}>{(o.status === 'paid' || o.status === 'dispatched') && (
@@ -287,10 +288,11 @@ const FIELDS = [
   ['tag_allow_mobiles', 'Before launch, also for these mobiles', 'Comma-separated 10-digit numbers.'],
   ['tag_limit_per_vehicle_hour', 'Messages to one vehicle per hour', ''],
   ['tag_limit_per_sender_day', 'Messages one person can send per day', ''],
-  ['tag_zone_city', 'Sticker: same city (₹, incl. GST & delivery)', ''],
-  ['tag_zone_state', 'Sticker: rest of the state (₹)', ''],
-  ['tag_zone_india', 'Sticker: rest of India (₹)', ''],
-  ['tag_zone_remote', 'Sticker: remote areas (₹)', 'North-East, J&K, Ladakh, islands.'],
+  ['tag_sticker_min', 'Stickers per order, at least', 'Default 2 (rear windscreen + a side window).'],
+  ['tag_sticker_base', 'Price for that minimum (₹, GST + delivery included)', 'Default ₹149.'],
+  ['tag_sticker_extra', 'Each extra sticker (₹)', 'Default ₹49.'],
+  ['tag_sticker_max', 'Stickers per order, at most', ''],
+  ['tag_remote_extra', 'Remote pincode surcharge (₹)', 'North-East, J&K, Ladakh, islands. 0 = same price everywhere.'],
   ['tag_pickup_pincode', 'Posting from pincode', ''],
   ['tag_alert_template', 'WhatsApp template: owner alert', 'Utility, approved in WhatsApp Manager.'],
   ['tag_shipped_template', 'WhatsApp template: sticker shipped', ''],
